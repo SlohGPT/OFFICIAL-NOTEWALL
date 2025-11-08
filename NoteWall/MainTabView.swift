@@ -5,14 +5,16 @@ struct MainTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Content - Direct view switching without TabView
-            if selectedTab == 0 {
+            ZStack {
                 ContentView()
-            } else {
+                    .opacity(selectedTab == 0 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 0)
+
                 SettingsView(selectedTab: $selectedTab)
+                    .opacity(selectedTab == 1 ? 1 : 0)
+                    .allowsHitTesting(selectedTab == 1)
             }
 
-            // Custom Bottom Navigation Bar
             BottomNavigationBar(selectedTab: $selectedTab)
         }
     }
@@ -35,7 +37,7 @@ struct BottomNavigationBar: View {
                     Text("Home")
                         .font(.caption)
                 }
-                .foregroundColor(selectedTab == 0 ? .blue : .gray)
+                .foregroundColor(selectedTab == 0 ? .appAccent : .gray)
             }
 
             Spacer()
@@ -50,7 +52,7 @@ struct BottomNavigationBar: View {
                     Text("Settings")
                         .font(.caption)
                 }
-                .foregroundColor(selectedTab == 1 ? .blue : .gray)
+                .foregroundColor(selectedTab == 1 ? .appAccent : .gray)
             }
 
             Spacer()

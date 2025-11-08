@@ -2,7 +2,11 @@ import UIKit
 import SwiftUI
 
 struct WallpaperRenderer {
-    static func generateWallpaper(from notes: [Note]) -> UIImage {
+    static func generateWallpaper(
+        from notes: [Note],
+        backgroundColor: UIColor,
+        backgroundImage: UIImage? = nil
+    ) -> UIImage {
         // iPhone wallpaper dimensions
         let width: CGFloat = 1290
         let height: CGFloat = 2796
@@ -10,9 +14,14 @@ struct WallpaperRenderer {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height))
 
         return renderer.image { context in
-            // Black background
-            UIColor.black.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            let canvasRect = CGRect(x: 0, y: 0, width: width, height: height)
+
+            backgroundColor.setFill()
+            context.fill(canvasRect)
+
+            if let image = backgroundImage {
+                drawBackground(image: image, in: canvasRect, on: context.cgContext)
+            }
 
             // Filter out completed notes and limit to notes that fit
             let activeNotes = notes.filter { !$0.isCompleted }
@@ -30,9 +39,14 @@ struct WallpaperRenderer {
 
             // Increased font size for better visibility
             let fontSize: CGFloat = 96
+            let textColor = textColorForBackground(
+                backgroundColor: backgroundColor,
+                backgroundImage: backgroundImage
+            )
+
             let attributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
-                .foregroundColor: UIColor.white,
+                .foregroundColor: textColor,
                 .paragraphStyle: paragraphStyle
             ]
 
@@ -63,13 +77,22 @@ struct WallpaperRenderer {
         }
     }
 
-    static func generateBlankWallpaper() -> UIImage {
+    static func generateBlankWallpaper(
+        backgroundColor: UIColor,
+        backgroundImage: UIImage? = nil
+    ) -> UIImage {
         let width: CGFloat = 1290
         let height: CGFloat = 2796
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height))
         return renderer.image { context in
-            UIColor.black.setFill()
-            context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+            let canvasRect = CGRect(x: 0, y: 0, width: width, height: height)
+
+            backgroundColor.setFill()
+            context.fill(canvasRect)
+
+            if let image = backgroundImage {
+                drawBackground(image: image, in: canvasRect, on: context.cgContext)
+            }
         }
     }
 
@@ -124,5 +147,96 @@ struct WallpaperRenderer {
         }
 
         return notesToShow
+    }
+
+    private static func drawBackground(image: UIImage, in canvasRect: CGRect, on context: CGContext) {
+        let canvasSize = canvasRect.size
+        let imageSize = image.size
+
+        let coverScale = max(canvasSize.width / imageSize.width, canvasSize.height / imageSize.height)
+        let coverSize = CGSize(width: imageSize.width * coverScale, height: imageSize.height * coverScale)
+        let coverOrigin = CGPoint(
+            x: (canvasSize.width - coverSize.width) / 2,
+            y: (canvasSize.height - coverSize.height) / 2
+        )
+
+        image.draw(in: CGRect(origin: coverOrigin, size: coverSize))
+
+        context.setFillColor(UIColor.black.withAlphaComponent(0.18).cgColor)
+        context.fill(canvasRect)
+    }
+
+    private static func textColorForBackground(backgroundColor: UIColor, backgroundImage: UIImage?) -> UIColor {
+        let brightness: CGFloat
+
+        if let image = backgroundImage {
+            brightness = averageBrightness(of: image)
+        } else {
+            brightness = brightnessOfColor(backgroundColor)
+        }
+
+        // Threshold chosen so mid-tone images still get high-contrast text.
+        if brightness < 0.55 {
+            return UIColor.white
+        } else {
+            return UIColor.black.withAlphaComponent(0.9)
+        }
+    }
+
+    private static func brightnessOfColor(_ color: UIColor) -> CGFloat {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var white: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        if color.getRed(&red, green: &green, blue: &blue, alpha: &alpha) {
+            return 0.299 * red + 0.587 * green + 0.114 * blue
+        } else if color.getWhite(&white, alpha: &alpha) {
+            return white
+        } else if let components = color.cgColor.components, components.count >= 3 {
+            return 0.299 * components[0] + 0.587 * components[1] + 0.114 * components[2]
+        }
+
+        return 0.5
+    }
+
+    private static func averageBrightness(of image: UIImage) -> CGFloat {
+        let sampleSize = CGSize(width: 12, height: 12)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+
+        let renderer = UIGraphicsImageRenderer(size: sampleSize, format: format)
+        let downsampled = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: sampleSize))
+        }
+
+        guard let cgImage = downsampled.cgImage,
+              let data = cgImage.dataProvider?.data,
+              let pointer = CFDataGetBytePtr(data) else {
+            return 0.5
+        }
+
+        let bytesPerPixel = cgImage.bitsPerPixel / 8
+        guard bytesPerPixel >= 3 else { return 0.5 }
+
+        var total: CGFloat = 0
+        let width = Int(sampleSize.width)
+        let height = Int(sampleSize.height)
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = (y * cgImage.bytesPerRow) + (x * bytesPerPixel)
+                let r = CGFloat(pointer[index])
+                let g = CGFloat(pointer[index + 1])
+                let b = CGFloat(pointer[index + 2])
+                total += (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+            }
+        }
+
+        let pixelCount = CGFloat(width * height)
+        guard pixelCount > 0 else { return 0.5 }
+        return total / pixelCount
     }
 }

@@ -1,9 +1,15 @@
 import SwiftUI
+import Combine
+import UIKit
 
 struct ContentView: View {
     @AppStorage("savedNotes") private var savedNotesData: Data = Data()
     @AppStorage("lastLockScreenIdentifier") private var lastLockScreenIdentifier: String = ""
     @AppStorage("skipDeletingOldWallpaper") private var skipDeletingOldWallpaper = false
+    @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
+    @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
+    @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
+    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
     @State private var notes: [Note] = []
     @State private var newNoteText = ""
     @State private var isGeneratingWallpaper = false
@@ -41,6 +47,32 @@ struct ContentView: View {
         notes
     }
 
+    private var lockScreenBackgroundOption: LockScreenBackgroundOption {
+        LockScreenBackgroundOption(rawValue: lockScreenBackgroundRaw) ?? .default
+    }
+
+    private var lockScreenBackgroundMode: LockScreenBackgroundMode {
+        LockScreenBackgroundMode(rawValue: lockScreenBackgroundModeRaw) ?? .default
+    }
+
+    private var lockScreenBackgroundColor: UIColor {
+        (lockScreenBackgroundMode.presetOption ?? lockScreenBackgroundOption).uiColor
+    }
+
+    private var lockScreenBackgroundImage: UIImage? {
+        if let storedImage = HomeScreenImageManager.lockScreenBackgroundSourceImage() {
+            return storedImage
+        }
+
+        guard !lockScreenBackgroundPhotoData.isEmpty,
+              let dataImage = UIImage(data: lockScreenBackgroundPhotoData) else {
+            return nil
+        }
+
+        try? HomeScreenImageManager.saveLockScreenBackgroundSource(dataImage)
+        return dataImage
+    }
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -65,56 +97,7 @@ struct ContentView: View {
                     } else {
                         List {
                             ForEach(sortedNotes) { note in
-                                if let index = notes.firstIndex(where: { $0.id == note.id }) {
-                                    NoteRowView(
-                                        note: $notes[index],
-                                        isOnWallpaper: false,
-                                        isEditMode: isEditMode,
-                                        isSelected: selectedNotes.contains(note.id),
-                                        toggleSelection: {
-                                            if selectedNotes.contains(note.id) {
-                                                selectedNotes.remove(note.id)
-                                            } else {
-                                                selectedNotes.insert(note.id)
-                                            }
-                                        },
-                                        onDelete: {
-                                            if let actualIndex = notes.firstIndex(where: { $0.id == note.id }) {
-                                                prepareNoteForDeletion(at: actualIndex)
-                                            }
-                                        },
-                                        onCommit: {
-                                            saveNotes()
-                                            hideKeyboard()
-                                        }
-                                    )
-                                    .listRowInsets(EdgeInsets())
-                                    .listRowSeparator(.visible)
-                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                                        if !isEditMode {
-                                            Button(role: .destructive) {
-                                                if let actualIndex = notes.firstIndex(where: { $0.id == note.id }) {
-                                                    prepareNoteForDeletion(at: actualIndex)
-                                                }
-                                            } label: {
-                                                Label("Delete", systemImage: "trash")
-                                            }
-                                        }
-                                    }
-                                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
-                                        if !isEditMode {
-                                            Button {
-                                                if let actualIndex = notes.firstIndex(where: { $0.id == note.id }) {
-                                                    notes[actualIndex].isCompleted.toggle()
-                                                    saveNotes()
-                                                }
-                                            } label: {
-                                                Label(note.isCompleted ? "Unmark" : "Complete", systemImage: note.isCompleted ? "arrow.uturn.backward" : "checkmark")
-                                            }
-                                            .tint(.green)
-                                        }
-                                    }
-                                }
+                                noteRow(for: note)
                             }
                             .onMove { source, destination in
                                 moveNotes(from: source, to: destination)
@@ -132,7 +115,7 @@ struct ContentView: View {
                                             }
                                         }) {
                                             Text(selectedNotes.count == sortedNotes.count ? "Deselect All" : "Select All")
-                                                .foregroundColor(.blue)
+                                                .foregroundColor(.appAccent)
                                         }
                                         .buttonStyle(.plain)
 
@@ -187,7 +170,7 @@ struct ContentView: View {
                         }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.system(size: 32))
-                                .foregroundColor(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .blue)
+                                .foregroundColor(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? .gray : .appAccent)
                         }
                         .disabled(newNoteText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
@@ -214,7 +197,7 @@ struct ContentView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(notes.isEmpty ? Color.gray : Color.blue)
+                        .background(notes.isEmpty ? Color.gray : Color.appAccent)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                     }
@@ -288,6 +271,10 @@ struct ContentView: View {
         .onAppear {
             loadNotes()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .requestWallpaperUpdate)) { _ in
+            hideKeyboard()
+            updateWallpaper()
+        }
         .onChange(of: savedNotesData) { _ in
             loadNotes()
         }
@@ -354,6 +341,119 @@ struct ContentView: View {
         saveNotes()
     }
 
+    @ViewBuilder
+    private func noteRow(for note: Note) -> some View {
+        if let index = notes.firstIndex(where: { $0.id == note.id }) {
+            NoteRowView(
+                note: $notes[index],
+                isOnWallpaper: false,
+                isEditMode: isEditMode,
+                isSelected: selectedNotes.contains(note.id),
+                toggleSelection: { toggleSelection(for: note) },
+                onDelete: { handleDelete(for: note) },
+                onCommit: {
+                    saveNotes()
+                    hideKeyboard()
+                }
+            )
+            .listRowInsets(EdgeInsets())
+            .listRowSeparator(.visible)
+            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                if !isEditMode {
+                    Button(role: .destructive) {
+                        handleDelete(for: note)
+                    } label: {
+                        Label("Delete", systemImage: "trash")
+                    }
+                }
+            }
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                if !isEditMode {
+                    Button {
+                        toggleCompletion(for: note)
+                    } label: {
+                        Label(note.isCompleted ? "Unmark" : "Complete", systemImage: note.isCompleted ? "arrow.uturn.backward" : "checkmark")
+                    }
+                    .tint(.green)
+                }
+            }
+        } else {
+            EmptyView()
+        }
+    }
+
+    private func toggleSelection(for note: Note) {
+        if selectedNotes.contains(note.id) {
+            selectedNotes.remove(note.id)
+        } else {
+            selectedNotes.insert(note.id)
+        }
+    }
+
+    private func handleDelete(for note: Note) {
+        if let index = notes.firstIndex(where: { $0.id == note.id }) {
+            prepareNoteForDeletion(at: index)
+        }
+    }
+
+    private func toggleCompletion(for note: Note) {
+        if let index = notes.firstIndex(where: { $0.id == note.id }) {
+            notes[index].isCompleted.toggle()
+            saveNotes()
+        }
+    }
+
+    private func resolveHomeWallpaperBaseImage() -> UIImage {
+        if let storedImage = HomeScreenImageManager.loadHomeScreenImage() {
+            return storedImage
+        }
+
+        if let presetImage = presetImageForCurrentSelection() {
+            return presetImage
+        }
+
+        if let lockPhoto = lockScreenBackgroundImage {
+            return lockPhoto
+        }
+
+        return solidColorWallpaperImage(color: lockScreenBackgroundColor)
+    }
+
+    private func presetImageForCurrentSelection() -> UIImage? {
+        guard let preset = PresetOption(rawValue: homeScreenPresetSelectionRaw) else {
+            return nil
+        }
+
+        switch preset {
+        case .black:
+            return HomeScreenImageManager.homePresetBlackImage()
+        case .gray:
+            return HomeScreenImageManager.homePresetGrayImage()
+        }
+    }
+
+    private func resolveLockBackgroundImage(using homeImage: UIImage) -> UIImage? {
+        if let photo = lockScreenBackgroundImage {
+            return photo
+        }
+
+        switch lockScreenBackgroundMode {
+        case .photo:
+            return homeImage
+        case .presetBlack, .presetGray:
+            return nil
+        }
+    }
+
+    private func solidColorWallpaperImage(color: UIColor) -> UIImage {
+        let size = CGSize(width: 1290, height: 2796)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            color.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+        }
+    }
+
     private func prepareNoteForDeletion(at index: Int) {
         restorePendingDeletionIfNeeded()
 
@@ -361,7 +461,7 @@ struct ContentView: View {
         let note = notes[index]
 
         withAnimation {
-            notes.remove(at: index)
+            _ = notes.remove(at: index)
         }
 
         notePendingDeletion = note
@@ -405,11 +505,31 @@ struct ContentView: View {
     }
 
     private func updateWallpaper() {
+        guard !isGeneratingWallpaper else { return }
         isGeneratingWallpaper = true
 
+        let homeWallpaperImage = resolveHomeWallpaperBaseImage()
+        do {
+            try HomeScreenImageManager.saveHomeScreenImage(homeWallpaperImage)
+        } catch {
+            print("Failed to save home screen wallpaper image: \(error)")
+        }
+
+        let lockBackgroundImage = resolveLockBackgroundImage(using: homeWallpaperImage)
+
         // Generate the wallpaper
-        let lockScreenImage = WallpaperRenderer.generateWallpaper(from: notes)
+        let lockScreenImage = WallpaperRenderer.generateWallpaper(
+            from: notes,
+            backgroundColor: lockScreenBackgroundColor,
+            backgroundImage: lockBackgroundImage
+        )
         pendingLockScreenImage = lockScreenImage
+
+        do {
+            try HomeScreenImageManager.saveLockScreenWallpaper(lockScreenImage)
+        } catch {
+            print("Failed to save lock screen wallpaper image: \(error)")
+        }
 
         // Delete previous wallpaper if it exists and user hasn't opted to skip
         if !lastLockScreenIdentifier.isEmpty && !skipDeletingOldWallpaper {
@@ -446,6 +566,8 @@ struct ContentView: View {
                     self.lastLockScreenIdentifier = id
                     self.openShortcut()
                 }
+
+                NotificationCenter.default.post(name: .wallpaperGenerationFinished, object: nil)
             }
         }
     }
@@ -464,8 +586,28 @@ struct ContentView: View {
     }
 
     private func setBlankWallpaper() {
-        let lockScreenImage = WallpaperRenderer.generateBlankWallpaper()
+        let homeWallpaperImage = resolveHomeWallpaperBaseImage()
+        do {
+            try HomeScreenImageManager.saveHomeScreenImage(homeWallpaperImage)
+        } catch {
+            print("Failed to save home screen wallpaper image: \(error)")
+        }
+
+        let lockBackgroundImage = resolveLockBackgroundImage(using: homeWallpaperImage)
+
+        let lockScreenImage = WallpaperRenderer.generateBlankWallpaper(
+            backgroundColor: lockScreenBackgroundColor,
+            backgroundImage: lockBackgroundImage
+        )
+
+        do {
+            try HomeScreenImageManager.saveLockScreenWallpaper(lockScreenImage)
+        } catch {
+            print("Failed to save lock screen wallpaper image: \(error)")
+        }
+
         saveNewLockScreenWallpaper(lockScreenImage)
+        NotificationCenter.default.post(name: .wallpaperGenerationFinished, object: nil)
     }
 
     private func openShortcut() {
@@ -493,7 +635,7 @@ struct NoteRowView: View {
                 Button(action: toggleSelection) {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 22))
-                        .foregroundColor(isSelected ? .blue : .gray)
+                        .foregroundColor(isSelected ? .appAccent : .gray)
                 }
                 .buttonStyle(.plain)
             }
@@ -515,7 +657,7 @@ struct NoteRowView: View {
             if isOnWallpaper && !isEditMode {
                 Image(systemName: "photo.badge.checkmark.fill")
                     .font(.system(size: 16))
-                    .foregroundColor(.blue)
+                    .foregroundColor(.appAccent)
             }
 
             if !isEditMode {
