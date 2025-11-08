@@ -102,6 +102,9 @@ NoteWall/
 - Ensure shortcut is installed: https://www.icloud.com/shortcuts/9ad9e11424104d2eb14e922abd3b9620
 - Check shortcut name matches exactly: "Set NoteWall Wallpaper"
 
+### Pushing commits to GitHub
+- See `GIT_PUSH_GUIDE.md` for a step-by-step walkthrough (including certificate fixes and permission requests) to push from Cursor to the GitHub remote.
+
 ## Features
 
 ✅ Multiple notes creation/editing/deletion
