@@ -5,7 +5,9 @@ import QuartzCore
 
 private enum OnboardingPage: Int, CaseIterable, Hashable {
     case installShortcut
+    case addNotes
     case chooseWallpapers
+    case allowPermissions
     case overview
 }
 
@@ -19,8 +21,9 @@ struct OnboardingView: View {
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
 
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = "black"
+    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
     @AppStorage("homeScreenUsesCustomPhoto") private var homeScreenUsesCustomPhoto = false
+    @AppStorage("savedNotes") private var savedNotesData: Data = Data()
     @State private var didOpenShortcut = false
     @State private var isSavingHomeScreenPhoto = false
     @State private var homeScreenStatusMessage: String?
@@ -33,6 +36,12 @@ struct OnboardingView: View {
     @State private var isLaunchingShortcut = false
     @State private var shortcutLaunchFallback: DispatchWorkItem?
     @State private var didTriggerShortcutRun = false
+    @State private var isLoadingWallpaperStep = false
+    
+    // Notes management for onboarding
+    @State private var onboardingNotes: [Note] = []
+    @State private var currentNoteText = ""
+    @FocusState private var isNoteFieldFocused: Bool
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/a00482ed7b054ee0b42d7d9a7796c7eb"
 
@@ -88,8 +97,12 @@ struct OnboardingView: View {
                 switch currentPage {
                 case .installShortcut:
                     installShortcutStep()
+                case .addNotes:
+                    addNotesStep()
                 case .chooseWallpapers:
                     chooseWallpapersStep(includePhotoPicker: includePhotoPicker)
+                case .allowPermissions:
+                    allowPermissionsStep()
                 case .overview:
                     overviewStep()
                 }
@@ -171,17 +184,272 @@ struct OnboardingView: View {
         }
         .scrollAlwaysBounceIfAvailable()
     }
+    
+    private func addNotesStep() -> some View {
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(alignment: .leading, spacing: 24) {
+                    Text("Add Your First Notes")
+                        .font(.system(.largeTitle, design: .rounded))
+                        .fontWeight(.bold)
+                    
+                    Text("These notes will appear on your lock screen wallpaper")
+                        .font(.system(.title3))
+                        .foregroundColor(.secondary)
+                    
+                    VStack(spacing: 16) {
+                        // Display existing notes
+                        ForEach(onboardingNotes) { note in
+                            HStack(spacing: 12) {
+                                Text("\(noteIndex(for: note) + 1).")
+                                    .font(.system(.body, design: .rounded))
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 24, alignment: .leading)
+                                
+                                Text(note.text)
+                                    .font(.system(.body))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                
+                                Button(action: {
+                                    withAnimation {
+                                        removeNote(note)
+                                    }
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .foregroundColor(.secondary)
+                                        .font(.system(size: 20))
+                                }
+                            }
+                            .padding(16)
+                            .background(Color(.secondarySystemBackground))
+                            .cornerRadius(12)
+                            .id(note.id)
+                        }
+                        
+                        // Input field for new note
+                        HStack(spacing: 12) {
+                            TextField("Type a note...", text: $currentNoteText)
+                                .font(.system(.body))
+                                .focused($isNoteFieldFocused)
+                                .onSubmit {
+                                    addCurrentNote(scrollProxy: proxy)
+                                }
+                            
+                            Button(action: {
+                                addCurrentNote(scrollProxy: proxy)
+                            }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(currentNoteText.isEmpty ? .gray : .appAccent)
+                            }
+                            .disabled(currentNoteText.isEmpty)
+                        }
+                        .padding(16)
+                        .background(Color(.secondarySystemBackground))
+                        .cornerRadius(12)
+                        .id("inputField")
+                        
+                        if onboardingNotes.isEmpty {
+                            VStack(spacing: 12) {
+                                Image(systemName: "note.text")
+                                    .font(.system(size: 48))
+                                    .foregroundColor(.secondary.opacity(0.5))
+                                
+                                Text("Add at least one note to continue")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 32)
+                .padding(.bottom, 32)
+            }
+            .scrollAlwaysBounceIfAvailable()
+            .onTapGesture {
+                // Dismiss keyboard when tapping outside
+                isNoteFieldFocused = false
+            }
+            .onAppear {
+                // Focus the text field when the view appears
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isNoteFieldFocused = true
+                }
+            }
+        }
+    }
+    
+    private func addCurrentNote(scrollProxy: ScrollViewProxy) {
+        let trimmed = currentNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        
+        withAnimation {
+            let newNote = Note(text: trimmed, isCompleted: false)
+            onboardingNotes.append(newNote)
+            currentNoteText = ""
+            isNoteFieldFocused = true
+            
+            // Scroll to the newly added note with center anchor
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    scrollProxy.scrollTo(newNote.id, anchor: .center)
+                }
+            }
+        }
+    }
+    
+    private func removeNote(_ note: Note) {
+        if let index = onboardingNotes.firstIndex(where: { $0.id == note.id }) {
+            onboardingNotes.remove(at: index)
+        }
+    }
+    
+    private func noteIndex(for note: Note) -> Int {
+        return onboardingNotes.firstIndex(where: { $0.id == note.id }) ?? 0
+    }
+
+    private func allowPermissionsStep() -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 32) {
+                Text("Allow Permissions")
+                    .font(.system(.largeTitle, design: .rounded))
+                    .fontWeight(.bold)
+
+                VStack(alignment: .leading, spacing: 20) {
+                    Text("After installing the shortcut, you'll see privacy notifications at the top of your screen.")
+                        .font(.system(.title3))
+                        .foregroundColor(.secondary)
+
+                    // Sample notification image
+                    VStack(spacing: 16) {
+                        Image("notification")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxHeight: 120)
+                            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(Color.black.opacity(0.08), lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+
+                        // Arrow pointing up
+                        VStack(spacing: 8) {
+                            Image(systemName: "arrow.up")
+                                .font(.system(size: 24, weight: .bold))
+                                .foregroundColor(.appAccent)
+                            
+                            Text("Click \"Allow\" for ALL permissions")
+                                .font(.system(.title2))
+                                .fontWeight(.semibold)
+                                .foregroundColor(.appAccent)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Why these permissions are needed:")
+                            .font(.system(.headline))
+                            .foregroundColor(.primary)
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: "photo.on.rectangle")
+                                    .foregroundColor(.appAccent)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Photos Access")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Text("To save and apply wallpapers to your device")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+
+                            HStack(alignment: .top, spacing: 12) {
+                                Image(systemName: "folder")
+                                    .foregroundColor(.appAccent)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Files Access")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Text("To read wallpaper files created by the app")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                    }
+
+                    Text("💡 Tip: If you accidentally tap \"Don't Allow\", you can change permissions later in Settings > Shortcuts > NoteWall")
+                        .font(.callout)
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 8)
+                        .padding(.horizontal, 16)
+                        .background(Color(.systemGray6))
+                        .cornerRadius(8)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.top, 32)
+            .padding(.bottom, 32)
+        }
+        .scrollAlwaysBounceIfAvailable()
+    }
 
     @ViewBuilder
     private func chooseWallpapersStep(includePhotoPicker: Bool) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                Text("Choose Your Wallpapers")
-                    .font(.system(.title, design: .rounded))
-                    .fontWeight(.bold)
+                HStack {
+                    Text("Choose Your Wallpapers")
+                        .font(.system(.title, design: .rounded))
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    // Edit Notes button to go back to step 2
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            currentPage = .addNotes
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Edit Notes")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                        }
+                        .foregroundColor(.appAccent)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.appAccent.opacity(0.1))
+                        )
+                    }
+                }
 
                 if includePhotoPicker {
                     if #available(iOS 16.0, *) {
+                        if isLoadingWallpaperStep {
+                            VStack(spacing: 16) {
+                                LoadingPlaceholder()
+                                LoadingPlaceholder()
+                                LoadingPlaceholder()
+                            }
+                            .transition(.opacity)
+                        } else {
+                            VStack(alignment: .leading, spacing: 16) {
                                 HomeScreenPhotoPickerView(
                                     isSavingHomeScreenPhoto: $isSavingHomeScreenPhoto,
                                     homeScreenStatusMessage: $homeScreenStatusMessage,
@@ -209,6 +477,9 @@ struct OnboardingView: View {
                                         .font(.caption)
                                         .foregroundColor(homeScreenStatusColor)
                                 }
+                                
+                                Divider()
+                                    .padding(.vertical, 12)
 
                                 LockScreenBackgroundPickerView(
                                     isSavingBackground: $isSavingLockScreenBackground,
@@ -233,6 +504,9 @@ struct OnboardingView: View {
                                     Text(message)
                                         .font(.caption)
                                         .foregroundColor(lockScreenBackgroundStatusColor)
+                                }
+                            }
+                            .transition(.opacity)
                         }
                     }
                 } else {
@@ -314,8 +588,12 @@ struct OnboardingView: View {
             return "Start Using NoteWall"
         case .chooseWallpapers:
             return isLaunchingShortcut ? "Launching Shortcut…" : "Next"
+        case .allowPermissions:
+            return "Continue"
         case .installShortcut:
             return didOpenShortcut ? "Next" : "Install Shortcut"
+        case .addNotes:
+            return "Continue"
         }
     }
 
@@ -325,8 +603,12 @@ struct OnboardingView: View {
             return "checkmark.circle.fill"
         case .chooseWallpapers:
             return isLaunchingShortcut ? nil : "paintbrush.pointed.fill"
+        case .allowPermissions:
+            return "checkmark.shield.fill"
         case .installShortcut:
             return "bolt.fill"
+        case .addNotes:
+            return "arrow.right.circle.fill"
         }
     }
 
@@ -334,12 +616,18 @@ struct OnboardingView: View {
         switch currentPage {
         case .installShortcut:
             return true
+        case .addNotes:
+            return !onboardingNotes.isEmpty
+        case .allowPermissions:
+            return true
         case .chooseWallpapers:
             let hasHomeSelection = homeScreenUsesCustomPhoto || !homeScreenPresetSelectionRaw.isEmpty
             let hasLockSelection: Bool
             if let mode = LockScreenBackgroundMode(rawValue: lockScreenBackgroundModeRaw) {
                 if mode == .photo {
                     hasLockSelection = !lockScreenBackgroundPhotoData.isEmpty
+                } else if mode == .notSelected {
+                    hasLockSelection = false
                 } else {
                     hasLockSelection = true
                 }
@@ -354,18 +642,44 @@ struct OnboardingView: View {
 
     private func handlePrimaryButton() {
         print("🎯 Onboarding: Primary button tapped on page: \(currentPage.progressTitle)")
+        
+        // Dismiss keyboard before any transition for smooth animation
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        
         switch currentPage {
         case .installShortcut:
             if didOpenShortcut {
-                print("   → Advancing to next step")
-                advanceStep()
+                print("   → Advancing to add notes")
+                // Small delay to let keyboard dismiss
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        self.currentPage = .addNotes
+                    }
+                }
             } else {
                 print("   → Opening shortcut installation")
                 installShortcut()
             }
+        case .addNotes:
+            print("   → Advancing to wallpaper selection")
+            // Show loading state
+            isLoadingWallpaperStep = true
+            // Small delay to let keyboard dismiss and show loading
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.currentPage = .chooseWallpapers
+                }
+                // Hide loading after transition completes
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    self.isLoadingWallpaperStep = false
+                }
+            }
         case .chooseWallpapers:
             print("   → Starting wallpaper generation and shortcut launch")
             startShortcutLaunch()
+        case .allowPermissions:
+            print("   → Advancing to overview")
+            advanceStep()
         case .overview:
             print("   → Completing onboarding")
             completeOnboarding()
@@ -408,9 +722,11 @@ struct OnboardingView: View {
         // Swipe left to go forward (optional, can be removed if not desired)
         else if horizontalAmount < -50 {
             if currentPage == .installShortcut && didOpenShortcut {
-                advanceStep()
+                currentPage = .chooseWallpapers
             } else if currentPage == .chooseWallpapers && primaryButtonEnabled {
                 startShortcutLaunch()
+            } else if currentPage == .allowPermissions {
+                advanceStep()
             }
         }
     }
@@ -425,15 +741,20 @@ struct OnboardingView: View {
         print("   📋 Home screen selection: \(homeScreenUsesCustomPhoto ? "Custom Photo" : homeScreenPresetSelectionRaw)")
         print("   📋 Lock screen mode: \(lockScreenBackgroundModeRaw)")
         
+        // Save notes BEFORE generating wallpaper so ContentView can read them
+        saveOnboardingNotes()
+        
         isLaunchingShortcut = true
         didTriggerShortcutRun = false
         shortcutLaunchFallback?.cancel()
 
         let fallback = DispatchWorkItem {
-            guard self.currentPage == .chooseWallpapers else { return }
-            if self.isLaunchingShortcut && !self.didTriggerShortcutRun {
-                print("⏰ Onboarding: Fallback triggered - opening shortcut")
-                self.openShortcutToApplyWallpaper()
+            // Check if we're on chooseWallpapers (Step 2) - if so, we're waiting for shortcut to launch
+            if self.currentPage == .chooseWallpapers {
+                if self.isLaunchingShortcut && !self.didTriggerShortcutRun {
+                    print("⏰ Onboarding: Fallback triggered - opening shortcut")
+                    self.openShortcutToApplyWallpaper()
+                }
             }
         }
         shortcutLaunchFallback = fallback
@@ -453,13 +774,37 @@ struct OnboardingView: View {
     }
 
     private func completeOnboarding() {
+        // Save notes to AppStorage before completing
+        saveOnboardingNotes()
+        
         hasCompletedSetup = true
         completedOnboardingVersion = onboardingVersion
+        NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
         isPresented = false
+    }
+    
+    private func saveOnboardingNotes() {
+        guard !onboardingNotes.isEmpty else { return }
+        
+        do {
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(onboardingNotes)
+            savedNotesData = data
+            print("✅ Saved \(onboardingNotes.count) notes from onboarding")
+        } catch {
+            print("❌ Failed to save onboarding notes: \(error)")
+        }
     }
 
     private func finalizeWallpaperSetup() {
-        NotificationCenter.default.post(name: .requestWallpaperUpdate, object: nil)
+        // Don't track onboarding wallpaper for paywall limit
+        let request = WallpaperUpdateRequest(skipDeletionPrompt: true, trackForPaywall: false)
+        
+        // Small delay to ensure ContentView has loaded the notes from savedNotesData
+        // The onChange handler needs time to trigger after saveOnboardingNotes()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            NotificationCenter.default.post(name: .requestWallpaperUpdate, object: request)
+        }
     }
 
     private func completeShortcutLaunch() {
@@ -473,8 +818,8 @@ struct OnboardingView: View {
         isLaunchingShortcut = false
         didTriggerShortcutRun = false
         if currentPage == .chooseWallpapers {
-            print("   → Advancing to overview step")
-            advanceStep()
+            print("   → Advancing to Allow Permissions step")
+            currentPage = .allowPermissions
         }
     }
 
@@ -562,12 +907,10 @@ private extension OnboardingView {
         let isComplete = currentPage.rawValue > page.rawValue
 
         let circleFill: Color = {
-            if isCurrent {
-                return Color.appAccent
-            } else if isComplete {
-                return Color.appAccent.opacity(0.65)
+            if isCurrent || isComplete {
+                return Color.appAccent  // Cyan for current and completed
             } else {
-                return Color(.systemGray5)
+                return Color(.systemGray5)  // Light gray for future steps
             }
         }()
 
@@ -616,15 +959,10 @@ private extension OnboardingView {
                     .strokeBorder(Color.white.opacity(circleStrokeOpacity), lineWidth: circleStrokeWidth)
                 )
 
-            if isComplete {
-                Image(systemName: "checkmark")
-                .font(.system(size: circleFontSize, weight: .semibold))
-                    .foregroundColor(circleTextColor)
-            } else {
-                Text("\(position)")
+            // Always show numbers (no checkmarks)
+            Text("\(position)")
                 .font(.system(size: circleFontSize, weight: .semibold, design: circleFontDesign))
-                    .foregroundColor(circleTextColor)
-            }
+                .foregroundColor(circleTextColor)
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Step \(position)")
@@ -648,7 +986,7 @@ private extension OnboardingView {
                 .shadow(color: Color.black.opacity(0.06), radius: 12, x: 0, y: 8)
 
             VStack(alignment: .leading, spacing: 16) {
-                Text("Step 3 • Ready to Go")
+                Text("Ready to Go")
                     .font(.title2)
                     .fontWeight(.bold)
 
@@ -806,6 +1144,10 @@ private extension OnboardingPage {
         switch self {
         case .installShortcut:
             return "Install Shortcut"
+        case .addNotes:
+            return "Add Notes"
+        case .allowPermissions:
+            return "Allow Permissions"
         case .chooseWallpapers:
             return "Choose Wallpapers"
         case .overview:
@@ -817,8 +1159,12 @@ private extension OnboardingPage {
         switch self {
         case .installShortcut:
             return "Install Shortcut"
+        case .addNotes:
+            return "Add Notes"
         case .chooseWallpapers:
             return "Choose Wallpapers"
+        case .allowPermissions:
+            return "Allow Permissions"
         case .overview:
             return "All Set"
         }
@@ -828,10 +1174,14 @@ private extension OnboardingPage {
         switch self {
         case .installShortcut:
             return "Step 1"
-        case .chooseWallpapers:
+        case .addNotes:
             return "Step 2"
-        case .overview:
+        case .chooseWallpapers:
             return "Step 3"
+        case .allowPermissions:
+            return "Step 4"
+        case .overview:
+            return "Step 5"
         }
     }
 }
@@ -864,12 +1214,56 @@ private extension View {
 }
 #endif
 
+// MARK: - Loading Placeholder
+
+private struct LoadingPlaceholder: View {
+    @State private var isAnimating = false
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color(.systemGray5))
+            .frame(height: 80)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                Color.clear,
+                                Color.white.opacity(0.3),
+                                Color.clear
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .offset(x: isAnimating ? 400 : -400)
+            )
+            .clipped()
+            .onAppear {
+                withAnimation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                    isAnimating = true
+                }
+            }
+    }
+}
+
 #Preview {
     OnboardingView(isPresented: .constant(true), onboardingVersion: 2)
 }
 
 private extension OnboardingView {
     func ensureCustomPhotoFlagIsAccurate() {
+        // During onboarding, don't auto-enable based on file existence
+        // Only sync the flag in Settings view where it makes sense
+        // This prevents pre-selection during first-time setup
+        
+        // If user hasn't completed setup yet, ensure flag starts as false
+        if !hasCompletedSetup {
+            homeScreenUsesCustomPhoto = false
+            return
+        }
+        
+        // After setup is complete, sync with actual file state
         let shouldBeEnabled = homeScreenPresetSelectionRaw.isEmpty && HomeScreenImageManager.homeScreenImageExists()
         if homeScreenUsesCustomPhoto != shouldBeEnabled {
             homeScreenUsesCustomPhoto = shouldBeEnabled
@@ -878,7 +1272,8 @@ private extension OnboardingView {
 
     private func advanceAfterShortcutInstallIfNeeded() {
         guard currentPage == .installShortcut, didOpenShortcut else { return }
-        advanceStep()
+        // After installing shortcut, go to add notes (Step 2)
+        currentPage = .addNotes
         didOpenShortcut = false
     }
 }

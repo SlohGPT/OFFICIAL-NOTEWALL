@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
     @AppStorage("hasCompletedInitialWallpaperSetup") private var hasCompletedInitialWallpaperSetup = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
+    @StateObject private var paywallManager = PaywallManager.shared
     @State private var notes: [Note]
     @State private var newNoteText = ""
     @State private var isGeneratingWallpaper = false
@@ -22,6 +23,7 @@ struct ContentView: View {
     @State private var isEditMode = false
     @State private var selectedNotes: Set<UUID> = []
     @State private var shouldSkipDeletionPrompt = false
+    @State private var isUserInitiatedUpdate = false
     @FocusState private var isTextFieldFocused: Bool
 
     // Computed property to get indices of notes that will appear on wallpaper
@@ -66,6 +68,9 @@ struct ContentView: View {
             return LockScreenBackgroundOption.black.uiColor
         case .presetGray:
             return LockScreenBackgroundOption.gray.uiColor
+        case .notSelected:
+            // Default to black if nothing is selected
+            return LockScreenBackgroundOption.black.uiColor
         }
     }
 
@@ -127,7 +132,9 @@ struct ContentView: View {
             isEditMode: $isEditMode,
             selectedNotes: $selectedNotes,
             shouldSkipDeletionPrompt: $shouldSkipDeletionPrompt,
+            isUserInitiatedUpdate: $isUserInitiatedUpdate,
             savedNotesData: $savedNotesData,
+            hasCompletedSetup: hasCompletedSetup,
             isTextFieldFocused: $isTextFieldFocused,
             addNote: addNote,
             moveNotes: moveNotes,
@@ -311,6 +318,10 @@ struct ContentView: View {
             print("   🎨 Preset mode detected: \(lockScreenBackgroundMode)")
             print("   ✅ Returning nil (will use solid color background)")
             return nil
+        case .notSelected:
+            // If nothing is selected, default to solid color (no image)
+            print("   ⚠️ No selection made, defaulting to solid color")
+            return nil
         }
     }
 
@@ -375,6 +386,10 @@ struct ContentView: View {
 
     private func updateWallpaper() {
         guard !isGeneratingWallpaper else { return }
+        
+        // Note: We don't block wallpaper updates here
+        // Users can always change wallpaper images/settings
+        // Credits are only tracked when explicitly updating from homepage
         isGeneratingWallpaper = true
 
         // Debug logging
@@ -440,9 +455,10 @@ struct ContentView: View {
             }
         } else {
             // First setup, no prior wallpaper, or skipping prompt; save silently
-            saveNewLockScreenWallpaper(lockScreenImage)
+            saveNewLockScreenWallpaper(lockScreenImage, trackForPaywall: isUserInitiatedUpdate)
             // Reset the flag after use
             shouldSkipDeletionPrompt = false
+            isUserInitiatedUpdate = false
         }
     }
 
@@ -453,15 +469,17 @@ struct ContentView: View {
         if !lastLockScreenIdentifier.isEmpty {
             PhotoSaver.deleteAsset(withIdentifier: lastLockScreenIdentifier) { _ in
                 DispatchQueue.main.async {
-                    self.saveNewLockScreenWallpaper(lockScreen)
+                    self.saveNewLockScreenWallpaper(lockScreen, trackForPaywall: self.isUserInitiatedUpdate)
+                    self.isUserInitiatedUpdate = false
                 }
             }
         } else {
-            saveNewLockScreenWallpaper(lockScreen)
+            saveNewLockScreenWallpaper(lockScreen, trackForPaywall: isUserInitiatedUpdate)
+            isUserInitiatedUpdate = false
         }
     }
 
-    private func saveNewLockScreenWallpaper(_ lockScreen: UIImage) {
+    private func saveNewLockScreenWallpaper(_ lockScreen: UIImage, trackForPaywall: Bool = false) {
         print("📸 Attempting to save wallpaper to Photos library...")
         
         PhotoSaver.saveImage(lockScreen) { success, identifier in
@@ -479,6 +497,14 @@ struct ContentView: View {
                 } else {
                     print("⚠️ Failed to save to Photos library (permission denied or error)")
                     print("   Wallpaper is still saved to file system and can be used by shortcut")
+                }
+                
+                // Track wallpaper export for paywall ONLY if user-initiated from home page
+                if trackForPaywall {
+                    print("📊 Tracking wallpaper export for paywall")
+                    PaywallManager.shared.trackWallpaperExport()
+                } else {
+                    print("ℹ️ Not tracking for paywall (onboarding/settings update)")
                 }
                 
                 // Post notification FIRST so UI updates
@@ -553,7 +579,9 @@ private struct ContentViewContext {
     let isEditMode: Binding<Bool>
     let selectedNotes: Binding<Set<UUID>>
     let shouldSkipDeletionPrompt: Binding<Bool>
+    let isUserInitiatedUpdate: Binding<Bool>
     let savedNotesData: Binding<Data>
+    let hasCompletedSetup: Bool
     let isTextFieldFocused: FocusState<Bool>.Binding
     let addNote: () -> Void
     let moveNotes: (IndexSet, Int) -> Void
@@ -563,7 +591,7 @@ private struct ContentViewContext {
     let noteCommit: () -> Void
     let hideKeyboard: () -> Void
     let updateWallpaper: () -> Void
-    let saveNewLockScreenWallpaper: (UIImage) -> Void
+    let saveNewLockScreenWallpaper: (UIImage, Bool) -> Void
     let proceedWithDeletionAndSave: () -> Void
     let restorePendingDeletionIfNeeded: () -> Void
     let finalizePendingDeletion: () -> Void
@@ -582,10 +610,19 @@ private enum ActiveAlert: String, Identifiable {
 
 private struct ContentViewRoot: View {
     let context: ContentViewContext
+    @StateObject private var paywallManager = PaywallManager.shared
 
     var body: some View {
         RootConfiguredView(context: context) {
             MainContentView(context: context)
+        }
+        .sheet(isPresented: $paywallManager.shouldShowPaywall) {
+            if #available(iOS 15.0, *) {
+                PaywallView(
+                    triggerReason: paywallManager.paywallTriggerReason,
+                    allowDismiss: paywallManager.paywallTriggerReason != .limitReached
+                )
+            }
         }
         .eraseToAnyView()
     }
@@ -627,14 +664,36 @@ private struct RootConfiguredModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .requestWallpaperUpdate)) { notification in
                 context.hideKeyboard()
                 
-                // Check if we should skip the deletion prompt
+                // Check if we should skip the deletion prompt and track for paywall
                 if let request = notification.object as? WallpaperUpdateRequest {
                     context.shouldSkipDeletionPrompt.wrappedValue = request.skipDeletionPrompt
+                    context.isUserInitiatedUpdate.wrappedValue = request.trackForPaywall
                 } else {
+                    // No request object - don't modify flags, use whatever was set by the caller
+                    // (Homepage button sets isUserInitiatedUpdate = true explicitly)
                     context.shouldSkipDeletionPrompt.wrappedValue = false
                 }
                 
                 context.updateWallpaper()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                // Reset generating state when returning from shortcut
+                // This ensures the button doesn't keep spinning after onboarding
+                if context.isGeneratingWallpaper.wrappedValue && context.hasCompletedSetup {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        context.isGeneratingWallpaper.wrappedValue = false
+                    }
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .onboardingCompleted)) { _ in
+                // Onboarding finished: ensure CTA is not spinning
+                if context.isGeneratingWallpaper.wrappedValue {
+                    context.isGeneratingWallpaper.wrappedValue = false
+                }
+                // Clear any pending image just in case
+                if context.pendingLockScreenImage.wrappedValue != nil {
+                    context.pendingLockScreenImage.wrappedValue = nil
+                }
             }
             .onChange(of: context.savedNotesData.wrappedValue) { _ in
                 context.loadNotes()
@@ -649,7 +708,10 @@ private struct RootConfiguredModifier: ViewModifier {
                 message: Text("To avoid filling your Photos library, NoteWall can delete the previous wallpaper. If you continue, iOS will ask for permission to delete the photo."),
                 primaryButton: .cancel(Text("Skip")) {
                     if let lockScreen = context.pendingLockScreenImage.wrappedValue {
-                        context.saveNewLockScreenWallpaper(lockScreen)
+                        // Pass trackForPaywall based on whether this was user-initiated
+                        let shouldTrack = context.isUserInitiatedUpdate.wrappedValue
+                        context.saveNewLockScreenWallpaper(lockScreen, shouldTrack)
+                        context.isUserInitiatedUpdate.wrappedValue = false
                     }
                     context.shouldSkipDeletionPrompt.wrappedValue = false
                 },
@@ -993,10 +1055,21 @@ private struct AddNoteSectionView: View {
 
 private struct UpdateWallpaperButtonView: View {
     let context: ContentViewContext
+    @StateObject private var paywallManager = PaywallManager.shared
 
     var body: some View {
         Button(action: {
             context.hideKeyboard()
+            
+            // Check if user can export wallpaper (has credits or is premium)
+            if !paywallManager.canExportWallpaper() {
+                print("🚫 Wallpaper update blocked - free limit reached")
+                paywallManager.showPaywall(reason: .limitReached)
+                return
+            }
+            
+            // Mark as user-initiated from homepage - this will consume a credit
+            context.isUserInitiatedUpdate.wrappedValue = true
             context.updateWallpaper()
         }) {
             HStack {

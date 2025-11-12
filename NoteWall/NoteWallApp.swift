@@ -9,9 +9,28 @@ struct NoteWallApp: App {
     private let onboardingVersion = 3
 
     init() {
+        // DEVELOPMENT: Clear all UserDefaults on every launch for testing
+        // Comment this out for production builds
+        #if DEBUG
+        clearAllUserDefaults()
+        #endif
+        
         // Check onboarding status on init
         let shouldShow = !hasCompletedSetup || completedOnboardingVersion < onboardingVersion
         _showOnboarding = State(initialValue: shouldShow)
+        
+        // Reset paywall data if this is a fresh install
+        if !hasCompletedSetup {
+            PaywallManager.shared.resetForFreshInstall()
+        }
+    }
+    
+    private func clearAllUserDefaults() {
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+            UserDefaults.standard.synchronize()
+            print("🧹 Cleared all UserDefaults for fresh testing")
+        }
     }
 
     var body: some Scene {

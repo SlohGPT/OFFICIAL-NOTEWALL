@@ -19,21 +19,25 @@ extension Notification.Name {
     static let wallpaperGenerationFinished = Notification.Name("wallpaperGenerationFinished")
     static let onboardingReplayRequested = Notification.Name("onboardingReplayRequested")
     static let shortcutWallpaperApplied = Notification.Name("shortcutWallpaperApplied")
+    static let onboardingCompleted = Notification.Name("onboardingCompleted")
 }
 
 struct WallpaperUpdateRequest {
     let skipDeletionPrompt: Bool
+    let trackForPaywall: Bool
     
-    init(skipDeletionPrompt: Bool = false) {
+    init(skipDeletionPrompt: Bool = false, trackForPaywall: Bool = true) {
         self.skipDeletionPrompt = skipDeletionPrompt
+        self.trackForPaywall = trackForPaywall
     }
 }
 
 enum LockScreenBackgroundOption: String, CaseIterable, Identifiable {
     case black
     case gray
+    case none = ""
 
-    static let `default` = LockScreenBackgroundOption.black
+    static let `default` = LockScreenBackgroundOption.none
 
     var id: String { rawValue }
 
@@ -41,6 +45,7 @@ enum LockScreenBackgroundOption: String, CaseIterable, Identifiable {
         switch self {
         case .black: return "Black"
         case .gray: return "Gray"
+        case .none: return "None"
         }
     }
 
@@ -50,6 +55,8 @@ enum LockScreenBackgroundOption: String, CaseIterable, Identifiable {
             return Color(red: 2 / 255, green: 2 / 255, blue: 2 / 255)
         case .gray:
             return Color(red: 40 / 255, green: 40 / 255, blue: 40 / 255)
+        case .none:
+            return .clear
         }
     }
 
@@ -59,6 +66,8 @@ enum LockScreenBackgroundOption: String, CaseIterable, Identifiable {
             return UIColor(red: 2 / 255, green: 2 / 255, blue: 2 / 255, alpha: 1)
         case .gray:
             return UIColor(red: 40 / 255, green: 40 / 255, blue: 40 / 255, alpha: 1)
+        case .none:
+            return .clear
         }
     }
 }
@@ -67,8 +76,9 @@ enum LockScreenBackgroundMode: String, Identifiable {
     case presetBlack
     case presetGray
     case photo
+    case notSelected = ""
 
-    static let `default` = LockScreenBackgroundMode.presetBlack
+    static let `default` = LockScreenBackgroundMode.notSelected
 
     var id: String { rawValue }
 
@@ -77,6 +87,7 @@ enum LockScreenBackgroundMode: String, Identifiable {
         case .presetBlack: return .black
         case .presetGray: return .gray
         case .photo: return nil
+        case .notSelected: return nil
         }
     }
 
@@ -84,6 +95,7 @@ enum LockScreenBackgroundMode: String, Identifiable {
         switch option {
         case .black: return .presetBlack
         case .gray: return .presetGray
+        case .none: return .notSelected
         }
     }
 }

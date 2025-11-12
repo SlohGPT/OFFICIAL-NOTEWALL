@@ -31,7 +31,7 @@ struct HomeScreenPhotoPickerView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 0) {
             Button(action: { showSourceOptions = true }) {
                 HStack(spacing: 12) {
                     Image(systemName: homeScreenImageAvailable ? "photo.fill" : "photo")
@@ -39,11 +39,11 @@ struct HomeScreenPhotoPickerView: View {
                         .foregroundColor(isHomeIconActive ? .appAccent : .gray)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(homeScreenImageAvailable ? "Home Screen Photo" : "Add Home Screen Photo")
+                        Text("Add Home Screen Photo")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.primary)
 
-                        Text(isSavingHomeScreenPhoto ? "Saving…" : "Choose a photo to keep your Home Screen consistent.")
+                        Text(isSavingHomeScreenPhoto ? "Saving…" : "Choose your own photo")
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
@@ -66,6 +66,7 @@ struct HomeScreenPhotoPickerView: View {
                     .foregroundColor(homeScreenStatusColor)
             }
         }
+        .padding(.horizontal, 16)
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: homeScreenImageAvailable)
         .confirmationDialog(
             "",
@@ -197,7 +198,7 @@ struct HomeScreenPhotoPickerView: View {
 
 @available(iOS 16.0, *)
 struct HomeScreenQuickPresetsView: View {
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = PresetOption.black.rawValue
+    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
 
     @Binding var isSavingHomeScreenPhoto: Bool
     @Binding var homeScreenStatusMessage: String?
@@ -211,14 +212,13 @@ struct HomeScreenQuickPresetsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            PresetOptionsRow(
-                title: "Quick presets",
-                isDisabled: isSavingHomeScreenPhoto,
-                selectedPreset: selectedPreset,
-                selectionAction: applyPreset
-            )
-        }
+        PresetOptionsRow(
+            title: "Presets",
+            isDisabled: isSavingHomeScreenPhoto,
+            selectedPreset: selectedPreset,
+            selectionAction: applyPreset
+        )
+        .padding(.horizontal, 16)
     }
 
     private func applyPreset(_ preset: PresetOption) {
@@ -291,29 +291,31 @@ private struct PresetOptionsRow: View {
     let selectionAction: (PresetOption) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 ForEach(PresetOption.allCases) { preset in
                     Button {
                         selectionAction(preset)
                     } label: {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(preset.previewColor)
-                            .frame(height: 50)
-                            .overlay(
-                                Text(preset.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(preset.textColor)
-                            )
-                            .overlay(
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(preset.previewColor)
+                            
+                            Text(preset.title)
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundColor(preset.textColor)
+                            
+                            if selectedPreset == preset {
                                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .stroke(selectedPreset == preset ? Color.appAccent : Color.clear, lineWidth: 2)
-                            )
+                                    .strokeBorder(Color.appAccent, lineWidth: 2.5)
+                            }
+                        }
+                        .frame(height: 50)
                     }
                     .buttonStyle(.plain)
                     .disabled(isDisabled)
@@ -321,7 +323,6 @@ private struct PresetOptionsRow: View {
                 }
             }
         }
-        .padding(.top, 8)
     }
 }
 
@@ -360,11 +361,12 @@ struct LockScreenBackgroundPickerView: View {
         switch option {
         case .black: return .black
         case .gray: return .gray
+        case .none: return nil
         }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Button(action: { showSourceOptions = true }) {
                 HStack(spacing: 12) {
                     Image(systemName: backgroundMode == .photo && (!backgroundPhotoData.isEmpty || backgroundPhotoAvailable) ? "photo.fill" : "photo")
@@ -372,11 +374,11 @@ struct LockScreenBackgroundPickerView: View {
                         .foregroundColor(isLockIconActive ? .appAccent : .gray)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Lock Screen Background")
+                        Text("Add Lock Screen Photo")
                             .font(.system(size: 17, weight: .semibold))
                             .foregroundColor(.primary)
 
-                        Text(isSavingBackground ? "Saving…" : "Choose a photo to sit behind your notes on the lock screen.")
+                        Text(isSavingBackground ? "Saving…" : "Choose your own photo")
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
@@ -397,8 +399,9 @@ struct LockScreenBackgroundPickerView: View {
                 Text(message)
                     .font(.caption)
                     .foregroundColor(statusColor)
+                    .padding(.top, 4)
             }
-
+            
             PresetOptionsRow(
                 title: "Presets",
                 isDisabled: isSavingBackground,
@@ -406,6 +409,7 @@ struct LockScreenBackgroundPickerView: View {
                 selectionAction: selectPreset
             )
         }
+        .padding(.horizontal, 16)
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: backgroundMode)
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: isLockIconActive)
         .confirmationDialog(
@@ -737,6 +741,7 @@ private struct CameraPickerView: UIViewControllerRepresentable {
         picker.delegate = context.coordinator
         picker.sourceType = .camera
         picker.allowsEditing = false
+        picker.modalPresentationStyle = .fullScreen
         return picker
     }
 

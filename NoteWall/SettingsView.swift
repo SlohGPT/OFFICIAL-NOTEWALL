@@ -12,8 +12,10 @@ struct SettingsView: View {
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("completedOnboardingVersion") private var completedOnboardingVersion = 0
     @AppStorage("homeScreenUsesCustomPhoto") private var homeScreenUsesCustomPhoto = false
+    @StateObject private var paywallManager = PaywallManager.shared
     @State private var showDeleteAlert = false
     @State private var showResetAlert = false
+    @State private var showPaywall = false
     var selectedTab: Binding<Int>?
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/a00482ed7b054ee0b42d7d9a7796c7eb"
@@ -21,7 +23,7 @@ struct SettingsView: View {
         self.selectedTab = selectedTab
     }
 
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = "black"
+    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
     @State private var isSavingHomeScreenPhoto = false
     @State private var homeScreenStatusMessage: String?
     @State private var homeScreenStatusColor: Color = .gray
@@ -43,13 +45,13 @@ struct SettingsView: View {
                 } message: {
                     Text("This action cannot be undone. All your notes will be permanently deleted.")
                 }
-                .alert("Reset to Fresh Install?", isPresented: $showResetAlert) {
+                .alert("Reinstall Shortcut?", isPresented: $showResetAlert) {
                     Button("Cancel", role: .cancel) { }
-                    Button("Reset Everything", role: .destructive) {
+                    Button("Reset & Reinstall", role: .destructive) {
                         resetToFreshInstall()
                     }
                 } message: {
-                    Text("This will delete ALL app data including notes, wallpapers, settings, and onboarding progress. The app will restart as if you just installed it for the first time.")
+                    Text("This will reset the app to fresh install state and guide you through reinstalling the shortcut. All app data including notes, wallpapers, and settings will be deleted.")
                 }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -58,10 +60,73 @@ struct SettingsView: View {
     @ViewBuilder
     private var settingsList: some View {
         List {
+            premiumSection
             homeScreenSection
             actionsSection
             wallpaperSettingsSection
             supportSection
+        }
+        .sheet(isPresented: $showPaywall) {
+            if #available(iOS 15.0, *) {
+                PaywallView(triggerReason: .settings, allowDismiss: true)
+            }
+        }
+    }
+    
+    private var premiumSection: some View {
+        Section {
+            if paywallManager.isPremium {
+                HStack(spacing: 12) {
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(.appAccent)
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("NoteWall+ Active")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text(paywallManager.hasLifetimeAccess ? "Lifetime Access" : "Subscription Active")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundColor(.green)
+                }
+                .padding(.vertical, 8)
+            } else {
+                Button(action: {
+                    showPaywall = true
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 24))
+                            .foregroundColor(.appAccent)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Upgrade to NoteWall+")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("\(paywallManager.remainingFreeExports) free wallpapers remaining")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 
@@ -92,6 +157,7 @@ struct SettingsView: View {
                     ),
                     handlePickedHomeScreenData: handlePickedHomeScreenData
                 )
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
 
                 HomeScreenQuickPresetsView(
@@ -104,6 +170,8 @@ struct SettingsView: View {
                     ),
                     handlePickedHomeScreenData: handlePickedHomeScreenData
                 )
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
 
                 LockScreenBackgroundPickerView(
                     isSavingBackground: $isSavingLockScreenBackground,
@@ -123,11 +191,12 @@ struct SettingsView: View {
                     ),
                     backgroundPhotoAvailable: !lockScreenBackgroundPhotoData.isEmpty
                 )
-                .padding(.top, 4)
+                .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
+                .listRowSeparator(.hidden)
 
                 UpdateWallpaperButton()
                     .listRowSeparator(.hidden)
-                    .padding(.top, 8)
+                    .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 12, trailing: 0))
             }
             .onAppear(perform: ensureCustomHomePhotoFlagIsAccurate)
         } else {
@@ -144,27 +213,6 @@ struct SettingsView: View {
     private var actionsSection: some View {
         Section(header: Text("Actions")) {
             Button(action: {
-                showResetAlert = true
-            }) {
-                HStack {
-                    Text("Reset to Fresh Install")
-                        .foregroundColor(.orange)
-                    Spacer()
-                    Image(systemName: "arrow.counterclockwise.circle")
-                        .foregroundColor(.orange)
-                }
-            }
-            
-            Button(action: resetOnboarding) {
-                HStack {
-                    Text("Replay Welcome Flow")
-                    Spacer()
-                    Image(systemName: "sparkles")
-                        .foregroundColor(.appAccent)
-                }
-            }
-
-            Button(action: {
                 showDeleteAlert = true
             }) {
                 HStack {
@@ -176,12 +224,15 @@ struct SettingsView: View {
                 }
             }
 
-            Button(action: reinstallShortcut) {
+            Button(action: {
+                showResetAlert = true
+            }) {
                 HStack {
                     Text("Reinstall Shortcut")
+                        .foregroundColor(.cyan)
                     Spacer()
                     Image(systemName: "arrow.up.right.square")
-                        .foregroundColor(.appAccent)
+                        .foregroundColor(.cyan)
                 }
             }
         }
@@ -208,16 +259,6 @@ struct SettingsView: View {
         }
     }
 
-    private func reinstallShortcut() {
-        guard let url = URL(string: shortcutURL) else { return }
-        UIApplication.shared.open(url)
-    }
-
-    private func resetOnboarding() {
-        hasCompletedSetup = false
-        completedOnboardingVersion = 0
-        NotificationCenter.default.post(name: .onboardingReplayRequested, object: nil)
-    }
     
     private func resetToFreshInstall() {
         print("🔄 RESETTING APP TO FRESH INSTALL STATE")
@@ -236,6 +277,9 @@ struct SettingsView: View {
         // Clear other AppStorage keys that might exist
         UserDefaults.standard.removeObject(forKey: "lastLockScreenIdentifier")
         UserDefaults.standard.removeObject(forKey: "hasCompletedInitialWallpaperSetup")
+        
+        // Reset paywall data for fresh install
+        PaywallManager.shared.resetForFreshInstall()
         
         print("✅ Cleared all AppStorage data")
         
@@ -320,14 +364,16 @@ private struct UpdateWallpaperButton: View {
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
-            .padding()
+            .padding(.vertical, 14)
+            .padding(.horizontal, 20)
             .background(Color.appAccent)
             .foregroundColor(.white)
-            .cornerRadius(14)
+            .cornerRadius(12)
             .animation(.easeInOut(duration: 0.2), value: isGenerating)
         }
         .buttonStyle(.plain)
         .disabled(isGenerating)
+        .padding(.horizontal, 16)
         .onReceive(NotificationCenter.default.publisher(for: .requestWallpaperUpdate)) { _ in
             isGenerating = true
         }
@@ -347,8 +393,9 @@ private struct UpdateWallpaperButton: View {
     private func triggerUpdate() {
         guard !isGenerating else { return }
         isGenerating = true
-        // Show deletion prompt to allow users to clean up old wallpapers
-        NotificationCenter.default.post(name: .requestWallpaperUpdate, object: nil)
+        // Settings wallpaper changes do NOT count toward free limit
+        let request = WallpaperUpdateRequest(skipDeletionPrompt: false, trackForPaywall: false)
+        NotificationCenter.default.post(name: .requestWallpaperUpdate, object: request)
     }
 }
 

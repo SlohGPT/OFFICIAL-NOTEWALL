@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
 		A1000001000000000000001 /* NoteWallApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000001000000000000001 /* NoteWallApp.swift */; };
 		A1000002000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000002000000000000001 /* ContentView.swift */; };
 		A1000003000000000000001 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000003000000000000001 /* Models.swift */; };
@@ -18,10 +19,14 @@
 		A1000009000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A2000009000000000000001 /* Assets.xcassets */; };
 		B1000001000000000000001 /* HomeScreenImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001000000000000001 /* HomeScreenImageManager.swift */; };
 		B1000002000000000000001 /* HomeScreenPhotoPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */; };
+		C1000001000000000000001 /* PaywallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000001000000000000001 /* PaywallManager.swift */; };
+		C1000002000000000000001 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000002000000000000001 /* StoreKitManager.swift */; };
+		C1000003000000000000001 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000003000000000000001 /* PaywallView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		424B745B2EBF88C1009F134B /* NoteWall.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NoteWall.entitlements; sourceTree = "<group>"; };
+		42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NoteWall.storekit; sourceTree = "<group>"; };
 		A2000001000000000000001 /* NoteWallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteWallApp.swift; sourceTree = "<group>"; };
 		A2000002000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A2000003000000000000001 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -32,9 +37,12 @@
 		A2000008000000000000001 /* PhotoSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoSaver.swift; sourceTree = "<group>"; };
 		A2000009000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A2000010000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A3000001000000000000001 /* NoteWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoteWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B2000001000000000000001 /* HomeScreenImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenImageManager.swift; sourceTree = "<group>"; };
 		B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenPhotoPickerView.swift; sourceTree = "<group>"; };
-		A3000001000000000000001 /* NoteWall.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NoteWall.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C2000001000000000000001 /* PaywallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallManager.swift; sourceTree = "<group>"; };
+		C2000002000000000000001 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		C2000003000000000000001 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,8 +78,12 @@
 				A2000008000000000000001 /* PhotoSaver.swift */,
 				B2000001000000000000001 /* HomeScreenImageManager.swift */,
 				B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */,
+				C2000001000000000000001 /* PaywallManager.swift */,
+				C2000002000000000000001 /* StoreKitManager.swift */,
+				C2000003000000000000001 /* PaywallView.swift */,
 				A2000009000000000000001 /* Assets.xcassets */,
 				A2000010000000000000001 /* Info.plist */,
+				42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */,
 			);
 			path = NoteWall;
 			sourceTree = "<group>";
@@ -142,6 +154,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */,
 				A1000009000000000000001 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -163,6 +176,9 @@
 				A1000008000000000000001 /* PhotoSaver.swift in Sources */,
 				B1000001000000000000001 /* HomeScreenImageManager.swift in Sources */,
 				B1000002000000000000001 /* HomeScreenPhotoPickerView.swift in Sources */,
+				C1000001000000000000001 /* PaywallManager.swift in Sources */,
+				C1000002000000000000001 /* StoreKitManager.swift in Sources */,
+				C1000003000000000000001 /* PaywallView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
