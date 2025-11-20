@@ -56,7 +56,6 @@ struct OnboardingView: View {
     @State private var demoVideoLooper: AVPlayerLooper?
     @State private var notificationsVideoPlayer: AVQueuePlayer?
     @State private var notificationsVideoLooper: AVPlayerLooper?
-    @State private var notificationsVideoReady: Bool = false
     private let demoVideoPlaybackRate: Float = 1.5
     
     // Notes management for onboarding
@@ -943,7 +942,7 @@ struct OnboardingView: View {
                 VideoPlayer(player: player)
                     .aspectRatio(9/16, contentMode: .fit)
                     .frame(maxWidth: .infinity)
-                    .frame(height: minHeight)
+                    .frame(minHeight: minHeight)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -952,15 +951,48 @@ struct OnboardingView: View {
                     .shadow(color: Color.black.opacity(0.12), radius: 10, x: 0, y: 6)
                     .allowsHitTesting(false)
                     .onAppear {
-                        player.playImmediately(atRate: demoVideoPlaybackRate)
+                        print("🎬 Video view appeared")
+                        print("   - Player exists: true")
+                        print("   - Current item: \(player.currentItem != nil)")
+                        print("   - Item status: \(player.currentItem?.status.rawValue ?? -1)")
+                        print("   - Current rate: \(player.rate)")
+                        
+                        // Small delay to ensure view hierarchy is ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            print("▶️ Attempting to play...")
+                            player.playImmediately(atRate: self.demoVideoPlaybackRate)
+                            
+                            // Check if playback actually started
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                let currentRate = player.rate
+                                let currentTime = player.currentTime().seconds
+                                print("📊 Playback status after 0.5s:")
+                                print("   - Rate: \(currentRate) (target: \(self.demoVideoPlaybackRate))")
+                                print("   - Current time: \(currentTime)s")
+                                print("   - Time base rate: \(player.currentItem?.timebase?.rate ?? 0)")
+                                
+                                if currentRate == 0 {
+                                    print("⚠️ WARNING: Player rate is 0 - video may not be playing!")
+                                    print("   Trying alternative play method...")
+                                    player.play()
+                                    player.rate = self.demoVideoPlaybackRate
+                                }
+                            }
+                        }
                     }
                     .onDisappear {
+                        print("⏸️ Video view disappeared, pausing")
                         player.pause()
                         player.seek(to: .zero)
                     }
                     .accessibilityLabel("Notifications demo video")
             } else {
                 notificationsVideoPlaceholder(minHeight: minHeight)
+                    .onAppear {
+                        print("⚠️ Video player is nil when view appeared!")
+                        print("   Attempting to prepare player now...")
+                        prepareNotificationsVideoPlayerIfNeeded()
+                    }
             }
         }
     }
@@ -983,38 +1015,122 @@ struct OnboardingView: View {
     }
     
     private func prepareNotificationsVideoPlayerIfNeeded() {
-        guard notificationsVideoPlayer == nil else {
-            // Player already exists, don't try to play here - let allowPermissionsStep handle it
-            return
+        guard notificationsVideoPlayer == nil else { 
+            print("⚠️ Video player already exists, skipping preparation")
+            return 
         }
         
+        print("🔍 Onboarding: Preparing notifications video player...")
+        
+        // Try to find the video file
         guard let bundleURL = Bundle.main.url(forResource: "notifications", withExtension: "mov") else {
-            print("⚠️ Onboarding: Notifications video not found in bundle")
-            // Try to list available resources for debugging
-            if let resourcePath = Bundle.main.resourcePath {
-                print("   Resource path: \(resourcePath)")
-                if let contents = try? FileManager.default.contentsOfDirectory(atPath: resourcePath) {
-                    print("   Available files: \(contents.filter { $0.contains("notification") || $0.contains(".mov") })")
-                }
+            print("❌ CRITICAL: notifications.mov not found in bundle!")
+            print("📁 Bundle path: \(Bundle.main.bundlePath)")
+            
+            // List ALL .mov files in bundle for debugging
+            if let files = try? FileManager.default.contentsOfDirectory(atPath: Bundle.main.bundlePath) {
+                let movFiles = files.filter { $0.hasSuffix(".mov") }
+                print("📁 MOV files in bundle: \(movFiles)")
             }
             return
         }
         
-        debugLog("✅ Onboarding: Found notifications video in bundle")
+        print("✅ Found notifications.mov at: \(bundleURL.path)")
         
-        // Use bundle URL directly - bundle resources are always accessible to AVFoundation
-        // and don't trigger sandbox extension warnings
-        let item = AVPlayerItem(url: bundleURL)
+        // Verify file is accessible and has content
+        let fileManager = FileManager.default
+        guard fileManager.isReadableFile(atPath: bundleURL.path) else {
+            print("❌ File exists but is not readable!")
+            return
+        }
+        
+        if let attrs = try? fileManager.attributesOfItem(atPath: bundleURL.path),
+           let size = attrs[.size] as? Int64 {
+            print("📊 File size: \(size) bytes (\(ByteCountFormatter.string(fromByteCount: size, countStyle: .file)))")
+            if size == 0 {
+                print("❌ File is empty!")
+                return
+            }
+        }
+        
+        // Create asset and check if it's playable
+        let asset = AVAsset(url: bundleURL)
+        
+        // Log asset properties
+        Task {
+            let isPlayable = try? await asset.load(.isPlayable)
+            let duration = try? await asset.load(.duration)
+            let tracks = try? await asset.load(.tracks)
+            
+            await MainActor.run {
+                print("📹 Asset properties:")
+                print("   - Playable: \(isPlayable ?? false)")
+                print("   - Duration: \(duration?.seconds ?? 0) seconds")
+                print("   - Tracks: \(tracks?.count ?? 0)")
+                
+                if let videoTracks = tracks?.filter({ $0.mediaType == .video }) {
+                    print("   - Video tracks: \(videoTracks.count)")
+                }
+            }
+        }
+        
+        let item = AVPlayerItem(asset: asset)
+        
+        // Observe player item status with detailed logging
+        let statusObservation = item.observe(\.status, options: [.new, .initial]) { playerItem, _ in
+            DispatchQueue.main.async {
+                switch playerItem.status {
+                case .readyToPlay:
+                    print("✅ notifications.mov player item READY TO PLAY")
+                    print("   - Duration: \(playerItem.duration.seconds) seconds")
+                    if let videoTrack = playerItem.asset.tracks(withMediaType: .video).first {
+                        print("   - Natural size: \(videoTrack.naturalSize)")
+                    }
+                case .failed:
+                    print("❌ Player item FAILED")
+                    if let error = playerItem.error as NSError? {
+                        print("   - Error: \(error.localizedDescription)")
+                        print("   - Domain: \(error.domain)")
+                        print("   - Code: \(error.code)")
+                        print("   - UserInfo: \(error.userInfo)")
+                    }
+                case .unknown:
+                    print("⚠️ Player item status UNKNOWN")
+                @unknown default:
+                    print("⚠️ Player item status @unknown default")
+                }
+            }
+        }
+        
+        // Observe playback errors
+        let errorObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { notification in
+            print("❌ Playback failed to play to end time")
+            if let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error {
+                print("   Error: \(error.localizedDescription)")
+            }
+        }
+        
+        // Create looping player
         let queuePlayer = AVQueuePlayer()
         let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
-
+        
         queuePlayer.isMuted = true
         queuePlayer.automaticallyWaitsToMinimizeStalling = false
-        queuePlayer.playImmediately(atRate: demoVideoPlaybackRate)
-
+        
+        // Store everything
         notificationsVideoPlayer = queuePlayer
         notificationsVideoLooper = looper
-        notificationsVideoReady = false
+        
+        print("✅ Notifications video player created")
+        print("   - Player ready: \(queuePlayer.currentItem != nil)")
+        print("   - Looper status: \(looper.status.rawValue)")
+        
+        // IMPORTANT: Don't call play here - let the view's onAppear handle it
+        // This prevents race conditions with the VideoPlayer view setup
     }
     
     private func saveOnboardingNotes() {
@@ -1721,3 +1837,4 @@ private extension OnboardingView {
         didOpenShortcut = false
     }
 }
+
