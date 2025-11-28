@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage("skipDeletingOldWallpaper") private var skipDeletingOldWallpaper = false
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
+    @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
     
     // Computed property for auto-update preference
     private var autoUpdateWallpaperAfterDeletion: Bool? {
@@ -258,6 +259,26 @@ struct SettingsView: View {
 
     private var wallpaperSettingsSection: some View {
         Section(header: Text("Wallpaper Settings")) {
+            // Lock Screen Widgets toggle - affects note positioning
+            Toggle(isOn: Binding(
+                get: { hasLockScreenWidgets },
+                set: { newValue in
+                    hasLockScreenWidgets = newValue
+                    // Light impact haptic for toggle switch
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("I Use Lock Screen Widgets")
+                    Text(hasLockScreenWidgets 
+                        ? "Notes start lower to avoid widgets below the clock." 
+                        : "Notes start closer to the clock for more space.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
             if autoUpdateWallpaperAfterDeletion != nil {
                 Toggle(isOn: Binding(
                     get: { autoUpdateWallpaperAfterDeletion ?? false },

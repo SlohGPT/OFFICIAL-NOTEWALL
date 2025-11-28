@@ -33,6 +33,7 @@ struct ContentView: View {
     @AppStorage("hasCompletedInitialWallpaperSetup") private var hasCompletedInitialWallpaperSetup = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("shouldShowTroubleshootingBanner") private var shouldShowTroubleshootingBanner = false
+    @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true // Default: assume user has widgets
     @StateObject private var paywallManager = PaywallManager.shared
     @State private var notes: [Note]
     @State private var newNoteText = ""
@@ -542,7 +543,8 @@ struct ContentView: View {
         let lockScreenImage = WallpaperRenderer.generateWallpaper(
             from: notes,
             backgroundColor: lockScreenBackgroundColor,
-            backgroundImage: lockBackgroundImage
+            backgroundImage: lockBackgroundImage,
+            hasLockScreenWidgets: hasLockScreenWidgets
         )
         print("Generated lock screen image size: \(lockScreenImage.size)")
         

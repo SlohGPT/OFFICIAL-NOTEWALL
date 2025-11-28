@@ -11,13 +11,6 @@ struct WallpaperRenderer {
     /// Minimum font size - smallest we'll go for readability
     private static let minFontSize: CGFloat = 52
     
-    /// Available height for notes
-    /// Screen height: 2796px
-    /// Top padding (below widgets): 1075px
-    /// Bottom safe area (above flashlight/camera): needs ~400px padding
-    /// Available: 2796 - 1075 - 400 = 1321px
-    private static let availableHeight: CGFloat = 1320
-    
     /// Horizontal padding on each side
     private static let horizontalPadding: CGFloat = 80
     
@@ -27,24 +20,53 @@ struct WallpaperRenderer {
     /// Text max width
     private static var textMaxWidth: CGFloat { canvasWidth - (horizontalPadding * 2) }
     
-    /// Top padding (below time and widgets)
-    private static let topPadding: CGFloat = 1075
-    
     /// Font weight for notes - heavy for better visibility
     private static let fontWeight: UIFont.Weight = .heavy
+    
+    // MARK: - Layout Configuration (Widget-aware)
+    
+    /// Top padding when user HAS widgets (just below widgets)
+    /// Balanced to clear widgets but not too far
+    private static let topPaddingWithWidgets: CGFloat = 1020
+    
+    /// Top padding when user has NO widgets (closer to clock)
+    private static let topPaddingNoWidgets: CGFloat = 700
+    
+    /// Bottom safe area padding (above flashlight/camera icons)
+    /// Increased to ensure notes never overlap flashlight/camera
+    private static let bottomSafeArea: CGFloat = 550
+    
+    /// Screen height
+    private static let screenHeight: CGFloat = 2796
+    
+    /// Get top padding based on widget setting
+    static func topPadding(hasWidgets: Bool) -> CGFloat {
+        return hasWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
+    }
+    
+    /// Get available height based on widget setting
+    static func availableHeight(hasWidgets: Bool) -> CGFloat {
+        return screenHeight - topPadding(hasWidgets: hasWidgets) - bottomSafeArea
+    }
     
     static func generateWallpaper(
         from notes: [Note],
         backgroundColor: UIColor,
-        backgroundImage: UIImage? = nil
+        backgroundImage: UIImage? = nil,
+        hasLockScreenWidgets: Bool = true
     ) -> UIImage {
         print("🎨 WallpaperRenderer: Generating wallpaper")
         print("   Total notes: \(notes.count)")
         print("   Background image: \(backgroundImage != nil ? "YES" : "NO")")
+        print("   Has widgets: \(hasLockScreenWidgets)")
         
         // iPhone wallpaper dimensions
         let width: CGFloat = 1290
         let height: CGFloat = 2796
+        
+        // Get layout values based on widget setting
+        let currentTopPadding = topPadding(hasWidgets: hasLockScreenWidgets)
+        let currentAvailableHeight = availableHeight(hasWidgets: hasLockScreenWidgets)
 
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height))
 
@@ -70,11 +92,11 @@ struct WallpaperRenderer {
             }
             
             // Calculate the optimal font size for all notes
-            let optimalFontSize = calculateOptimalFontSize(for: notes)
+            let optimalFontSize = calculateOptimalFontSize(for: notes, availableHeight: currentAvailableHeight)
             print("   📏 Optimal font size: \(optimalFontSize)pt")
             
             // Get the notes that fit at this font size (should be all of them unless we hit min font)
-            let notesToShow = getNotesToShowAtFontSize(notes, fontSize: optimalFontSize)
+            let notesToShow = getNotesToShowAtFontSize(notes, fontSize: optimalFontSize, availableHeight: currentAvailableHeight)
             print("   Notes to show: \(notesToShow.count)")
             
             guard !notesToShow.isEmpty else {
@@ -106,15 +128,15 @@ struct WallpaperRenderer {
                 context: nil
             )
 
-            // Position text in upper portion, left-aligned, with enough space to avoid widgets
+            // Position text based on widget setting
             let textRect = CGRect(
                 x: horizontalPadding,
-                y: topPadding,
+                y: currentTopPadding,
                 width: textMaxWidth,
                 height: textSize.height
             )
             
-            print("   📍 Text rect: x=\(horizontalPadding), y=\(topPadding), w=\(textMaxWidth), h=\(textSize.height)")
+            print("   📍 Text rect: x=\(horizontalPadding), y=\(currentTopPadding), w=\(textMaxWidth), h=\(textSize.height)")
 
             // Draw attributed text
             attributedString.draw(in: textRect)
@@ -125,12 +147,15 @@ struct WallpaperRenderer {
     // MARK: - Adaptive Font Size Calculation
     
     /// Calculates the optimal font size to fit all notes in the available space
+    /// - Parameters:
+    ///   - notes: Array of notes to fit
+    ///   - availableHeight: The height available for notes (depends on widget setting)
     /// - Returns: The largest font size that fits all notes, clamped to min/max bounds
-    private static func calculateOptimalFontSize(for notes: [Note]) -> CGFloat {
+    private static func calculateOptimalFontSize(for notes: [Note], availableHeight: CGFloat) -> CGFloat {
         guard !notes.isEmpty else { return maxFontSize }
         
         // First check: do all notes fit at max font size?
-        if doesAllNotesFit(notes, atFontSize: maxFontSize) {
+        if doesAllNotesFit(notes, atFontSize: maxFontSize, availableHeight: availableHeight) {
             print("   ✅ All notes fit at max font size (\(maxFontSize)pt)")
             return maxFontSize
         }
@@ -143,7 +168,7 @@ struct WallpaperRenderer {
         while low <= high {
             let mid = (low + high) / 2
             
-            if doesAllNotesFit(notes, atFontSize: mid) {
+            if doesAllNotesFit(notes, atFontSize: mid, availableHeight: availableHeight) {
                 bestFit = mid
                 low = mid + 1 // Try larger
             } else {
@@ -156,7 +181,7 @@ struct WallpaperRenderer {
     }
     
     /// Checks if all notes fit in the available space at the given font size
-    private static func doesAllNotesFit(_ notes: [Note], atFontSize fontSize: CGFloat) -> Bool {
+    private static func doesAllNotesFit(_ notes: [Note], atFontSize fontSize: CGFloat, availableHeight: CGFloat) -> Bool {
         let lineSpacing = lineSpacingForFontSize(fontSize)
         let separatorHeight = separatorHeightForFontSize(fontSize)
         
@@ -191,7 +216,7 @@ struct WallpaperRenderer {
     }
     
     /// Gets the notes that fit at the given font size
-    private static func getNotesToShowAtFontSize(_ notes: [Note], fontSize: CGFloat) -> [Note] {
+    private static func getNotesToShowAtFontSize(_ notes: [Note], fontSize: CGFloat, availableHeight: CGFloat) -> [Note] {
         let lineSpacing = lineSpacingForFontSize(fontSize)
         let separatorHeight = separatorHeightForFontSize(fontSize)
         
@@ -236,33 +261,34 @@ struct WallpaperRenderer {
         hasBackgroundImage: Bool
     ) -> NSMutableAttributedString {
         let lineSpacing = lineSpacingForFontSize(fontSize)
-        
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .left
-        paragraphStyle.lineSpacing = lineSpacing
+        let noteSeparation = separatorHeightForFontSize(fontSize) // Gap between notes
         
         // Create shadow for better readability on photo backgrounds
-        // Shadow color is opposite of text color for contrast
         let shadow = NSShadow()
         if hasBackgroundImage {
-            // For photo backgrounds, add a subtle shadow for readability
             let isLightText = textColor == .white || textColor.cgColor.alpha == 1.0
             shadow.shadowColor = isLightText 
-                ? UIColor.black.withAlphaComponent(0.7)  // Dark shadow for white text
-                : UIColor.white.withAlphaComponent(0.7)  // Light shadow for black text
+                ? UIColor.black.withAlphaComponent(0.7)
+                : UIColor.white.withAlphaComponent(0.7)
             shadow.shadowOffset = CGSize(width: 0, height: 2)
-            shadow.shadowBlurRadius = fontSize * 0.08  // Scales with font size
+            shadow.shadowBlurRadius = fontSize * 0.08
         }
         
         let attributedString = NSMutableAttributedString()
         
         for (index, note) in notes.enumerated() {
+            // Create paragraph style for THIS note
+            // First note has no spacing before, subsequent notes have gap
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .left
+            paragraphStyle.lineSpacing = lineSpacing
+            
+            // Add spacing BEFORE this note (except for the first one)
             if index > 0 {
-                // Add separator between notes
-                attributedString.append(NSAttributedString(string: "\n\n"))
+                paragraphStyle.paragraphSpacingBefore = noteSeparation
             }
             
-            // Base attributes for all notes
+            // Base attributes for this note
             var noteAttributes: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: fontSize, weight: fontWeight),
                 .paragraphStyle: paragraphStyle
@@ -284,6 +310,11 @@ struct WallpaperRenderer {
                 noteAttributes[.foregroundColor] = textColor
             }
             
+            // Add newline before each note (except first) to create separate paragraphs
+            if index > 0 {
+                attributedString.append(NSAttributedString(string: "\n", attributes: noteAttributes))
+            }
+            
             let noteAttributedString = NSAttributedString(string: note.text, attributes: noteAttributes)
             attributedString.append(noteAttributedString)
         }
@@ -294,15 +325,15 @@ struct WallpaperRenderer {
     // MARK: - Proportional Spacing Helpers
     
     /// Line spacing scales proportionally with font size
-    /// At 96pt: 12pt spacing, at 48pt: 6pt spacing
+    /// Increased for better readability within multi-line notes
     private static func lineSpacingForFontSize(_ fontSize: CGFloat) -> CGFloat {
-        return fontSize * 0.125 // 12/96 = 0.125
+        return fontSize * 0.15 // Slightly increased for better readability
     }
     
-    /// Separator height (for \n\n) scales proportionally with font size
-    /// At 96pt: ~24pt separator, at 48pt: ~12pt separator
+    /// Separator height between notes - BIGGER gaps for visual separation
+    /// This creates clear breathing room between each note
     private static func separatorHeightForFontSize(_ fontSize: CGFloat) -> CGFloat {
-        return fontSize * 0.25 // 24/96 = 0.25
+        return fontSize * 0.45 // Increased from 0.25 to 0.45 for much better separation
     }
 
     static func generateBlankWallpaper(
@@ -327,20 +358,28 @@ struct WallpaperRenderer {
     // MARK: - Public API
     
     /// Calculate how many notes will appear on wallpaper with adaptive sizing
-    static func getWallpaperNoteCount(from notes: [Note]) -> Int {
+    /// - Parameters:
+    ///   - notes: Array of notes to check
+    ///   - hasLockScreenWidgets: Whether user has lock screen widgets (affects available space)
+    static func getWallpaperNoteCount(from notes: [Note], hasLockScreenWidgets: Bool = true) -> Int {
         guard !notes.isEmpty else { return 0 }
         
+        let height = availableHeight(hasWidgets: hasLockScreenWidgets)
+        
         // Calculate optimal font size for all notes
-        let optimalFontSize = calculateOptimalFontSize(for: notes)
+        let optimalFontSize = calculateOptimalFontSize(for: notes, availableHeight: height)
         
         // Get how many notes fit at that font size
-        return getNotesToShowAtFontSize(notes, fontSize: optimalFontSize).count
+        return getNotesToShowAtFontSize(notes, fontSize: optimalFontSize, availableHeight: height).count
     }
     
     /// Returns the font size that will be used for rendering the given notes
-    /// This is useful for previews or UI that needs to match the wallpaper
-    static func getFontSizeForNotes(_ notes: [Note]) -> CGFloat {
-        return calculateOptimalFontSize(for: notes)
+    /// - Parameters:
+    ///   - notes: Array of notes to render
+    ///   - hasLockScreenWidgets: Whether user has lock screen widgets (affects available space)
+    static func getFontSizeForNotes(_ notes: [Note], hasLockScreenWidgets: Bool = true) -> CGFloat {
+        let height = availableHeight(hasWidgets: hasLockScreenWidgets)
+        return calculateOptimalFontSize(for: notes, availableHeight: height)
     }
 
     private static func drawBackground(image: UIImage, in canvasRect: CGRect, on context: CGContext) {
