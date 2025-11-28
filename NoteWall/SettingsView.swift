@@ -230,6 +230,28 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 .buttonStyle(.plain)
+                
+                if isTestFlightBuild {
+                    Button(action: grantTestSubscription) {
+                        HStack(spacing: 12) {
+                            Image(systemName: "wand.and.stars")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary)
+                            
+                            Text("Grant NoteWall+ (Test)")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Spacer()
+                            
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
@@ -364,7 +386,7 @@ struct SettingsView: View {
                 .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
                 .listRowSeparator(.hidden)
 
-                UpdateWallpaperButton()
+                UpdateWallpaperButton(selectedTab: selectedTab)
                     .listRowSeparator(.hidden)
                     .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 12, trailing: 0))
             }
@@ -383,6 +405,33 @@ struct SettingsView: View {
     private var actionsSection: some View {
         Section(header: Text("Actions")) {
             Button(action: {
+                // Medium impact haptic for destructive reset action
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                showResetAlert = true
+            }) {
+                HStack {
+                    Text("Reinstall Shortcut")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundColor(.white)
+                }
+            }
+
+            Button(action: {
+                showTroubleshooting = true
+            }) {
+                HStack {
+                    Text("Wallpaper Not Showing?")
+                        .foregroundColor(.appAccent)
+                    Spacer()
+                    Image(systemName: "wrench.and.screwdriver.fill")
+                        .foregroundColor(.appAccent)
+                }
+            }
+            
+            Button(action: {
                 // Medium impact haptic for destructive delete action
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
@@ -394,33 +443,6 @@ struct SettingsView: View {
                     Spacer()
                     Image(systemName: "trash")
                         .foregroundColor(.red)
-                }
-            }
-
-            Button(action: {
-                // Medium impact haptic for destructive reset action
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                showResetAlert = true
-            }) {
-                HStack {
-                    Text("Reinstall Shortcut")
-                        .foregroundColor(.cyan)
-                    Spacer()
-                    Image(systemName: "arrow.up.right.square")
-                        .foregroundColor(.cyan)
-                }
-            }
-            
-            Button(action: {
-                showTroubleshooting = true
-            }) {
-                HStack {
-                    Text("Wallpaper Not Showing?")
-                        .foregroundColor(.appAccent)
-                    Spacer()
-                    Image(systemName: "wrench.and.screwdriver.fill")
-                        .foregroundColor(.appAccent)
                 }
             }
         }
@@ -443,8 +465,9 @@ struct SettingsView: View {
             }
             
             Button(action: {
-                selectedLegalDocument = .termsOfService
-                showLegalDocument = true
+                if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                    UIApplication.shared.open(url)
+                }
             }) {
                 HStack {
                     Text("Terms of Service")
@@ -465,6 +488,20 @@ struct SettingsView: View {
                         .foregroundColor(.primary)
                     Spacer()
                     Image(systemName: "hand.raised")
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Button(action: {
+                if let url = URL(string: "https://peat-appendix-c3c.notion.site/END-USER-LICENSE-AGREEMENT-2b7f6a63758f80a58aebf0207e51f7fb?source=copy_link") {
+                    UIApplication.shared.open(url)
+                }
+            }) {
+                HStack {
+                    Text("End-User License Agreement")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Image(systemName: "doc.text.fill")
                         .foregroundColor(.secondary)
                 }
             }
@@ -594,6 +631,7 @@ struct SettingsView: View {
 private struct UpdateWallpaperButton: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var isGenerating = false
+    var selectedTab: Binding<Int>?
 
     var body: some View {
         Button(action: triggerUpdate) {
@@ -620,9 +658,6 @@ private struct UpdateWallpaperButton: View {
         .buttonStyle(.plain)
         .disabled(isGenerating)
         .padding(.horizontal, 16)
-        .onReceive(NotificationCenter.default.publisher(for: .requestWallpaperUpdate)) { _ in
-            isGenerating = true
-        }
         .onReceive(NotificationCenter.default.publisher(for: .wallpaperGenerationFinished)) { _ in
             isGenerating = false
         }
@@ -644,9 +679,21 @@ private struct UpdateWallpaperButton: View {
         generator.impactOccurred()
         
         isGenerating = true
-        // Settings wallpaper changes do NOT count toward free limit
-        let request = WallpaperUpdateRequest(skipDeletionPrompt: false, trackForPaywall: false)
-        NotificationCenter.default.post(name: .requestWallpaperUpdate, object: request)
+        
+        // Show loading overlay FIRST (appears immediately on top of Settings)
+        // Then MainTabView will switch to home tab
+        NotificationCenter.default.post(name: .showGlobalLoadingOverlay, object: nil)
+        
+        // Trigger wallpaper update after a tiny delay (overlay is already visible)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Settings wallpaper changes do NOT count toward free limit
+            let request = WallpaperUpdateRequest(
+                skipDeletionPrompt: false,
+                trackForPaywall: false,
+                showLoadingOverlay: false  // Don't show again, MainTabView already showing it
+            )
+            NotificationCenter.default.post(name: .requestWallpaperUpdate, object: request)
+        }
     }
 }
 
@@ -666,6 +713,16 @@ private extension SettingsView {
         if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
             UIApplication.shared.open(url)
         }
+    }
+    
+    private func grantTestSubscription() {
+        // Handy tester button to bypass paywall while debugging/TestFlight
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        let expiryDate = Calendar.current.date(byAdding: .year, value: 10, to: Date()) ??
+        Date().addingTimeInterval(60 * 60 * 24 * 365 * 10)
+        paywallManager.grantSubscription(expiryDate: expiryDate)
     }
     
     @available(iOS 13.0, *)
@@ -777,51 +834,7 @@ private extension SettingsView {
             PART I: END-USER LICENSE AGREEMENT (EULA)
             ═══════════════════════════════════════
             
-            1. ACKNOWLEDGEMENT
-            
-            This End-User License Agreement ("EULA") is a legal agreement between you ("End-User") and NoteWall Team ("Developer") for the NoteWall mobile application ("Licensed Application"). This EULA is concluded between you and the Developer only, and not with Apple Inc. ("Apple"). The Developer, not Apple, is solely responsible for the Licensed Application and its content. The EULA may not provide for usage rules for Licensed Applications that are in conflict with the Apple Media Services Terms and Conditions.
-            
-            2. SCOPE OF LICENSE
-            
-            The license granted to the End-User for the Licensed Application must be limited to a non-transferable license to use the Licensed Application on any Apple-branded Products that the End-User owns or controls and as permitted by the Usage Rules set forth in the Apple Media Services Terms and Conditions, except that such Licensed Application may be accessed and used by other accounts associated with the purchaser via Family Sharing or volume purchasing.
-            
-            3. MAINTENANCE AND SUPPORT
-            
-            You must be solely responsible for providing any maintenance and support services with respect to the Licensed Application, as specified in the EULA, or as required under applicable law. You and the End-User must acknowledge that Apple has no obligation whatsoever to furnish any maintenance and support services with respect to the Licensed Application.
-            
-            Contact for support: iosnotewall@gmail.com
-            
-            4. WARRANTY
-            
-            You must be solely responsible for any product warranties, whether express or implied by law, to the extent not effectively disclaimed. The EULA must provide that, in the event of any failure of the Licensed Application to conform to any applicable warranty, the End-User may notify Apple, and Apple will refund the purchase price for the Licensed Application to that End-User; and that, to the maximum extent permitted by applicable law, Apple will have no other warranty obligation whatsoever with respect to the Licensed Application, and any other claims, losses, liabilities, damages, costs or expenses attributable to any failure to conform to any warranty will be Your sole responsibility.
-            
-            5. PRODUCT CLAIMS
-            
-            You and the End-User must acknowledge that You, not Apple, are responsible for addressing any claims of the End-User or any third party relating to the Licensed Application or the end-user's possession and/or use of that Licensed Application, including, but not limited to: (i) product liability claims; (ii) any claim that the Licensed Application fails to conform to any applicable legal or regulatory requirement; and (iii) claims arising under consumer protection, privacy, or similar legislation, including in connection with Your Licensed Application's use of the HealthKit and HomeKit frameworks. The EULA may not limit Your liability to the End-User beyond what is permitted by applicable law.
-            
-            6. INTELLECTUAL PROPERTY RIGHTS
-            
-            You and the End-User must acknowledge that, in the event of any third party claim that the Licensed Application or the End-User's possession and use of that Licensed Application infringes that third party's intellectual property rights, You, not Apple, will be solely responsible for the investigation, defense, settlement and discharge of any such intellectual property infringement claim.
-            
-            7. LEGAL COMPLIANCE
-            
-            The End-User must represent and warrant that (i) he/she is not located in a country that is subject to a U.S. Government embargo, or that has been designated by the U.S. Government as a "terrorist supporting" country; and (ii) he/she is not listed on any U.S. Government list of prohibited or restricted parties.
-            
-            8. DEVELOPER NAME AND ADDRESS
-            
-            Developer Name: NoteWall Team
-            Address: Slovakia
-            Email: iosnotewall@gmail.com
-            
-            Contact information to which any End-User questions, complaints or claims with respect to the Licensed Application should be directed.
-            
-            9. THIRD PARTY TERMS OF AGREEMENT
-            
-            You must state in the EULA that the End-User must comply with applicable third party terms of agreement when using Your Application.
-            
-            10. THIRD PARTY BENEFICIARY
-            
-            You and the End-User must acknowledge and agree that Apple, and Apple's subsidiaries, are third party beneficiaries of the EULA, and that, upon the End-User's acceptance of the terms and conditions of the EULA, Apple will have the right (and will be deemed to have accepted the right) to enforce the EULA against the End-User as a third party beneficiary thereof.
+            The End-User License Agreement (EULA) is hosted online. Please review the complete EULA using the link provided in the app interface.
             
             ═══════════════════════════════════════
             PART II: SUBSCRIPTION TERMS

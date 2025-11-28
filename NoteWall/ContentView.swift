@@ -808,10 +808,15 @@ private struct RootConfiguredModifier: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .requestWallpaperUpdate)) { notification in
                 context.hideKeyboard()
                 
-                // Check if we should skip the deletion prompt and track for paywall
+                // Check if we should skip the deletion prompt, track for paywall, and show loading overlay
                 if let request = notification.object as? WallpaperUpdateRequest {
                     context.shouldSkipDeletionPrompt.wrappedValue = request.skipDeletionPrompt
                     context.isUserInitiatedUpdate.wrappedValue = request.trackForPaywall
+                    
+                    // Show loading overlay if requested (e.g., from Settings)
+                    if request.showLoadingOverlay {
+                        context.showWallpaperUpdateLoading.wrappedValue = true
+                    }
                 } else {
                     // No request object - don't modify flags, use whatever was set by the caller
                     // (Homepage button sets isUserInitiatedUpdate = true explicitly)

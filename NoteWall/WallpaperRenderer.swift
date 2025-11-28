@@ -2,6 +2,37 @@ import UIKit
 import SwiftUI
 
 struct WallpaperRenderer {
+    // MARK: - Adaptive Text Sizing Configuration
+    
+    /// Maximum font size - used when you have few notes
+    /// This is much larger to make 1-3 notes look prominent
+    private static let maxFontSize: CGFloat = 140
+    
+    /// Minimum font size - smallest we'll go for readability
+    private static let minFontSize: CGFloat = 52
+    
+    /// Available height for notes
+    /// Screen height: 2796px
+    /// Top padding (below widgets): 1075px
+    /// Bottom safe area (above flashlight/camera): needs ~400px padding
+    /// Available: 2796 - 1075 - 400 = 1321px
+    private static let availableHeight: CGFloat = 1320
+    
+    /// Horizontal padding on each side
+    private static let horizontalPadding: CGFloat = 80
+    
+    /// Canvas width
+    private static let canvasWidth: CGFloat = 1290
+    
+    /// Text max width
+    private static var textMaxWidth: CGFloat { canvasWidth - (horizontalPadding * 2) }
+    
+    /// Top padding (below time and widgets)
+    private static let topPadding: CGFloat = 1075
+    
+    /// Font weight for notes - heavy for better visibility
+    private static let fontWeight: UIFont.Weight = .heavy
+    
     static func generateWallpaper(
         from notes: [Note],
         backgroundColor: UIColor,
@@ -28,75 +59,46 @@ struct WallpaperRenderer {
                 print("   ✅ Drew background image")
             }
 
-            // Include all notes (both active and completed) and limit to notes that fit
-            let notesToShow = limitNotesToSafeArea(notes)
-            
             let activeNotes = notes.filter { !$0.isCompleted }
             let completedNotes = notes.filter { $0.isCompleted }
             print("   Active notes: \(activeNotes.count)")
             print("   Completed notes: \(completedNotes.count)")
-            print("   Notes to show: \(notesToShow.count)")
 
-            guard !notesToShow.isEmpty else {
+            guard !notes.isEmpty else {
                 print("   ⚠️ NO NOTES TO SHOW - Wallpaper will be blank")
                 return
             }
+            
+            // Calculate the optimal font size for all notes
+            let optimalFontSize = calculateOptimalFontSize(for: notes)
+            print("   📏 Optimal font size: \(optimalFontSize)pt")
+            
+            // Get the notes that fit at this font size (should be all of them unless we hit min font)
+            let notesToShow = getNotesToShowAtFontSize(notes, fontSize: optimalFontSize)
+            print("   Notes to show: \(notesToShow.count)")
+            
+            guard !notesToShow.isEmpty else {
+                print("   ⚠️ NO NOTES FIT - Wallpaper will be blank")
+                return
+            }
 
-            // Text attributes - white, left-aligned
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.alignment = .left
-            paragraphStyle.lineSpacing = 12
-
-            // Increased font size for better visibility
-            let fontSize: CGFloat = 96
             let baseTextColor = textColorForBackground(
                 backgroundColor: backgroundColor,
                 backgroundImage: backgroundImage
             )
             
-            // App accent color for strikethrough (cyan: RGB 0, 0.768, 0.722)
-            let accentColor = UIColor(red: 0.0, green: 0.768, blue: 0.722, alpha: 1.0)
-            
             print("   🎨 Text color: \(baseTextColor == .white ? "WHITE" : "BLACK")")
 
-            // Build attributed string with strikethrough for completed notes
-            let attributedString = NSMutableAttributedString()
-            
-            for (index, note) in notesToShow.enumerated() {
-                if index > 0 {
-                    // Add separator between notes
-                    attributedString.append(NSAttributedString(string: "\n\n"))
-                }
-                
-                // Base attributes for all notes
-                var noteAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
-                    .paragraphStyle: paragraphStyle
-                ]
-                
-                if note.isCompleted {
-                    // Completed notes: dimmed text color and strikethrough
-                    let dimmedColor = baseTextColor.withAlphaComponent(0.5)
-                    noteAttributes[.foregroundColor] = dimmedColor
-                    noteAttributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
-                    noteAttributes[.strikethroughColor] = accentColor
-                } else {
-                    // Active notes: normal text color
-                    noteAttributes[.foregroundColor] = baseTextColor
-                }
-                
-                let noteAttributedString = NSAttributedString(string: note.text, attributes: noteAttributes)
-                attributedString.append(noteAttributedString)
-            }
+            // Build attributed string with adaptive sizing
+            // Pass whether there's a background image for shadow rendering
+            let attributedString = buildAttributedString(
+                for: notesToShow,
+                fontSize: optimalFontSize,
+                textColor: baseTextColor,
+                hasBackgroundImage: backgroundImage != nil
+            )
             
             print("   📝 Combined text length: \(attributedString.length) chars")
-
-            // Calculate text size and position
-            let horizontalPadding: CGFloat = 80
-            // Position text below time and widgets - moved further down
-            // For iPhone 14 Pro (2796px height), this positions text lower on the screen
-            let topPadding: CGFloat = 1075 // Increased to move notes further down towards bottom
-            let textMaxWidth = width - (horizontalPadding * 2)
 
             let textSize = attributedString.boundingRect(
                 with: CGSize(width: textMaxWidth, height: .greatestFiniteMagnitude),
@@ -119,6 +121,189 @@ struct WallpaperRenderer {
             print("   ✅ Drew text on wallpaper (with strikethrough for completed notes)")
         }
     }
+    
+    // MARK: - Adaptive Font Size Calculation
+    
+    /// Calculates the optimal font size to fit all notes in the available space
+    /// - Returns: The largest font size that fits all notes, clamped to min/max bounds
+    private static func calculateOptimalFontSize(for notes: [Note]) -> CGFloat {
+        guard !notes.isEmpty else { return maxFontSize }
+        
+        // First check: do all notes fit at max font size?
+        if doesAllNotesFit(notes, atFontSize: maxFontSize) {
+            print("   ✅ All notes fit at max font size (\(maxFontSize)pt)")
+            return maxFontSize
+        }
+        
+        // Binary search to find the largest font size that fits all notes
+        var low = minFontSize
+        var high = maxFontSize
+        var bestFit = minFontSize
+        
+        while low <= high {
+            let mid = (low + high) / 2
+            
+            if doesAllNotesFit(notes, atFontSize: mid) {
+                bestFit = mid
+                low = mid + 1 // Try larger
+            } else {
+                high = mid - 1 // Try smaller
+            }
+        }
+        
+        print("   🔍 Binary search found optimal size: \(bestFit)pt")
+        return bestFit
+    }
+    
+    /// Checks if all notes fit in the available space at the given font size
+    private static func doesAllNotesFit(_ notes: [Note], atFontSize fontSize: CGFloat) -> Bool {
+        let lineSpacing = lineSpacingForFontSize(fontSize)
+        let separatorHeight = separatorHeightForFontSize(fontSize)
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = lineSpacing
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: fontSize, weight: fontWeight),
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        var totalHeight: CGFloat = 0
+        
+        for (index, note) in notes.enumerated() {
+            let attributedString = NSAttributedString(string: note.text, attributes: attributes)
+            let textSize = attributedString.boundingRect(
+                with: CGSize(width: textMaxWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                context: nil
+            )
+            
+            let noteHeight = textSize.height + (index > 0 ? separatorHeight : 0)
+            totalHeight += noteHeight
+            
+            if totalHeight > availableHeight {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
+    /// Gets the notes that fit at the given font size
+    private static func getNotesToShowAtFontSize(_ notes: [Note], fontSize: CGFloat) -> [Note] {
+        let lineSpacing = lineSpacingForFontSize(fontSize)
+        let separatorHeight = separatorHeightForFontSize(fontSize)
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = lineSpacing
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: UIFont.systemFont(ofSize: fontSize, weight: fontWeight),
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        var notesToShow: [Note] = []
+        var totalHeight: CGFloat = 0
+        
+        for (index, note) in notes.enumerated() {
+            let attributedString = NSAttributedString(string: note.text, attributes: attributes)
+            let textSize = attributedString.boundingRect(
+                with: CGSize(width: textMaxWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                context: nil
+            )
+            
+            let noteHeight = textSize.height + (index > 0 ? separatorHeight : 0)
+            
+            if totalHeight + noteHeight <= availableHeight {
+                notesToShow.append(note)
+                totalHeight += noteHeight
+            } else {
+                break
+            }
+        }
+        
+        return notesToShow
+    }
+    
+    /// Builds the attributed string with the given font size
+    private static func buildAttributedString(
+        for notes: [Note],
+        fontSize: CGFloat,
+        textColor: UIColor,
+        hasBackgroundImage: Bool
+    ) -> NSMutableAttributedString {
+        let lineSpacing = lineSpacingForFontSize(fontSize)
+        
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = lineSpacing
+        
+        // Create shadow for better readability on photo backgrounds
+        // Shadow color is opposite of text color for contrast
+        let shadow = NSShadow()
+        if hasBackgroundImage {
+            // For photo backgrounds, add a subtle shadow for readability
+            let isLightText = textColor == .white || textColor.cgColor.alpha == 1.0
+            shadow.shadowColor = isLightText 
+                ? UIColor.black.withAlphaComponent(0.7)  // Dark shadow for white text
+                : UIColor.white.withAlphaComponent(0.7)  // Light shadow for black text
+            shadow.shadowOffset = CGSize(width: 0, height: 2)
+            shadow.shadowBlurRadius = fontSize * 0.08  // Scales with font size
+        }
+        
+        let attributedString = NSMutableAttributedString()
+        
+        for (index, note) in notes.enumerated() {
+            if index > 0 {
+                // Add separator between notes
+                attributedString.append(NSAttributedString(string: "\n\n"))
+            }
+            
+            // Base attributes for all notes
+            var noteAttributes: [NSAttributedString.Key: Any] = [
+                .font: UIFont.systemFont(ofSize: fontSize, weight: fontWeight),
+                .paragraphStyle: paragraphStyle
+            ]
+            
+            // Add shadow only for photo backgrounds
+            if hasBackgroundImage {
+                noteAttributes[.shadow] = shadow
+            }
+            
+            if note.isCompleted {
+                // Completed notes: dimmed text color and strikethrough
+                let dimmedColor = textColor.withAlphaComponent(0.5)
+                noteAttributes[.foregroundColor] = dimmedColor
+                noteAttributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue
+                noteAttributes[.strikethroughColor] = dimmedColor
+            } else {
+                // Active notes: normal text color
+                noteAttributes[.foregroundColor] = textColor
+            }
+            
+            let noteAttributedString = NSAttributedString(string: note.text, attributes: noteAttributes)
+            attributedString.append(noteAttributedString)
+        }
+        
+        return attributedString
+    }
+    
+    // MARK: - Proportional Spacing Helpers
+    
+    /// Line spacing scales proportionally with font size
+    /// At 96pt: 12pt spacing, at 48pt: 6pt spacing
+    private static func lineSpacingForFontSize(_ fontSize: CGFloat) -> CGFloat {
+        return fontSize * 0.125 // 12/96 = 0.125
+    }
+    
+    /// Separator height (for \n\n) scales proportionally with font size
+    /// At 96pt: ~24pt separator, at 48pt: ~12pt separator
+    private static func separatorHeightForFontSize(_ fontSize: CGFloat) -> CGFloat {
+        return fontSize * 0.25 // 24/96 = 0.25
+    }
 
     static func generateBlankWallpaper(
         backgroundColor: UIColor,
@@ -139,57 +324,23 @@ struct WallpaperRenderer {
         }
     }
 
-    // Calculate how many notes will appear on wallpaper
+    // MARK: - Public API
+    
+    /// Calculate how many notes will appear on wallpaper with adaptive sizing
     static func getWallpaperNoteCount(from notes: [Note]) -> Int {
-        // Include all notes (both active and completed) in the count
-        return limitNotesToSafeArea(notes).count
+        guard !notes.isEmpty else { return 0 }
+        
+        // Calculate optimal font size for all notes
+        let optimalFontSize = calculateOptimalFontSize(for: notes)
+        
+        // Get how many notes fit at that font size
+        return getNotesToShowAtFontSize(notes, fontSize: optimalFontSize).count
     }
-
-    private static func limitNotesToSafeArea(_ notes: [Note]) -> [Note] {
-        // Available space calculation
-        // Screen height: 2796px
-        // Top padding (below widgets): 1075px
-        // Bottom safe area (above flashlight/camera): 2600px
-        // Available height: 2600 - 1075 = 1525px
-        let maxHeight: CGFloat = 1525
-        let fontSize: CGFloat = 96
-        let lineSpacing: CGFloat = 12
-        let noteSeparatorHeight: CGFloat = 24 // \n\n between notes
-        let width: CGFloat = 1290
-        let horizontalPadding: CGFloat = 80
-        let textMaxWidth = width - (horizontalPadding * 2)
-
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.alignment = .left
-        paragraphStyle.lineSpacing = lineSpacing
-
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: fontSize, weight: .medium),
-            .paragraphStyle: paragraphStyle
-        ]
-
-        var notesToShow: [Note] = []
-        var currentHeight: CGFloat = 0
-
-        for note in notes {
-            let attributedString = NSAttributedString(string: note.text, attributes: attributes)
-            let textSize = attributedString.boundingRect(
-                with: CGSize(width: textMaxWidth, height: .greatestFiniteMagnitude),
-                options: [.usesLineFragmentOrigin, .usesFontLeading],
-                context: nil
-            )
-
-            let noteHeight = textSize.height + (notesToShow.isEmpty ? 0 : noteSeparatorHeight)
-
-            if currentHeight + noteHeight <= maxHeight {
-                notesToShow.append(note)
-                currentHeight += noteHeight
-            } else {
-                break // Stop adding notes if we exceed the safe area
-            }
-        }
-
-        return notesToShow
+    
+    /// Returns the font size that will be used for rendering the given notes
+    /// This is useful for previews or UI that needs to match the wallpaper
+    static func getFontSizeForNotes(_ notes: [Note]) -> CGFloat {
+        return calculateOptimalFontSize(for: notes)
     }
 
     private static func drawBackground(image: UIImage, in canvasRect: CGRect, on context: CGContext) {
@@ -244,7 +395,38 @@ struct WallpaperRenderer {
         return 0.5
     }
 
+    /// Samples brightness from the TEXT AREA of the image (middle-lower portion)
+    /// This gives better results than sampling the whole image
     private static func averageBrightness(of image: UIImage) -> CGFloat {
+        let imageSize = image.size
+        
+        // Define the text area region (where notes appear on lock screen)
+        // Approximately: top 38% to bottom 85% of the image, left side
+        // This corresponds to where notes are rendered (below widgets, above flashlight)
+        let textAreaRect = CGRect(
+            x: 0,
+            y: imageSize.height * 0.38,  // Start below clock/widgets area
+            width: imageSize.width * 0.8, // Left portion where text is
+            height: imageSize.height * 0.47 // Up to above flashlight area
+        )
+        
+        // Crop to text area first
+        guard let cgImage = image.cgImage,
+              let croppedCGImage = cgImage.cropping(to: CGRect(
+                x: textAreaRect.origin.x * CGFloat(cgImage.width) / imageSize.width,
+                y: textAreaRect.origin.y * CGFloat(cgImage.height) / imageSize.height,
+                width: textAreaRect.width * CGFloat(cgImage.width) / imageSize.width,
+                height: textAreaRect.height * CGFloat(cgImage.height) / imageSize.height
+              )) else {
+            return averageBrightnessFullImage(of: image)
+        }
+        
+        let croppedImage = UIImage(cgImage: croppedCGImage)
+        return averageBrightnessFullImage(of: croppedImage)
+    }
+    
+    /// Samples brightness from the entire image (fallback)
+    private static func averageBrightnessFullImage(of image: UIImage) -> CGFloat {
         let sampleSize = CGSize(width: 12, height: 12)
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1

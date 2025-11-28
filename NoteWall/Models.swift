@@ -20,15 +20,18 @@ extension Notification.Name {
     static let onboardingReplayRequested = Notification.Name("onboardingReplayRequested")
     static let shortcutWallpaperApplied = Notification.Name("shortcutWallpaperApplied")
     static let onboardingCompleted = Notification.Name("onboardingCompleted")
+    static let showGlobalLoadingOverlay = Notification.Name("showGlobalLoadingOverlay")
 }
 
 struct WallpaperUpdateRequest {
     let skipDeletionPrompt: Bool
     let trackForPaywall: Bool
+    let showLoadingOverlay: Bool
     
-    init(skipDeletionPrompt: Bool = false, trackForPaywall: Bool = true) {
+    init(skipDeletionPrompt: Bool = false, trackForPaywall: Bool = true, showLoadingOverlay: Bool = false) {
         self.skipDeletionPrompt = skipDeletionPrompt
         self.trackForPaywall = trackForPaywall
+        self.showLoadingOverlay = showLoadingOverlay
     }
 }
 

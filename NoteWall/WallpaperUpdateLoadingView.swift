@@ -21,10 +21,10 @@ struct WallpaperUpdateLoadingView: View {
     @State private var errorShake: CGFloat = 0
     @State private var pulseScale: CGFloat = 1.0
     @State private var progress: Double = 0.0
-    @State private var remainingSeconds: Int = 8
+    @State private var remainingSeconds: Int = 10
     
-    private let timeoutDuration: TimeInterval = 15.0
-    private let expectedDuration: TimeInterval = 8.0
+    private let timeoutDuration: TimeInterval = 25.0
+    private let expectedDuration: TimeInterval = 10.0
     
     
     var body: some View {
@@ -294,7 +294,7 @@ struct WallpaperUpdateLoadingView: View {
                 remainingSeconds = remaining
             }
             
-            // Check for timeout at 15 seconds
+            // Check for timeout at 25 seconds
             if elapsed >= timeoutDuration {
                 handleTimeout()
             }
@@ -350,8 +350,8 @@ struct WallpaperUpdateLoadingView: View {
             showSuccess = true
         }
         
-        // Auto-dismiss after 2 seconds
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        // Auto-dismiss after 1 second (shortened for better UX)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             withAnimation(.easeOut(duration: 0.3)) {
                 isPresented = false
             }
@@ -364,7 +364,7 @@ struct WallpaperUpdateLoadingView: View {
             return
         }
         
-        print("⏰ WallpaperUpdateLoading: Timeout reached at 15 seconds, showing error")
+        print("⏰ WallpaperUpdateLoading: Timeout reached at 25 seconds, showing error")
         cleanup()
         
         // Error notification haptic

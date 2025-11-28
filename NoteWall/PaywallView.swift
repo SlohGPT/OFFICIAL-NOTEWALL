@@ -67,7 +67,7 @@ struct PaywallView: View {
 
     @GestureState private var benefitDragOffset: CGFloat = 0
     
-    private let benefitsAutoScrollTimer = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
+    private let benefitsAutoScrollTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     
     init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true) {
         self.triggerReason = triggerReason
@@ -96,16 +96,75 @@ struct PaywallView: View {
         .sheet(isPresented: $showTermsAndPrivacy) {
             NavigationView {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text(getLegalDocumentContent())
-                            .font(.system(.body, design: .default))
-                            .foregroundColor(.primary)
-                            .multilineTextAlignment(.leading)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 16)
-                        
-                        // Code input field at the bottom (only for Terms and Privacy)
+                    VStack(alignment: .leading, spacing: 20) {
                         if selectedLegalDocument == .termsAndPrivacy {
+                            // Show EULA and Privacy Policy buttons
+                            VStack(spacing: 16) {
+                                Text("Legal Documents")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                                    .padding(.top, 20)
+                                
+                                // EULA Button
+                                Button(action: {
+                                    if let url = URL(string: "https://peat-appendix-c3c.notion.site/END-USER-LICENSE-AGREEMENT-2b7f6a63758f80a58aebf0207e51f7fb?source=copy_link") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("End-User License Agreement (EULA)")
+                                            .fontWeight(.semibold)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.appAccent)
+                                    .cornerRadius(12)
+                                }
+                                
+                                // Privacy Policy Button
+                                Button(action: {
+                                    if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("Privacy Policy")
+                                            .fontWeight(.semibold)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.appAccent)
+                                    .cornerRadius(12)
+                                }
+                                
+                                // Terms of Use Button
+                                Button(action: {
+                                    if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }) {
+                                    HStack {
+                                        Text("Terms of Use")
+                                            .fontWeight(.semibold)
+                                        Spacer()
+                                        Image(systemName: "arrow.up.right.square")
+                                    }
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity)
+                                    .background(Color.appAccent)
+                                    .cornerRadius(12)
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                        
+                            // Code input field at the bottom
                             VStack(spacing: 12) {
                                 Divider()
                                     .padding(.vertical, 8)
@@ -139,6 +198,14 @@ struct PaywallView: View {
                                 .padding(.horizontal, 20)
                             }
                             .padding(.bottom, 20)
+                        } else {
+                            // For other document types, show the content
+                            Text(getLegalDocumentContent())
+                                .font(.system(.body, design: .default))
+                                .foregroundColor(.primary)
+                                .multilineTextAlignment(.leading)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 16)
                         }
                     }
                 }
@@ -353,8 +420,9 @@ struct PaywallView: View {
                 // Terms & Privacy and Restore Purchases
                 HStack(spacing: 24) {
                     Button("Terms") {
-                        selectedLegalDocument = .termsAndPrivacy
-                        showTermsAndPrivacy = true
+                        if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                            UIApplication.shared.open(url)
+                        }
                     }
                     .font(.caption)
                     .foregroundColor(.secondary)
@@ -924,7 +992,7 @@ struct PaywallView: View {
                     }
                     
                 VStack(alignment: .leading, spacing: isYearlyPlan ? 6 : 2) {
-                    Text(planLabel)
+                        Text(planLabel)
                         .font(.system(.subheadline, design: .rounded))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -1357,9 +1425,9 @@ struct PaywallView: View {
         
         // For yearly, calculate and show per month
         if kind == .yearly, let value = perMonthPrice(for: package) {
-            let formatter = currencyFormatter(for: package)
-            let formatted = formatter.string(from: NSDecimalNumber(decimal: value))
-            return formatted.map { "\($0)/mo" }
+        let formatter = currencyFormatter(for: package)
+        let formatted = formatter.string(from: NSDecimalNumber(decimal: value))
+        return formatted.map { "\($0)/mo" }
         }
         
         return nil
@@ -1414,40 +1482,16 @@ struct PaywallView: View {
     private func getLegalDocumentContent() -> String {
         switch selectedLegalDocument {
         case .termsOfService:
+            // Terms of Use is hosted on Notion - open URL
+            DispatchQueue.main.async {
+                if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                    UIApplication.shared.open(url)
+                }
+            }
             return """
-            Terms of Service
+            Opening Terms of Use...
             
-            Last Updated: November 13, 2025
-            
-            1. Acceptance of Terms
-            
-            By downloading, installing, or using NoteWall ("the App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the App.
-            
-            2. Description of Service
-            
-            NoteWall is a productivity application that allows users to create custom wallpapers with personal notes and reminders for their iOS devices.
-            
-            3. Subscription Terms
-            
-            • NoteWall+ Monthly: Monthly subscription with automatic renewal
-            • NoteWall+ Lifetime: One-time payment for permanent access
-            • Free trial periods may be offered for subscription plans
-            • Subscriptions automatically renew unless cancelled 24 hours before renewal
-            • Manage subscriptions in your Apple ID account settings
-            
-            4. User Obligations
-            
-            You agree to use the App only for lawful purposes and in accordance with these Terms.
-            
-            5. Privacy
-            
-            Your privacy is important to us. All notes and personal data are stored locally on your device and are not transmitted to our servers.
-            
-            6. Contact Information
-            
-            For questions or support, contact us at: iosnotewall@gmail.com
-            
-            Developer: NoteWall Team
+            Your browser will open with the Terms of Use.
             """
         case .privacyPolicy:
             // Privacy Policy is hosted on Notion - open URL
@@ -1469,51 +1513,9 @@ struct PaywallView: View {
             
             PART I: END-USER LICENSE AGREEMENT (EULA)
             
-            1. ACKNOWLEDGEMENT
+            The End-User License Agreement (EULA) is hosted online. Please review the complete EULA at the link below.
             
-            This End-User License Agreement ("EULA") is a legal agreement between you ("End-User") and NoteWall Team ("Developer") for the NoteWall mobile application ("Licensed Application"). This EULA is concluded between you and the Developer only, and not with Apple Inc. ("Apple"). The Developer, not Apple, is solely responsible for the Licensed Application and its content. The EULA may not provide for usage rules for Licensed Applications that are in conflict with the Apple Media Services Terms and Conditions.
-            
-            2. SCOPE OF LICENSE
-            
-            The license granted to the End-User for the Licensed Application must be limited to a non-transferable license to use the Licensed Application on any Apple-branded Products that the End-User owns or controls and as permitted by the Usage Rules set forth in the Apple Media Services Terms and Conditions, except that such Licensed Application may be accessed and used by other accounts associated with the purchaser via Family Sharing or volume purchasing.
-            
-            3. MAINTENANCE AND SUPPORT
-            
-            You must be solely responsible for providing any maintenance and support services with respect to the Licensed Application, as specified in the EULA, or as required under applicable law. You and the End-User must acknowledge that Apple has no obligation whatsoever to furnish any maintenance and support services with respect to the Licensed Application.
-            
-            Contact for support: iosnotewall@gmail.com
-            
-            4. WARRANTY
-            
-            You must be solely responsible for any product warranties, whether express or implied by law, to the extent not effectively disclaimed. The EULA must provide that, in the event of any failure of the Licensed Application to conform to any applicable warranty, the End-User may notify Apple, and Apple will refund the purchase price for the Licensed Application to that End-User; and that, to the maximum extent permitted by applicable law, Apple will have no other warranty obligation whatsoever with respect to the Licensed Application, and any other claims, losses, liabilities, damages, costs or expenses attributable to any failure to conform to any warranty will be Your sole responsibility.
-            
-            5. PRODUCT CLAIMS
-            
-            You and the End-User must acknowledge that You, not Apple, are responsible for addressing any claims of the End-User or any third party relating to the Licensed Application or the end-user's possession and/or use of that Licensed Application, including, but not limited to: (i) product liability claims; (ii) any claim that the Licensed Application fails to conform to any applicable legal or regulatory requirement; and (iii) claims arising under consumer protection, privacy, or similar legislation, including in connection with Your Licensed Application's use of the HealthKit and HomeKit frameworks. The EULA may not limit Your liability to the End-User beyond what is permitted by applicable law.
-            
-            6. INTELLECTUAL PROPERTY RIGHTS
-            
-            You and the End-User must acknowledge that, in the event of any third party claim that the Licensed Application or the End-User's possession and use of that Licensed Application infringes that third party's intellectual property rights, You, not Apple, will be solely responsible for the investigation, defense, settlement and discharge of any such intellectual property infringement claim.
-            
-            7. LEGAL COMPLIANCE
-            
-            The End-User must represent and warrant that (i) he/she is not located in a country that is subject to a U.S. Government embargo, or that has been designated by the U.S. Government as a "terrorist supporting" country; and (ii) he/she is not listed on any U.S. Government list of prohibited or restricted parties.
-            
-            8. DEVELOPER NAME AND ADDRESS
-            
-            Developer Name: NoteWall Team
-            Address: Slovakia
-            Email: iosnotewall@gmail.com
-            
-            Contact information to which any End-User questions, complaints or claims with respect to the Licensed Application should be directed.
-            
-            9. THIRD PARTY TERMS OF AGREEMENT
-            
-            You must state in the EULA that the End-User must comply with applicable third party terms of agreement when using Your Application.
-            
-            10. THIRD PARTY BENEFICIARY
-            
-            You and the End-User must acknowledge and agree that Apple, and Apple's subsidiaries, are third party beneficiaries of the EULA, and that, upon the End-User's acceptance of the terms and conditions of the EULA, Apple will have the right (and will be deemed to have accepted the right) to enforce the EULA against the End-User as a third party beneficiary thereof.
+            [EULA Link will be displayed as a button]
             
 
             PART II: SUBSCRIPTION TERMS
@@ -1825,6 +1827,8 @@ private struct LifetimePlanSheet: View {
                         // Logo with premium glow
                 Image("OnboardingLogo")
                     .resizable()
+                    .interpolation(.high)
+                    .antialiased(true)
                     .scaledToFit()
                             .frame(width: 100, height: 100)
                             .cornerRadius(26)

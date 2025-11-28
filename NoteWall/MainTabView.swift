@@ -2,20 +2,48 @@ import SwiftUI
 
 struct MainTabView: View {
     @State private var selectedTab = 0
+    @State private var showWallpaperUpdateLoading = false
+    @State private var showTroubleshooting = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                ContentView()
-                    .opacity(selectedTab == 0 ? 1 : 0)
-                    .allowsHitTesting(selectedTab == 0)
+        ZStack {
+            VStack(spacing: 0) {
+                ZStack {
+                    ContentView()
+                        .opacity(selectedTab == 0 ? 1 : 0)
+                        .allowsHitTesting(selectedTab == 0)
 
-                SettingsView(selectedTab: $selectedTab)
-                    .opacity(selectedTab == 1 ? 1 : 0)
-                    .allowsHitTesting(selectedTab == 1)
+                    SettingsView(selectedTab: $selectedTab)
+                        .opacity(selectedTab == 1 ? 1 : 0)
+                        .allowsHitTesting(selectedTab == 1)
+                }
+
+                BottomNavigationBar(selectedTab: $selectedTab)
             }
-
-            BottomNavigationBar(selectedTab: $selectedTab)
+            
+            // Global loading overlay - shows on top of everything regardless of tab
+            if showWallpaperUpdateLoading {
+                WallpaperUpdateLoadingView(
+                    isPresented: $showWallpaperUpdateLoading,
+                    showTroubleshooting: $showTroubleshooting
+                )
+                .zIndex(1000)
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showGlobalLoadingOverlay)) { notification in
+            // Show loading overlay immediately, then switch tab
+            showWallpaperUpdateLoading = true
+            
+            // Switch to home tab after a tiny delay (overlay is already visible)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                selectedTab = 0
+            }
+        }
+        .sheet(isPresented: $showTroubleshooting) {
+            TroubleshootingView(
+                isPresented: $showTroubleshooting,
+                shouldRestartOnboarding: .constant(false)
+            )
         }
     }
 }
