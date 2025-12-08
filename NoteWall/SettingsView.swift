@@ -9,23 +9,6 @@ struct SettingsView: View {
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
     @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
-    
-    // Computed property for auto-update preference
-    private var autoUpdateWallpaperAfterDeletion: Bool? {
-        get {
-            if autoUpdateWallpaperAfterDeletionRaw.isEmpty {
-                return nil
-            }
-            return autoUpdateWallpaperAfterDeletionRaw == "true"
-        }
-        set {
-            if let value = newValue {
-                autoUpdateWallpaperAfterDeletionRaw = value ? "true" : "false"
-            } else {
-                autoUpdateWallpaperAfterDeletionRaw = ""
-            }
-        }
-    }
     @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
@@ -38,23 +21,14 @@ struct SettingsView: View {
     @State private var showPaywall = false
     @State private var showTroubleshooting = false
     @State private var shouldRestartOnboarding = false
+    @State private var showExitFeedback = false
+    @State private var showSupportView = false
+    @State private var showLegalSelection = false
+    @State private var supportViewAnimateIn = false
+    @State private var supportViewFloatOffset: CGFloat = 0
     var selectedTab: Binding<Int>?
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7"
-    private let testFlightShortcutURL = "https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7"
-    
-    // Detect if running from TestFlight
-    private var isTestFlightBuild: Bool {
-        guard let path = Bundle.main.appStoreReceiptURL?.path else {
-            return false
-        }
-        return path.contains("sandboxReceipt")
-    }
-    
-    // Get the appropriate shortcut URL based on build type
-    private var currentShortcutURL: String {
-        return isTestFlightBuild ? testFlightShortcutURL : shortcutURL
-    }
     init(selectedTab: Binding<Int>? = nil) {
         self.selectedTab = selectedTab
     }
@@ -108,8 +82,8 @@ struct SettingsView: View {
         List {
             premiumSection
             homeScreenSection
-            actionsSection
             wallpaperSettingsSection
+            actionsSection
             supportSection
         }
         .sheet(isPresented: $showPaywall) {
@@ -122,6 +96,15 @@ struct SettingsView: View {
                 isPresented: $showTroubleshooting,
                 shouldRestartOnboarding: $shouldRestartOnboarding
             )
+        }
+        .sheet(isPresented: $showExitFeedback) {
+            ExitFeedbackView()
+        }
+        .sheet(isPresented: $showSupportView) {
+            supportOnlyView
+            }
+        .sheet(isPresented: $showLegalSelection) {
+            legalSelectionView
         }
         .sheet(isPresented: $showLegalDocument) {
             NavigationView {
@@ -184,22 +167,6 @@ struct SettingsView: View {
                     .padding(.vertical, 8)
                 }
                 .buttonStyle(.plain)
-                
-                Button(action: {
-                    paywallManager.resetPaywallData()
-                    paywallManager.showPaywall(reason: .settings)
-                }) {
-                    HStack {
-                        Text("Revert to Paywall (Test)")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-                .buttonStyle(.plain)
             } else {
                 Button(action: {
                     // Light impact haptic for opening paywall
@@ -232,27 +199,6 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 
-                if isTestFlightBuild {
-                    Button(action: grantTestSubscription) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "wand.and.stars")
-                                .font(.system(size: 20))
-                                .foregroundColor(.secondary)
-                            
-                            Text("Grant NoteWall+ (Test)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            Spacer()
-                            
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
             }
         }
     }
@@ -267,93 +213,20 @@ struct SettingsView: View {
                     // Light impact haptic for toggle switch
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
+                    // User must click "Update Wallpaper Now" to apply changes
                 }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("I Use Lock Screen Widgets")
+                    Text("I use lock screen widgets")
                     Text(hasLockScreenWidgets 
-                        ? "Notes start lower to avoid widgets below the clock." 
-                        : "Notes start closer to the clock for more space.")
+                        ? "Notes start appearing lower to avoid widgets that are below the time." 
+                        : "Notes start closer to the time for more space and aesthetic look.")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
             }
-            
-            if autoUpdateWallpaperAfterDeletion != nil {
-                Toggle(isOn: Binding(
-                    get: { autoUpdateWallpaperAfterDeletion ?? false },
-                    set: { newValue in
-                        autoUpdateWallpaperAfterDeletionRaw = newValue ? "true" : "false"
-                        // When switching to automatic, also disable Photos library
-                        if newValue {
-                            saveWallpapersToPhotos = false
-                        }
-                        // Light impact haptic for toggle switch
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text("Automatic")
-                            if autoUpdateWallpaperAfterDeletion ?? false {
-                                Text("Recommended")
-                                    .font(.caption2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.appAccent)
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.appAccent.opacity(0.1))
-                                    .cornerRadius(4)
-                            }
-                        }
-                        Text((autoUpdateWallpaperAfterDeletion ?? false) ? "Wallpaper updates automatically when you delete notes. Zero popups." : "You manually update wallpaper using the Update button.")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                    }
-                }
-            }
-            
-            Toggle(isOn: Binding(
-                get: { saveWallpapersToPhotos },
-                set: { newValue in
-                    saveWallpapersToPhotos = newValue
-                    // When enabling Photos library, disable automatic updates
-                    if newValue && (autoUpdateWallpaperAfterDeletion ?? false) {
-                        autoUpdateWallpaperAfterDeletionRaw = "false"
-                    }
-                    // Light impact haptic for toggle switch
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                }
-            )) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Save to Photos Library")
-                    Text(saveWallpapersToPhotos ? "Wallpapers saved to Photos and Files. May see popups." : "Wallpapers saved to Files only. Clean Photos library.")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-            }
-            
-            Toggle(isOn: Binding(
-                get: { skipDeletingOldWallpaper },
-                set: { newValue in
-                    skipDeletingOldWallpaper = newValue
-                    // Light impact haptic for toggle switch
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                }
-            )) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Skip Deleting Old Wallpapers")
-                    Text("When enabled, old wallpapers won't be deleted automatically. This avoids system permission popups.")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-            }
-            .opacity(saveWallpapersToPhotos ? 1 : 0.5)
-            .disabled(!saveWallpapersToPhotos)
         }
+        // User must click "Update Wallpaper Now" to apply changes - no automatic shortcuts
     }
 
     @ViewBuilder
@@ -426,21 +299,6 @@ struct SettingsView: View {
     private var actionsSection: some View {
         Section(header: Text("Actions")) {
             Button(action: {
-                // Medium impact haptic for destructive reset action
-                let generator = UIImpactFeedbackGenerator(style: .medium)
-                generator.impactOccurred()
-                showResetAlert = true
-            }) {
-                HStack {
-                    Text("Reinstall Shortcut")
-                        .foregroundColor(.white)
-                    Spacer()
-                    Image(systemName: "arrow.up.right.square")
-                        .foregroundColor(.white)
-                }
-            }
-
-            Button(action: {
                 showTroubleshooting = true
             }) {
                 HStack {
@@ -470,60 +328,49 @@ struct SettingsView: View {
     }
 
     private var supportSection: some View {
-        Section(header: Text("Support & Legal")) {
-            Button(action: {
-                if let url = URL(string: "mailto:iosnotewall@gmail.com") {
-                    UIApplication.shared.open(url)
+            Section(header: Text("Help & Support")) {
+                Button(action: {
+                    showExitFeedback = true
+                }) {
+                    HStack {
+                        Image(systemName: "message.fill")
+                        .foregroundColor(.secondary)
+                        Text("Send Feedback")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                    }
                 }
-            }) {
-                HStack {
+                
+                Button(action: {
+                showSupportView = true
+                }) {
+                    HStack {
+                    Image(systemName: "headphones")
+                        .foregroundColor(.secondary)
                     Text("Contact Support")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "envelope")
-                        .foregroundColor(.secondary)
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
                 }
             }
             
-            Button(action: {
-                if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
-                    UIApplication.shared.open(url)
-                }
+                Button(action: {
+                showLegalSelection = true
             }) {
                 HStack {
-                    Text("Terms of Service")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "doc.text")
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Button(action: {
-                if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
-                    UIApplication.shared.open(url)
-                }
-            }) {
-                HStack {
-                    Text("Privacy Policy")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Image(systemName: "hand.raised")
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            Button(action: {
-                if let url = URL(string: "https://peat-appendix-c3c.notion.site/END-USER-LICENSE-AGREEMENT-2b7f6a63758f80a58aebf0207e51f7fb?source=copy_link") {
-                    UIApplication.shared.open(url)
-                }
-            }) {
-                HStack {
-                    Text("End-User License Agreement")
-                        .foregroundColor(.primary)
-                    Spacer()
                     Image(systemName: "doc.text.fill")
                         .foregroundColor(.secondary)
+                    Text("Legal")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 12))
                 }
             }
             
@@ -531,12 +378,12 @@ struct SettingsView: View {
                 shareApp()
             }) {
                 HStack {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundColor(.secondary)
                     Text("Share NoteWall")
                         .foregroundColor(.primary)
                     Spacer()
-                    Image(systemName: "square.and.arrow.up")
-                        .foregroundColor(.secondary)
-                }
+            }
             }
         }
     }
@@ -554,9 +401,18 @@ struct SettingsView: View {
 
     
     private func resetToFreshInstall() {
+        #if DEBUG
         print("🔄 RESETTING APP TO FRESH INSTALL STATE")
+        #endif
         
         // 1. Clear all AppStorage values
+        // CRITICAL: Set hasCompletedSetup to false FIRST before clearing notes
+        // This prevents the onChange handler from triggering wallpaper update
+        // when savedNotesData is cleared (which would otherwise see hasCompletedSetup = true)
+        hasCompletedSetup = false
+        completedOnboardingVersion = 0
+        
+        // Now clear other data (order matters for race conditions!)
         savedNotesData = Data()
         skipDeletingOldWallpaper = false
         saveWallpapersToPhotos = false
@@ -564,8 +420,6 @@ struct SettingsView: View {
         lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
         lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
         lockScreenBackgroundPhotoData = Data()
-        hasCompletedSetup = false
-        completedOnboardingVersion = 0
         homeScreenUsesCustomPhoto = false
         homeScreenPresetSelectionRaw = ""
         
@@ -581,7 +435,9 @@ struct SettingsView: View {
         // Reset shortcut setup completion flag
         ShortcutVerificationService.resetSetupCompletion()
         
+        #if DEBUG
         print("✅ Cleared all AppStorage data")
+        #endif
         
         // 2. Delete all files from Documents/NoteWall directory
         if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
@@ -590,15 +446,21 @@ struct SettingsView: View {
             if FileManager.default.fileExists(atPath: noteWallURL.path) {
                 do {
                     try FileManager.default.removeItem(at: noteWallURL)
+                    #if DEBUG
                     print("✅ Deleted all wallpaper files")
+                    #endif
                 } catch {
+                    #if DEBUG
                     print("❌ Error deleting files: \(error)")
+                    #endif
                 }
             }
         }
         
+        #if DEBUG
         print("🎉 Reset complete! App is now in fresh install state.")
         print("   Triggering onboarding...")
+        #endif
         
         // 3. Trigger onboarding
         NotificationCenter.default.post(name: .onboardingReplayRequested, object: nil)
@@ -647,7 +509,333 @@ struct SettingsView: View {
             }
         }
     }
+    
+    // MARK: - Support View
+    
+    private var supportOnlyView: some View {
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Close button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        showSupportView = false
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
+                Spacer()
+                
+                SupportHeroIcon(
+                    systemName: "headphones",
+                    floatAmplitude: abs(supportViewFloatOffset)
+                )
+                .frame(height: 200)
+                .opacity(supportViewAnimateIn ? 1 : 0)
+                .scaleEffect(supportViewAnimateIn ? 1 : 0.8)
+                .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1), value: supportViewAnimateIn)
+                
+                // Title
+                VStack(spacing: 10) {
+                    Text("We're Here to Help")
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text("Our team responds within 24 hours")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .multilineTextAlignment(.center)
+                .opacity(supportViewAnimateIn ? 1 : 0)
+                .offset(y: supportViewAnimateIn ? 0 : 15)
+                .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.15), value: supportViewAnimateIn)
+                
+                Spacer()
+                
+                // Contact options
+                VStack(spacing: 14) {
+                        // Email button
+                        Button(action: {
+                            // Light impact haptic for opening email
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            
+                            if let url = URL(string: "mailto:iosnotewall@gmail.com") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appAccent.opacity(0.15))
+                                        .frame(width: 48, height: 48)
+                                    
+                                    Image(systemName: "envelope.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Email Support")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text("iosnotewall@gmail.com")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.appAccent.opacity(0.25), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .opacity(supportViewAnimateIn ? 1 : 0)
+                        .offset(x: supportViewAnimateIn ? 0 : -20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: supportViewAnimateIn)
+                        
+                        // Twitter button
+                        Button(action: {
+                            // Light impact haptic for opening Twitter
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            
+                            if let url = URL(string: "https://x.com/billikkarol3") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appAccent.opacity(0.15))
+                                        .frame(width: 48, height: 48)
+                                    
+                                    Image(systemName: "at")
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Twitter / X")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text("@billikkarol3")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.appAccent.opacity(0.25), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .opacity(supportViewAnimateIn ? 1 : 0)
+                        .offset(x: supportViewAnimateIn ? 0 : -20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25), value: supportViewAnimateIn)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
+            }
+            .onAppear {
+                supportViewAnimateIn = true
+                withAnimation(Animation.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                    supportViewFloatOffset = -8
+                }
+            }
+        }
+    }
+    
+    // MARK: - Legal Selection View
+    
+    private var legalSelectionView: some View {
+        ZStack {
+            // Background gradient (same as supportOnlyView)
+            LinearGradient(
+                colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                // Close button
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        showLegalSelection = false
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                
+                // Title
+                Text("Legal")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.top, 20)
+                    .padding(.bottom, 24)
+                
+                ScrollView {
+                    VStack(spacing: 12) {
+                        Button(action: {
+                            if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "doc.text")
+                                    .foregroundColor(.appAccent)
+                                    .frame(width: 24)
+                                Text("Terms of Service")
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .font(.system(size: 12))
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        
+                        Button(action: {
+                            if let url = URL(string: "https://peat-appendix-c3c.notion.site/END-USER-LICENSE-AGREEMENT-2b7f6a63758f80a58aebf0207e51f7fb?source=copy_link") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack(alignment: .center, spacing: 14) {
+                                Image(systemName: "doc.text.fill")
+                                    .foregroundColor(.appAccent)
+                                    .frame(width: 24)
+                                
+                                Text("EULA")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .font(.system(size: 12))
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        
+                        Button(action: {
+                            if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
+                                UIApplication.shared.open(url)
+                            }
+                        }) {
+                            HStack {
+                                Image(systemName: "hand.raised")
+                                    .foregroundColor(.appAccent)
+                                    .frame(width: 24)
+                                Text("Privacy Policy")
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Image(systemName: "arrow.up.right")
+                                    .foregroundColor(.white.opacity(0.4))
+                                    .font(.system(size: 12))
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 40)
+                }
+            }
+        }
+    }
 }
+
+// MARK: - Update Wallpaper Button
 
 private struct UpdateWallpaperButton: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -718,6 +906,63 @@ private struct UpdateWallpaperButton: View {
     }
 }
 
+// MARK: - Support Hero Icon Component
+
+private struct SupportHeroIcon: View {
+    let systemName: String
+    let floatAmplitude: CGFloat
+    var iconFontSize: CGFloat = 48
+    
+    @State private var animateRings = false
+    @State private var floatingOffset: CGFloat = 0
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .stroke(Color.appAccent.opacity(0.2), lineWidth: 1)
+                    .frame(width: 140 + CGFloat(i) * 35, height: 140 + CGFloat(i) * 35)
+                    .scaleEffect(animateRings ? 1.1 : 1.0)
+                    .opacity(animateRings ? 0.3 : 0.6)
+                    .animation(
+                        Animation.easeInOut(duration: 2)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(i) * 0.2),
+                        value: animateRings
+                    )
+            }
+            
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.appAccent.opacity(0.25), Color.appAccent.opacity(0.1)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: systemName)
+                    .font(.system(size: iconFontSize, weight: .medium))
+                    .foregroundColor(.appAccent)
+                    .shadow(color: Color.appAccent.opacity(0.5), radius: 10, x: 0, y: 5)
+            }
+            .offset(y: floatingOffset)
+        }
+        .onAppear {
+            DispatchQueue.main.async {
+                withAnimation(Animation.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                    animateRings = true
+                }
+                withAnimation(Animation.easeInOut(duration: 2.4).repeatForever(autoreverses: true)) {
+                    floatingOffset = -abs(floatAmplitude)
+                }
+            }
+        }
+    }
+}
+
 #Preview {
     SettingsView()
 }
@@ -736,16 +981,6 @@ private extension SettingsView {
         }
     }
     
-    private func grantTestSubscription() {
-        // Handy tester button to bypass paywall while debugging/TestFlight
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
-        
-        let expiryDate = Calendar.current.date(byAdding: .year, value: 10, to: Date()) ??
-        Date().addingTimeInterval(60 * 60 * 24 * 365 * 10)
-        paywallManager.grantSubscription(expiryDate: expiryDate)
-    }
-    
     @available(iOS 13.0, *)
     private func shareApp() {
         let shareText = """
@@ -756,7 +991,8 @@ private extension SettingsView {
         #ProductivityHack #NoteWall #LockScreen
         """
         
-        let appURL = URL(string: "https://apps.apple.com/app/notewall")!
+        // App Store link using Apple ID (will work once app is published)
+        let appURL = URL(string: "https://apps.apple.com/app/id6755601996")!
         let items = [shareText, appURL] as [Any]
         
         let activityViewController = UIActivityViewController(activityItems: items, applicationActivities: nil)
@@ -872,7 +1108,7 @@ private extension SettingsView {
             12. FREE TRIAL TERMS
             
             • New users receive 3 free wallpaper exports to try the app
-            • Premium subscriptions may include a free trial period (typically 5-7 days)
+            • Premium subscriptions may include a free trial period (typically 3 days)
             • You will be charged at the end of the trial period unless you cancel before it ends
             • To cancel: Settings app → [Your Name] → Subscriptions → NoteWall → Cancel Subscription
             • Free trials are available to new subscribers only

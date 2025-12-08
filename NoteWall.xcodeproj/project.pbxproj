@@ -27,12 +27,17 @@
 		B1000001000000000000001 /* HomeScreenImageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000001000000000000001 /* HomeScreenImageManager.swift */; };
 		B1000002000000000000001 /* HomeScreenPhotoPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */; };
 		C1000001000000000000001 /* PaywallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000001000000000000001 /* PaywallManager.swift */; };
-		C1000002000000000000001 /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000002000000000000001 /* StoreKitManager.swift */; };
 		C1000003000000000000001 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000003000000000000001 /* PaywallView.swift */; };
 		D1000001000000000000001 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000001000000000000001 /* CrashReporter.swift */; };
-		E1000001000000000000002 /* pip-guide-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E2000001000000000000002 /* pip-guide-video.mp4 */; };
+		E1000001000000000000002 /* pip-slow-guide-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E2000001000000000000002 /* pip-slow-guide-video.mp4 */; };
 		F1000001000000000000001 /* notifications.mov in Resources */ = {isa = PBXBuildFile; fileRef = F2000001000000000000001 /* notifications.mov */; };
-/* End PBXBuildFile section */
+		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
+				486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
+				346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434025501223443399045143 /* AutoFixWorkflowView.swift */; };
+				837611352366433428582121 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950124043593401227364632 /* AppDelegate.swift */; };
+				954208369699442397571273 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 688891131442405819145593 /* FeedbackService.swift */; };
+				887053656051426091269260 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606640631211416417165230 /* SceneDelegate.swift */; };
+		/* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		424B745B2EBF88C1009F134B /* NoteWall.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NoteWall.entitlements; sourceTree = "<group>"; };
@@ -56,13 +61,18 @@
 		B2000001000000000000001 /* HomeScreenImageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenImageManager.swift; sourceTree = "<group>"; };
 		B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreenPhotoPickerView.swift; sourceTree = "<group>"; };
 		C2000001000000000000001 /* PaywallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallManager.swift; sourceTree = "<group>"; };
-		C2000002000000000000001 /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
 		C2000003000000000000001 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		D2000001000000000000001 /* CrashReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TroubleshootingView.swift; sourceTree = "<group>"; };
-		E2000001000000000000002 /* pip-guide-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pip-guide-video.mp4"; sourceTree = "<group>"; };
+		E2000001000000000000002 /* pip-slow-guide-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pip-slow-guide-video.mp4"; sourceTree = "<group>"; };
 		F2000001000000000000001 /* notifications.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = notifications.mov; sourceTree = "<group>"; };
-/* End PBXFileReference section */
+		179742655116427522430919 /* QuickActionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QuickActionsManager.swift"; sourceTree = "<group>"; };
+				571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExitFeedbackView.swift"; sourceTree = "<group>"; };
+				434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoFixWorkflowView.swift"; sourceTree = "<group>"; };
+				950124043593401227364632 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
+				688891131442405819145593 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FeedbackService.swift"; sourceTree = "<group>"; };
+				606640631211416417165230 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SceneDelegate.swift"; sourceTree = "<group>"; };
+		/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A4000001000000000000001 /* Frameworks */ = {
@@ -88,7 +98,7 @@
 			children = (
 				A5000002000000000000001 /* NoteWall */,
 				A5000003000000000000001 /* Products */,
-				E2000001000000000000002 /* pip-guide-video.mp4 */,
+				E2000001000000000000002 /* pip-slow-guide-video.mp4 */,
 				F2000001000000000000001 /* notifications.mov */,
 				425035A22ED5ADB20064014E /* Frameworks */,
 			);
@@ -110,7 +120,6 @@
 				B2000001000000000000001 /* HomeScreenImageManager.swift */,
 				B2000002000000000000001 /* HomeScreenPhotoPickerView.swift */,
 				C2000001000000000000001 /* PaywallManager.swift */,
-				C2000002000000000000001 /* StoreKitManager.swift */,
 				C2000003000000000000001 /* PaywallView.swift */,
 				D2000001000000000000001 /* CrashReporter.swift */,
 				A2000009000000000000001 /* Assets.xcassets */,
@@ -121,7 +130,12 @@
 				4283B2332ED25B5E00093E2D /* ShortcutSetupViewModel.swift */,
 				4283B2342ED25B5E00093E2D /* ShortcutVerificationService.swift */,
 				D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */,
-			);
+				179742655116427522430919 /* QuickActionsManager.swift */,
+				571205128022447414641365 /* ExitFeedbackView.swift */,
+				434025501223443399045143 /* AutoFixWorkflowView.swift */,
+				950124043593401227364632 /* AppDelegate.swift */,
+				688891131442405819145593 /* FeedbackService.swift */,
+				606640631211416417165230 /* SceneDelegate.swift */,);
 			path = NoteWall;
 			sourceTree = "<group>";
 		};
@@ -196,7 +210,7 @@
 			files = (
 				42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */,
 				A1000009000000000000001 /* Assets.xcassets in Resources */,
-				E1000001000000000000002 /* pip-guide-video.mp4 in Resources */,
+				E1000001000000000000002 /* pip-slow-guide-video.mp4 in Resources */,
 				F1000001000000000000001 /* notifications.mov in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -224,11 +238,15 @@
 				4283B2362ED25B5E00093E2D /* ShortcutSetupViewModel.swift in Sources */,
 				4283B2372ED25B5E00093E2D /* ShortcutVerificationService.swift in Sources */,
 				4283B2382ED25B5E00093E2D /* PIPVideoPlayer.swift in Sources */,
-				C1000002000000000000001 /* StoreKitManager.swift in Sources */,
 				C1000003000000000000001 /* PaywallView.swift in Sources */,
 				D1000001000000000000001 /* CrashReporter.swift in Sources */,
 				874E701C5A960D9C43D2B335 /* TroubleshootingView.swift in Sources */,
-			);
+				652485545120494283652512 /* QuickActionsManager.swift in Sources */,
+				486563549087408615731241 /* ExitFeedbackView.swift in Sources */,
+				346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */,
+				837611352366433428582121 /* AppDelegate.swift in Sources */,
+				954208369699442397571273 /* FeedbackService.swift in Sources */,
+				887053656051426091269260 /* SceneDelegate.swift in Sources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
@@ -362,6 +380,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -394,6 +413,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;

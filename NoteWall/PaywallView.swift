@@ -12,6 +12,7 @@ struct PaywallView: View {
     
     let triggerReason: PaywallTriggerReason
     let allowDismiss: Bool
+    let applyExitInterceptDiscount: Bool // 30% discount for exit-intercept
     
     @State private var selectedProductIndex = 0  // Default to first package
     @State private var isPurchasing = false
@@ -30,17 +31,19 @@ struct PaywallView: View {
     @State private var benefitCarouselIndex = 0
     @State private var isUserDraggingBenefits = false
     @State private var lastManualSwipeTime: Date = Date()
+    @State private var showRedemptionInstructions = false
+    @State private var copiedPromoCode = false
 
     private let benefitSlides: [BenefitSlide] = [
         BenefitSlide(
             icon: "sparkles",
             title: "Lock Screen Focus",
-            subtitle: "Keep your goals in front of you every single time you pickup your phone."
+            subtitle: "Keep your goals in front of you every single time you pickup your phone to stay locked in."
         ),
         BenefitSlide(
             icon: "checkmark.seal",
             title: "Stay Accountable",
-            subtitle: "See your habits, affirmations, or to-do focus cues 50× a day without opening another app."
+            subtitle: "See your notes, reminders or to-do list up to 498x times a day and never forget things."
         ),
         BenefitSlide(
             icon: "wand.and.rays",
@@ -69,9 +72,10 @@ struct PaywallView: View {
     
     private let benefitsAutoScrollTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     
-    init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true) {
+    init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true, applyExitInterceptDiscount: Bool = false) {
         self.triggerReason = triggerReason
         self.allowDismiss = allowDismiss
+        self.applyExitInterceptDiscount = applyExitInterceptDiscount
     }
     
     var body: some View {
@@ -236,6 +240,12 @@ struct PaywallView: View {
         .onAppear {
             paywallManager.trackPaywallView()
             
+            // Track exit-intercept discount view
+            if applyExitInterceptDiscount {
+                CrashReporter.logMessage("Paywall: Exit-intercept 30% discount shown", level: .info)
+                CrashReporter.setCustomKey("showed_exit_discount", value: "true")
+            }
+            
             // Initialize plan selection immediately if packages are already loaded
             initializePlanSelection()
             
@@ -349,12 +359,21 @@ struct PaywallView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 8)
+                .padding(.top, 20)
                 
                 logoHeader
                     .opacity(animateIn ? 1 : 0)
                     .offset(y: animateIn ? 0 : 12)
                     .animation(.spring(response: 0.6, dampingFraction: 0.85), value: animateIn)
+                
+                // Exit-intercept discount badge
+                if applyExitInterceptDiscount {
+                    exitInterceptDiscountBadge
+                        .opacity(animateIn ? 1 : 0)
+                        .scaleEffect(animateIn ? 1 : 0.9)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.15), value: animateIn)
+                        .padding(.top, 8)
+                }
                 
                 benefitsCarousel
                     .opacity(animateIn ? 1 : 0)
@@ -375,6 +394,16 @@ struct PaywallView: View {
                     .offset(y: animateIn ? 0 : 20)
                     .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.35), value: animateIn)
                 
+                // Redemption instructions for exit-intercept discount
+                if applyExitInterceptDiscount {
+                    redemptionInstructionsButton
+                        .padding(.horizontal, 24)
+                        .padding(.top, 20)
+                        .opacity(animateIn ? 1 : 0)
+                        .scaleEffect(animateIn ? 1 : 0.95)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.4), value: animateIn)
+                }
+                
                 // Continue button (goes to step 2 or purchase directly)
                 Button(action: {
                     if shouldShowTrialStep {
@@ -391,19 +420,28 @@ struct PaywallView: View {
                         handlePurchase()
                     }
                 }) {
-                    HStack(spacing: 8) {
-                        if !shouldShowTrialStep && (isPurchasing || paywallManager.isLoadingOfferings) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        } else {
-                            Text(purchaseButtonTitle)
-                            .font(.headline)
-                            .fontWeight(.bold)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
+                    VStack(spacing: 4) {
+                        HStack(spacing: 8) {
+                            if !shouldShowTrialStep && (isPurchasing || paywallManager.isLoadingOfferings) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            } else {
+                                Text(purchaseButtonTitle)
+                                .font(.headline)
+                                .fontWeight(.bold)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                            }
+                        }
+                        
+                        // Show redemption reminder for exit-intercept
+                        if applyExitInterceptDiscount && !isPurchasing && !paywallManager.isLoadingOfferings {
+                            Text("(Redeem code NOTEWALL30 for 30% off the yearly plan)")
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
                         }
                     }
-                    .frame(height: 60)
+                    .frame(height: applyExitInterceptDiscount ? 70 : 60)
                     .frame(maxWidth: .infinity)
                     .background(Color.appAccent)
                     .foregroundColor(.white)
@@ -415,36 +453,48 @@ struct PaywallView: View {
                 .opacity(animateIn ? 1 : 0)
                 .scaleEffect(animateIn ? 1 : 0.9)
                 .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.7), value: animateIn)
-                .padding(.top, 8)
                 
                 // Terms & Privacy and Restore Purchases
-                HStack(spacing: 24) {
+                HStack(spacing: 20) {
                     Button("Terms") {
                         if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
                             UIApplication.shared.open(url)
                         }
                     }
-                    .font(.caption)
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    
+                    Button("EULA") {
+                        if let url = URL(string: "https://peat-appendix-c3c.notion.site/END-USER-LICENSE-AGREEMENT-2b7f6a63758f80a58aebf0207e51f7fb") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    
+                    Button("Privacy") {
+                        if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .font(.system(size: 14))
+                    .foregroundColor(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
                     
                     Button("Restore Purchases") {
                         Task {
                             await paywallManager.restoreRevenueCatPurchases()
                         }
                     }
-                    .font(.caption)
+                    .font(.system(size: 14))
                     .foregroundColor(.secondary)
-
-                    Button("Privacy") {
-                        if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
-                            UIApplication.shared.open(url)
-                        }
-                    }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 24)
-                .padding(.top, 0)
+                .padding(.top, -8)
                 .opacity(animateIn ? 1 : 0)
                 .animation(.easeIn.delay(0.7), value: animateIn)
         }
@@ -458,7 +508,7 @@ struct PaywallView: View {
     private var step2TrialExplanation: some View {
         paywallScrollView {
         VStack(spacing: 20) {
-                // Close button
+                // Close button at top
                 HStack {
                     Spacer()
                     Button(action: {
@@ -471,7 +521,7 @@ struct PaywallView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, -6)
+                .padding(.top, 20)
                 // Header
                 VStack(spacing: 8) {
                     Text("How your free trial works")
@@ -605,6 +655,94 @@ struct PaywallView: View {
         .padding(.horizontal, 12)
     }
     
+    private var exitInterceptDiscountBadge: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "star.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.yellow)
+                
+                Text("SPECIAL OFFER")
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                
+                Image(systemName: "star.fill")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.yellow)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.appAccent, Color.appAccent.opacity(0.8)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .overlay(
+                        Capsule()
+                            .stroke(Color.yellow.opacity(0.5), lineWidth: 1)
+                    )
+                    .shadow(color: Color.appAccent.opacity(0.5), radius: 12, x: 0, y: 4)
+            )
+            
+            VStack(spacing: 8) {
+                Text("30% OFF Yearly Plan - Your Exclusive Code:")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
+                
+                // Promo code display
+                Button(action: {
+                    UIPasteboard.general.string = "NOTEWALL30"
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
+                    
+                    // Show checkmark animation
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        copiedPromoCode = true
+                    }
+                    
+                    // Reset after 2 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            copiedPromoCode = false
+                        }
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Text("NOTEWALL30")
+                            .font(.system(size: 18, weight: .black, design: .monospaced))
+                            .foregroundColor(.appAccent)
+                        
+                        Image(systemName: copiedPromoCode ? "checkmark.circle.fill" : "doc.on.doc.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(copiedPromoCode ? .green : .appAccent.opacity(0.7))
+                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: copiedPromoCode)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.appAccent.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(copiedPromoCode ? Color.green.opacity(0.5) : Color.appAccent.opacity(0.5), lineWidth: 1.5)
+                            )
+                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: copiedPromoCode)
+                    )
+                }
+                
+                Text(copiedPromoCode ? "✓ Copied to clipboard!" : "Tap to copy code")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(copiedPromoCode ? .green : .white.opacity(0.5))
+                    .animation(.easeInOut(duration: 0.2), value: copiedPromoCode)
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+    
     private var benefitsCarousel: some View {
         let slides = loopingBenefitSlides
         let originalCount = benefitSlides.count
@@ -728,7 +866,7 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(.tertiarySystemFill).opacity(0.6))
+                .fill(Color(red: 27/255, green: 28/255, blue: 37/255).opacity(0.6))
         )
     }
     
@@ -748,6 +886,71 @@ struct PaywallView: View {
                     .foregroundColor(.appAccent)
             }
             .buttonStyle(.plain)
+        }
+    }
+    
+    private var redemptionInstructionsButton: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            showRedemptionInstructions = true
+        }) {
+            HStack(spacing: 12) {
+                Image(systemName: "questionmark.circle.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                
+                Text("How to use this code?")
+                    .font(.system(size: 18, weight: .semibold))
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.appAccent.opacity(0.9), Color.appAccent.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.appAccent, lineWidth: 1.5)
+                    )
+                    .shadow(color: Color.appAccent.opacity(0.4), radius: 8, x: 0, y: 4)
+            )
+        }
+        .buttonStyle(.plain)
+        .alert("How to Redeem Your 30% Discount", isPresented: $showRedemptionInstructions) {
+            Button("Copy Code", action: {
+                UIPasteboard.general.string = "NOTEWALL30"
+                copiedPromoCode = true
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+            })
+            Button("Open App Store", action: {
+                openRedeemURL()
+            })
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("""
+            1. Copy the code: NOTEWALL30
+            2. Subscribe to the YEARLY plan below
+            3. Open App Store → Profile → Redeem
+            4. Paste the code to get 30% off!
+            
+            The discount applies to the yearly subscription only.
+            """)
+        }
+    }
+    
+    private func openRedeemURL() {
+        // Open App Store redeem page
+        if let url = URL(string: "https://apps.apple.com/redeem") {
+            UIApplication.shared.open(url)
         }
     }
     
@@ -860,7 +1063,7 @@ struct PaywallView: View {
                 subtitle: "",
                 priceText: "€14.99",
                 highlight: true,
-                trialDays: 7
+                trialDays: 3
             ),
             FallbackPlan(
                 kind: .monthly,
@@ -868,7 +1071,7 @@ struct PaywallView: View {
                 subtitle: "",
                 priceText: "€6.99",
                 highlight: false,
-                trialDays: 7
+                trialDays: 3
             )
         ]
     }
@@ -882,7 +1085,7 @@ struct PaywallView: View {
         return fallbackPlans[selectedProductIndex]
     }
     
-    // Fallback pricing cards for testing before App Store Connect setup
+    // Fallback pricing cards when StoreKit packages are not available
     private var fallbackPricingCards: some View {
         VStack(spacing: 16) {
             ForEach(Array(fallbackPlans.enumerated()), id: \.element.id) { index, plan in
@@ -892,22 +1095,46 @@ struct PaywallView: View {
     }
     
     private func fallbackPricingCard(plan: FallbackPlan, index: Int) -> some View {
+        let isYearlyPlan = plan.kind == .yearly
+        let showExitDiscount = applyExitInterceptDiscount && isYearlyPlan
+        
+        // Determine display price and original price
+        let displayPrice: String
+        let originalPrice: String?
+        if showExitDiscount {
+            // Show $9.99 (or €9.99) as discounted price
+            displayPrice = plan.priceText.contains("€") ? "€9.99" : "$9.99"
+            originalPrice = plan.priceText // Show original with strikethrough
+        } else {
+            displayPrice = plan.priceText
+            originalPrice = nil
+        }
+        
         let perMonthText: String?
         if plan.kind == .monthly {
-            perMonthText = "\(plan.priceText)/mo"
+            perMonthText = "\(displayPrice)/mo"
         } else if plan.kind == .yearly {
-            // Calculate per month for yearly: €14.99 / 12 = €1.25/mo
-            perMonthText = "€1.25/mo"
+            if showExitDiscount {
+                // Calculate per month for discounted yearly: $9.99 / 12 = $0.83/mo
+                perMonthText = plan.priceText.contains("€") ? "€0.83/mo" : "$0.83/mo"
+            } else {
+                // Calculate per month for yearly: €14.99 / 12 = €1.25/mo
+                perMonthText = plan.priceText.contains("€") ? "€1.25/mo" : "$1.25/mo"
+            }
         } else {
             perMonthText = nil
         }
         
         let badgeText: String?
         if plan.kind == .yearly {
-            // Monthly is €6.99 × 12 = €83.88
-            // Yearly is €14.99
-            // Savings: (83.88 - 14.99) / 83.88 = 82%
-            badgeText = "82% OFF"
+            if showExitDiscount {
+                badgeText = "USE CODE FOR 30% OFF"
+            } else {
+                // Monthly is €6.99 × 12 = €83.88
+                // Yearly is €14.99
+                // Savings: (83.88 - 14.99) / 83.88 = 82%
+                badgeText = "82% OFF"
+            }
         } else {
             badgeText = nil
         }
@@ -915,7 +1142,8 @@ struct PaywallView: View {
         return selectablePricingCard(
             planLabel: plan.label,
             subtitle: plan.subtitle,
-            price: plan.priceText,
+            price: displayPrice,
+            originalPrice: originalPrice,
             highlight: plan.highlight,
             index: index,
             perMonthText: perMonthText,
@@ -936,15 +1164,36 @@ struct PaywallView: View {
         }
 
         let highlight = false
+        
+        // Determine if this is a yearly plan
+        let isYearlyPlan = planLabel.lowercased().contains("year")
+        
+        // Show discounted price if exit-intercept discount is enabled
+        let displayPrice: String
+        let showOriginalPrice: String?
+        
+        if applyExitInterceptDiscount && isYearlyPlan {
+            // Show $9.99 (or equivalent) as discounted price for exit-intercept
+            let discountedPriceString = getExitInterceptDiscountedPrice(for: package)
+            displayPrice = discountedPriceString
+            showOriginalPrice = package.localizedPriceString // Show original with strikethrough
+        } else {
+            displayPrice = package.localizedPriceString
+            showOriginalPrice = nil
+        }
 
+        // Only show "USE CODE FOR 30% OFF" badge on yearly plans
+        let exitBadgeText = (applyExitInterceptDiscount && isYearlyPlan) ? "USE CODE FOR 30% OFF" : nil
+        
         return selectablePricingCard(
             planLabel: planLabel,
             subtitle: "", // No subtitle
-            price: package.localizedPriceString,
+            price: displayPrice,
+            originalPrice: showOriginalPrice,
             highlight: highlight,
             index: index,
-            perMonthText: perMonthText(for: package, displayAlways: true),
-            badgeText: discountBadgeText(for: package)
+            perMonthText: perMonthText(for: package, displayAlways: true, applyDiscount: applyExitInterceptDiscount && isYearlyPlan),
+            badgeText: exitBadgeText ?? discountBadgeText(for: package)
         )
     }
 
@@ -952,6 +1201,7 @@ struct PaywallView: View {
         planLabel: String,
         subtitle: String,
         price: String,
+        originalPrice: String? = nil,
         highlight: Bool,
         index: Int,
         perMonthText: String? = nil,
@@ -999,9 +1249,19 @@ struct PaywallView: View {
                     
                     // For yearly, show price below the title
                     if isYearlyPlan {
-                        Text(price)
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(.primary)
+                        HStack(spacing: 8) {
+                            Text(price)
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                            
+                            // Show original price strikethrough if discount applied
+                            if let originalPrice = originalPrice {
+                                Text(originalPrice)
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .foregroundColor(.secondary)
+                                    .strikethrough(true, color: .secondary)
+                            }
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1020,7 +1280,7 @@ struct PaywallView: View {
             .padding(.horizontal, 20)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color(.systemBackground))
+                    .fill(Color.appAccent.opacity(0.12))
                     .shadow(color: (isSelected && isYearlyPlan) ? Color.appAccent.opacity(0.25) : Color.black.opacity(0.05), radius: isSelected ? 14 : 6, x: 0, y: 4)
             )
             .overlay(
@@ -1159,7 +1419,7 @@ struct PaywallView: View {
     private func ctaTitle(for plan: PlanKind, trialDays: Int?) -> String {
         switch plan {
         case .yearly:
-            let days = trialDays ?? 7
+            let days = trialDays ?? 3
             return "Start \(days)-day free trial"
         case .monthly:
             return "Continue"
@@ -1191,7 +1451,9 @@ struct PaywallView: View {
     
     @ViewBuilder
     private func paywallScrollView<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
+        ScrollView(.vertical, showsIndicators: false) {
+            content()
+        }
     }
     
     private func handlePurchase() {
@@ -1273,7 +1535,6 @@ struct PaywallView: View {
         let package = selectedPackage
         let planKind = planKind(for: package)
         let trialDays = trialDaysForSelectedPackage(package)
-        let reminderDay = max((trialDays ?? 3) - 2, 1)
         let iconSize: CGFloat = 44
         let itemSpacing: CGFloat = 18
 
@@ -1286,30 +1547,23 @@ struct PaywallView: View {
                 iconName: "crown.fill",
                 iconColor: .appAccent,
                 title: "Today",
-                subtitle: "Start enjoying full access to unlimited wallpapers."
+                subtitle: "Start staying locked in and focused on what matters."
             )
         ]
 
         if let trialDays {
-            if planKind == .yearly {
+            // Calculate reminder day: 1 day before trial ends (so user has time to cancel)
+            // For 3-day trial: remind on day 2 = "Tomorrow" (1 day from now)
+            // For 7-day trial: remind on day 6 = "In 5 days" (5 days from now)
+            let reminderDay = max(trialDays - 2, 1)
             events.append(
-            TimelineEvent(
-                iconName: "bell.fill",
-                iconColor: .appAccent,
-                        title: "After 5 days",
-                        subtitle: "We’ll remind you so you only keep NoteWall+ if you love it."
-                    )
-                )
-            } else {
-                events.append(
-                    TimelineEvent(
-                        iconName: "bell.fill",
-                        iconColor: .appAccent,
-                        title: reminderDay == 1 ? "Tomorrow" : "In \(reminderDay) days",
-                subtitle: "You'll get a reminder that your trial is about to end."
+                TimelineEvent(
+                    iconName: "bell.fill",
+                    iconColor: .appAccent,
+                    title: reminderDay == 1 ? "Tomorrow" : "In \(reminderDay) days",
+                    subtitle: "We'll remind you so you only keep NoteWall+ if you love it."
                 )
             )
-            }
 
             events.append(
             TimelineEvent(
@@ -1415,22 +1669,66 @@ struct PaywallView: View {
         }
     }
     
-    private func perMonthText(for package: Package, displayAlways: Bool = false) -> String? {
+    private func perMonthText(for package: Package, displayAlways: Bool = false, applyDiscount: Bool = false) -> String? {
         let kind = planKind(for: package)
         
         // For monthly, show price/mo
         if kind == .monthly {
-            return "\(package.localizedPriceString)/mo"
+            let price = applyDiscount ? getDiscountedPriceString(for: package) : package.localizedPriceString
+            return "\(price)/mo"
         }
         
         // For yearly, calculate and show per month
-        if kind == .yearly, let value = perMonthPrice(for: package) {
-        let formatter = currencyFormatter(for: package)
-        let formatted = formatter.string(from: NSDecimalNumber(decimal: value))
-        return formatted.map { "\($0)/mo" }
+        if kind == .yearly {
+            let formatter = currencyFormatter(for: package)
+            let locale = formatter.locale ?? Locale.current
+            let currencyCode = locale.currencyCode ?? "USD"
+            
+            if applyDiscount {
+                // For exit-intercept discount, show $9.99/12 = $0.83/mo
+                let discountedYearlyPrice: Decimal = currencyCode == "EUR" ? 9.99 : 9.99
+                let perMonthValue = discountedYearlyPrice / 12
+                let formatted = formatter.string(from: NSDecimalNumber(decimal: perMonthValue))
+                return formatted.map { "\($0)/mo" }
+            } else if let value = perMonthPrice(for: package) {
+                let formatted = formatter.string(from: NSDecimalNumber(decimal: value))
+                return formatted.map { "\($0)/mo" }
+            }
         }
         
         return nil
+    }
+    
+    /// Calculates and returns the discounted price string (30% off) for a package
+    private func getDiscountedPriceString(for package: Package) -> String {
+        let originalPrice = package.storeProduct.price
+        let discountedPrice = originalPrice * 0.7 // 30% discount
+        
+        let formatter = currencyFormatter(for: package)
+        return formatter.string(from: NSDecimalNumber(decimal: discountedPrice)) ?? package.localizedPriceString
+    }
+    
+    /// Returns $9.99 (or equivalent) for exit-intercept discount display
+    private func getExitInterceptDiscountedPrice(for package: Package) -> String {
+        let formatter = currencyFormatter(for: package)
+        let locale = formatter.locale ?? Locale.current
+        
+        // Determine currency and set appropriate discounted price
+        let currencyCode = locale.currencyCode ?? "USD"
+        let discountedAmount: Decimal
+        
+        // Set $9.99 for USD, €9.99 for EUR, or equivalent
+        if currencyCode == "EUR" {
+            discountedAmount = 9.99
+        } else if currencyCode == "USD" {
+            discountedAmount = 9.99
+        } else {
+            // For other currencies, calculate 33% off (to get close to $9.99 from $14.99)
+            let originalPrice = package.storeProduct.price
+            discountedAmount = originalPrice * 0.67 // ~33% discount to approximate $9.99
+        }
+        
+        return formatter.string(from: NSDecimalNumber(decimal: discountedAmount)) ?? "$9.99"
     }
     
     private func discountBadgeText(for package: Package) -> String? {
@@ -1532,7 +1830,7 @@ struct PaywallView: View {
             12. FREE TRIAL TERMS
             
             • New users receive 3 free wallpaper exports to try the app
-            • Premium subscriptions may include a free trial period (typically 5-7 days)
+            • Premium subscriptions may include a free trial period (typically 3 days)
             • You will be charged at the end of the trial period unless you cancel before it ends
             • To cancel: Settings app → [Your Name] → Subscriptions → NoteWall → Cancel Subscription
             • Free trials are available to new subscribers only

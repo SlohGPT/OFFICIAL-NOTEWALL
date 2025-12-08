@@ -4,6 +4,11 @@ struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showWallpaperUpdateLoading = false
     @State private var showTroubleshooting = false
+    
+    // Quick Actions state
+    @State private var showExitFeedback = false
+    @State private var showDiscountedPaywall = false
+    @State private var shouldRestartOnboarding = false
 
     var body: some View {
         ZStack {
@@ -39,11 +44,139 @@ struct MainTabView: View {
                 selectedTab = 0
             }
         }
+        // Quick Action modals
+        .sheet(isPresented: $showExitFeedback) {
+            ExitFeedbackView()
+        }
         .sheet(isPresented: $showTroubleshooting) {
             TroubleshootingView(
                 isPresented: $showTroubleshooting,
-                shouldRestartOnboarding: .constant(false)
+                shouldRestartOnboarding: $shouldRestartOnboarding
             )
+        }
+        .sheet(isPresented: $showDiscountedPaywall) {
+            if #available(iOS 15.0, *) {
+                PaywallView(
+                    triggerReason: .exitIntercept,
+                    allowDismiss: true,
+                    applyExitInterceptDiscount: true
+                )
+            }
+        }
+        // Quick Action handler
+        .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
+            #if DEBUG
+            print("📥 MainTabView: Received quick action notification")
+            #endif
+            handleQuickAction(notification)
+        }
+        .onAppear {
+            // Check if there's a pending Quick Action on app appear
+            if let triggeredAction = QuickActionsManager.shared.triggeredAction {
+                #if DEBUG
+                print("📥 MainTabView: Found pending Quick Action on appear - \(triggeredAction.title)")
+                #endif
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                    #if DEBUG
+                    print("📥 MainTabView: Processing pending Quick Action after delay")
+                    #endif
+                    switch triggeredAction {
+                    case .claimDiscount:
+                        if !PaywallManager.shared.isPremium {
+                            #if DEBUG
+                            print("✅ MainTabView: Opening discounted paywall (from appear)")
+                            #endif
+                            self.showDiscountedPaywall = true
+                        }
+                    case .giveFeedback:
+                        #if DEBUG
+                        print("✅ MainTabView: Opening feedback modal (from appear)")
+                        #endif
+                        self.showExitFeedback = true
+                    case .autoFix:
+                        #if DEBUG
+                        print("✅ MainTabView: Opening troubleshooting workflow (from appear)")
+                        #endif
+                        self.showTroubleshooting = true
+                    }
+                    QuickActionsManager.shared.clearTriggeredAction()
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            // When app comes to foreground, check for pending Quick Actions
+            #if DEBUG
+            print("📱 MainTabView: App entering foreground, checking for Quick Actions")
+            #endif
+            if let triggeredAction = QuickActionsManager.shared.triggeredAction {
+                #if DEBUG
+                print("📥 MainTabView: Found pending Quick Action on foreground - \(triggeredAction.title)")
+                #endif
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.handleQuickAction(Notification(name: .quickActionTriggered, object: triggeredAction))
+                }
+            }
+        }
+    }
+    
+    // MARK: - Quick Action Handler
+    
+    private func handleQuickAction(_ notification: Notification) {
+        guard let actionType = notification.object as? QuickActionsManager.QuickActionType else {
+            #if DEBUG
+            print("⚠️ MainTabView: Invalid quick action notification object")
+            #endif
+            return
+        }
+        
+        #if DEBUG
+        print("🎬 MainTabView: Handling quick action - \(actionType.title)")
+        #endif
+        
+        // Provide haptic feedback immediately
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Open the page immediately (no delay needed if app is already running)
+        DispatchQueue.main.async {
+            #if DEBUG
+            print("🎯 MainTabView: Executing quick action switch statement")
+            #endif
+            
+            switch actionType {
+            case .claimDiscount:
+                // Safety check: Only show discount to non-premium users
+                if !PaywallManager.shared.isPremium {
+                    #if DEBUG
+                    print("✅ MainTabView: Setting showDiscountedPaywall = true")
+                    #endif
+                    self.showDiscountedPaywall = true
+                } else {
+                    #if DEBUG
+                    print("⚠️ MainTabView: Blocked discount for premium user")
+                    #endif
+                }
+                
+            case .giveFeedback:
+                #if DEBUG
+                print("✅ MainTabView: Setting showExitFeedback = true")
+                #endif
+                self.showExitFeedback = true
+                
+            case .autoFix:
+                #if DEBUG
+                print("✅ MainTabView: Setting showTroubleshooting = true")
+                #endif
+                self.showTroubleshooting = true
+            }
+            
+            // Clear the triggered action
+            QuickActionsManager.shared.clearTriggeredAction()
+            
+            // Verify state was set
+            #if DEBUG
+            print("🔍 MainTabView: State after action - showExitFeedback: \(self.showExitFeedback), showTroubleshooting: \(self.showTroubleshooting), showDiscountedPaywall: \(self.showDiscountedPaywall)")
+            #endif
         }
     }
 }

@@ -7,6 +7,12 @@ struct NoteWallApp: App {
     @State private var showOnboarding = false
     
     private let onboardingVersion = 3
+    
+    // Quick Actions integration
+    @StateObject private var quickActionsManager = QuickActionsManager.shared
+    
+    // AppDelegate for handling Quick Actions
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
         // Initialize crash reporting
@@ -22,16 +28,18 @@ struct NoteWallApp: App {
         if !hasCompletedSetup {
             PaywallManager.shared.resetForFreshInstall()
         }
+        
+        // Register Quick Actions for exit-intercept strategy
+        QuickActionsManager.shared.registerQuickActions()
     }
 
     private func configureRevenueCat() {
         let configuration = Configuration
-            .builder(withAPIKey: "test_VXwqNhGerYQUCqvvM2NEltrrEhM")
+            .builder(withAPIKey: "appl_VuulGamLrpZVzgEymEJnflZNEzs")
             .with(entitlementVerificationMode: .informational)
             .build()
 
         Purchases.configure(with: configuration)
-        // Production: Use default log level (errors only)
         PaywallManager.shared.connectRevenueCat()
     }
     
@@ -76,9 +84,27 @@ struct NoteWallApp: App {
                 .onAppear {
                     // Show onboarding only for users who haven't completed setup yet
                     showOnboarding = !hasCompletedSetup
+                    
+                    // Handle Quick Action if app was launched via one
+                    if let triggeredAction = quickActionsManager.triggeredAction {
+                        print("🎬 NoteWallApp: App launched with Quick Action - \(triggeredAction.title)")
+                        
+                        // Post notification after a longer delay to ensure MainTabView is ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                            print("📤 NoteWallApp: Posting quick action notification")
+                            NotificationCenter.default.post(
+                                name: .quickActionTriggered,
+                                object: triggeredAction
+                            )
+                        }
+                    }
                 }
                 .onChange(of: hasCompletedSetup) { newValue in
                     showOnboarding = !newValue
+                }
+                .onChange(of: PaywallManager.shared.isPremium) { _ in
+                    // Update Quick Actions when premium status changes
+                    QuickActionsManager.shared.refreshQuickActions()
                 }
                 .onOpenURL { url in
                     // Handle URL scheme when app is opened via notewall://

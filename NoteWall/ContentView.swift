@@ -9,23 +9,6 @@ struct ContentView: View {
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("hasShownAutoUpdatePrompt") private var hasShownAutoUpdatePrompt = false
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
-    
-    // Computed property for auto-update preference (nil = not set, true/false = user choice)
-    private var autoUpdateWallpaperAfterDeletion: Bool? {
-        get {
-            if autoUpdateWallpaperAfterDeletionRaw.isEmpty {
-                return nil
-            }
-            return autoUpdateWallpaperAfterDeletionRaw == "true"
-        }
-        set {
-            if let value = newValue {
-                autoUpdateWallpaperAfterDeletionRaw = value ? "true" : "false"
-            } else {
-                autoUpdateWallpaperAfterDeletionRaw = ""
-            }
-        }
-    }
     @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
@@ -210,9 +193,6 @@ struct ContentView: View {
             finalizePendingDeletion: finalizePendingDeletion,
             deleteSelectedNotes: deleteSelectedNotes,
             loadNotes: loadNotes,
-            setAutoUpdatePreference: { value in
-                autoUpdateWallpaperAfterDeletionRaw = value ? "true" : "false"
-            },
             handleNotesChangedAfterDeletion: handleNotesChangedAfterDeletion
         )
     }
@@ -479,14 +459,7 @@ struct ContentView: View {
         pendingDeletionIndex = nil
 
         saveNotes()
-        
-        // Check if this is first deletion after onboarding and preference not set
-        if hasCompletedSetup && !hasShownAutoUpdatePrompt && autoUpdateWallpaperAfterDeletion == nil {
-            hasShownAutoUpdatePrompt = true
-            activeAlert = .autoUpdateWallpaperPrompt
-        } else {
-            handleNotesChangedAfterDeletion()
-        }
+        handleNotesChangedAfterDeletion()
     }
 
     private func deleteSelectedNotes() {
@@ -497,15 +470,8 @@ struct ContentView: View {
         notes.removeAll { selectedNotes.contains($0.id) }
         selectedNotes.removeAll()
         saveNotes()
-        
-        // Check if this is first deletion after onboarding and preference not set
-        if hasCompletedSetup && !hasShownAutoUpdatePrompt && autoUpdateWallpaperAfterDeletion == nil {
-            hasShownAutoUpdatePrompt = true
-            activeAlert = .autoUpdateWallpaperPrompt
-        } else {
-            handleNotesChangedAfterDeletion()
-            activeAlert = nil
-        }
+        handleNotesChangedAfterDeletion()
+        activeAlert = nil
     }
 
     private func updateWallpaper() {
@@ -646,9 +612,15 @@ struct ContentView: View {
                 NotificationCenter.default.post(name: .wallpaperGenerationFinished, object: nil)
                 
                 // Auto-open shortcut after a delay to ensure wallpaper is fully saved
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    print("🚀 Opening shortcut to apply wallpaper...")
-                    self.openShortcut()
+                // CRITICAL: Only auto-open shortcut if user has completed setup
+                // During onboarding, the OnboardingView handles shortcut opening at the right time
+                if self.hasCompletedSetup {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("🚀 Opening shortcut to apply wallpaper...")
+                        self.openShortcut()
+                    }
+                } else {
+                    print("ℹ️ Skipping auto-open shortcut (setup not completed, onboarding will handle)")
                 }
             }
         }
@@ -664,8 +636,8 @@ struct ContentView: View {
 
         if notes.isEmpty {
             setBlankWallpaper()
-        } else if autoUpdateWallpaperAfterDeletion == true {
-            // Auto-update wallpaper after deletion if user enabled it
+        } else {
+            // Always auto-update wallpaper after deletion
             updateWallpaper()
         }
     }
@@ -740,7 +712,6 @@ private struct ContentViewContext {
     let finalizePendingDeletion: () -> Void
     let deleteSelectedNotes: () -> Void
     let loadNotes: () -> Void
-    let setAutoUpdatePreference: (Bool) -> Void
     let handleNotesChangedAfterDeletion: () -> Void
 }
 
@@ -749,7 +720,6 @@ private enum ActiveAlert: String, Identifiable {
     case deleteNote
     case deleteSelectedNotes
     case wallpaperFull
-    case autoUpdateWallpaperPrompt
 
     var id: String { rawValue }
 }
@@ -922,25 +892,6 @@ private struct RootConfiguredModifier: ViewModifier {
                     // Light impact haptic for alert dismissal
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
-                }
-            )
-        case .autoUpdateWallpaperPrompt:
-            return Alert(
-                title: Text("Update Wallpaper Automatically?"),
-                message: Text("Would you like NoteWall to automatically update your lock screen wallpaper when you delete notes, or would you prefer to update it manually?"),
-                primaryButton: .default(Text("Update Automatically")) {
-                    // Light impact haptic
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    context.setAutoUpdatePreference(true)
-                    context.handleNotesChangedAfterDeletion()
-                },
-                secondaryButton: .default(Text("Update Manually")) {
-                    // Light impact haptic
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    context.setAutoUpdatePreference(false)
-                    context.handleNotesChangedAfterDeletion()
                 }
             )
         }

@@ -71,55 +71,85 @@ struct WallpaperUpdateLoadingView: View {
     // MARK: - Loading View
     
     private var loadingView: some View {
-        VStack(spacing: 22) {
-            ZStack {
-                // Outer subtle glow
-                Circle()
-                    .fill(Color.appAccent.opacity(0.08))
-                    .frame(width: 88, height: 88)
-                    .scaleEffect(pulseScale)
-                
-                // Background track
-                Circle()
-                    .stroke(Color.appAccent.opacity(0.15), lineWidth: 5)
-                    .frame(width: 76, height: 76)
-                
-                // Progress circle that fills up
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        Color.appAccent,
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                    )
-                    .frame(width: 76, height: 76)
-                    .rotationEffect(.degrees(-90)) // Start from top
-                    .shadow(color: Color.appAccent.opacity(0.4), radius: 6, x: 0, y: 2)
-                
-                // Countdown number in center
-                VStack(spacing: 2) {
-                    Text("\(remainingSeconds)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 22) {
+                ZStack {
+                    // Outer subtle glow
+                    Circle()
+                        .fill(Color.appAccent.opacity(0.08))
+                        .frame(width: 88, height: 88)
+                        .scaleEffect(pulseScale)
                     
-                    Text("sec")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
+                    // Background track
+                    Circle()
+                        .stroke(Color.appAccent.opacity(0.15), lineWidth: 5)
+                        .frame(width: 76, height: 76)
+                    
+                    // Progress circle that fills up
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            Color.appAccent,
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round)
+                        )
+                        .frame(width: 76, height: 76)
+                        .rotationEffect(.degrees(-90)) // Start from top
+                        .shadow(color: Color.appAccent.opacity(0.4), radius: 6, x: 0, y: 2)
+                    
+                    // Countdown number in center
+                    VStack(spacing: 2) {
+                        Text("\(remainingSeconds)")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        
+                        Text("sec")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
                 }
+                
+                // Status text
+                Text("Updating wallpaper...")
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundColor(.secondary)
             }
+            .padding(.vertical, 40)
+            .padding(.horizontal, 48)
+            .background(
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.3), radius: 28, x: 0, y: 14)
+            )
             
-            // Status text
-            Text("Updating wallpaper...")
-                .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.secondary)
+            // Cancel X button
+            Button(action: handleCancel) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(.systemGray))
+                    .frame(width: 28, height: 28)
+                    .background(
+                        Circle()
+                            .fill(Color(.systemGray5))
+                    )
+            }
+            .offset(x: -8, y: 8)
         }
-        .padding(.vertical, 40)
-        .padding(.horizontal, 48)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.3), radius: 28, x: 0, y: 14)
-        )
         .padding(32)
+    }
+    
+    private func handleCancel() {
+        // Light impact haptic for cancel
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        print("❌ WallpaperUpdateLoading: User cancelled loading")
+        
+        // Cleanup and dismiss
+        cleanup()
+        
+        withAnimation(.easeOut(duration: 0.2)) {
+            isPresented = false
+        }
     }
     
     // MARK: - Success View

@@ -9,7 +9,10 @@ class SocialSharingManager {
     /// Share wallpaper design (without personal notes) for viral growth
     func shareWallpaperDesign(image: UIImage, from viewController: UIViewController) {
         let shareText = "Created my productivity wallpaper with NoteWall! 📱✨ #NoteWall #ProductivityHack #LockScreen"
-        let appURL = URL(string: "https://apps.apple.com/app/notewall/idYOUR_APP_ID")!
+        guard let appURL = URL(string: "https://apps.apple.com/app/id6755601996") else {
+            print("⚠️ Invalid app URL")
+            return
+        }
         
         let activityViewController = UIActivityViewController(
             activityItems: [shareText, image, appURL],
@@ -43,7 +46,10 @@ class SocialSharingManager {
         #ProductivityHack #NoteWall #LockScreen
         """
         
-        let appURL = URL(string: "https://apps.apple.com/app/notewall/idYOUR_APP_ID")!
+        guard let appURL = URL(string: "https://apps.apple.com/app/id6755601996") else {
+            print("⚠️ Invalid app URL")
+            return
+        }
         
         let activityViewController = UIActivityViewController(
             activityItems: [shareText, appURL],

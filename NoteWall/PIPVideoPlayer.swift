@@ -48,6 +48,13 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     
     // MARK: - Private Properties
     
+    /// Debug print helper - only prints in DEBUG builds
+    private func debugPrint(_ message: String) {
+        #if DEBUG
+        print(message)
+        #endif
+    }
+    
     /// The AVPlayer instance for video playback
     private var player: AVPlayer?
     
@@ -94,11 +101,15 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     /// This MUST be called before creating the PiP controller.
     private func setupAudioSession() {
         do {
+            // CRITICAL: Use .playback without .mixWithOthers for PiP to work
+            // PiP requires exclusive audio playback
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .moviePlayback)
             try AVAudioSession.sharedInstance().setActive(true)
-            print("✅ PIPVideoPlayerManager: Audio session configured for PiP")
+            debugPrint("✅ PIPVideoPlayerManager: Audio session configured for PiP")
         } catch {
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: Failed to set up audio session: \(error)")
+            #endif
         }
     }
     
@@ -178,7 +189,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         // Mark as loaded to trigger view updates
         hasLoadedVideo = true
         
-        print("✅ PIPVideoPlayerManager: Video loaded successfully")
+        debugPrint("✅ PIPVideoPlayerManager: Video loaded successfully")
         return true
     }
     
@@ -186,33 +197,47 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     /// - Returns: true if playback started, false otherwise
     func play() -> Bool {
         guard let player = player else {
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: Cannot play - player is nil")
+            #endif
             return false
         }
         
         guard isReadyToPlay else {
-            print("⚠️ PIPVideoPlayerManager: Player not ready yet, will play when ready")
+            debugPrint("⚠️ PIPVideoPlayerManager: Player not ready yet, will play when ready")
             // Set up observer to play when ready
             setupPlayerReadyObserver()
             return false
         }
         
-        player.play()
-        print("✅ PIPVideoPlayerManager: Playback started")
+        // Use playImmediately to force immediate playback without waiting for buffering
+        // This is critical for PiP to work - the video MUST be actively playing
+        player.playImmediately(atRate: 1.0)
+        
+        // Log actual player state
+        debugPrint("✅ PIPVideoPlayerManager: Playback started")
+        debugPrint("   - Player rate after play: \(player.rate)")
+        debugPrint("   - Player timeControlStatus: \(player.timeControlStatus.rawValue)")
+        
         return true
+    }
+    
+    /// Checks if the video is currently playing
+    var isPlaying: Bool {
+        return player?.rate ?? 0 > 0
     }
     
     /// Pauses video playback.
     func pause() {
         player?.pause()
-        print("⏸️ PIPVideoPlayerManager: Playback paused")
+        debugPrint("⏸️ PIPVideoPlayerManager: Playback paused")
     }
     
     /// Stops video playback and resets to beginning.
     func stop() {
         pause()
         player?.seek(to: .zero)
-        print("⏹️ PIPVideoPlayerManager: Playback stopped")
+        debugPrint("⏹️ PIPVideoPlayerManager: Playback stopped")
     }
     
     /// Starts Picture-in-Picture mode.
@@ -220,43 +245,89 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     /// - Returns: true if PiP started successfully, false otherwise
     func startPictureInPicture() -> Bool {
         guard isPiPAvailable else {
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: PiP is not available on this device")
+            #endif
             return false
         }
         
         guard let controller = pipController else {
-            print("❌ PIPVideoPlayerManager: PiP controller is nil - not set up yet")
-            print("   - Player exists: \(player != nil)")
-            print("   - Player layer exists: \(playerLayer != nil)")
+            debugPrint("❌ PIPVideoPlayerManager: PiP controller is nil - not set up yet")
+            debugPrint("   - Player exists: \(player != nil)")
+            debugPrint("   - Player layer exists: \(playerLayer != nil)")
             return false
         }
         
-        guard controller.isPictureInPicturePossible else {
-            print("❌ PIPVideoPlayerManager: PiP is not possible at this time")
-            print("   - Player ready: \(isReadyToPlay)")
-            print("   - Player rate: \(player?.rate ?? 0)")
-            if let layer = playerLayer {
-                print("   - Layer in superlayer: \(layer.superlayer != nil)")
-                print("   - Layer frame: \(layer.frame)")
-            }
-            return false
+        // CRITICAL: Re-activate audio session before starting PiP
+        // This is required for PiP to work when app is backgrounding
+        do {
+            try AVAudioSession.sharedInstance().setActive(true)
+            debugPrint("✅ PIPVideoPlayerManager: Audio session reactivated for PiP")
+        } catch {
+            #if DEBUG
+            print("⚠️ PIPVideoPlayerManager: Failed to reactivate audio session: \(error)")
+            #endif
         }
         
-        // Ensure player is playing - some iOS versions require this
+        // Ensure player is playing before we check PiP readiness. Some iOS versions
+        // won't mark PiP as possible until playback has actually started.
         if let player = player, player.rate == 0 {
-            print("⚠️ PIPVideoPlayerManager: Player not playing, starting playback")
-            player.play()
+            debugPrint("⚠️ PIPVideoPlayerManager: Player not playing, starting playback")
+            player.playImmediately(atRate: 1.0)
         }
-        
+
+        // If PiP isn't possible yet, give the system a brief moment to update after
+        // starting playback and try one more time before failing.
+        guard controller.isPictureInPicturePossible else {
+            debugPrint("❌ PIPVideoPlayerManager: PiP is not possible at this time")
+            debugPrint("   - Player ready: \(isReadyToPlay)")
+            debugPrint("   - Player rate: \(player?.rate ?? 0)")
+            debugPrint("   - Player time control status: \(player?.timeControlStatus.rawValue ?? -1)")
+            if let layer = playerLayer {
+                debugPrint("   - Layer in superlayer: \(layer.superlayer != nil)")
+                debugPrint("   - Layer frame: \(layer.frame)")
+                debugPrint("   - Layer bounds: \(layer.bounds)")
+                if let superlayer = layer.superlayer {
+                    debugPrint("   - Superlayer frame: \(superlayer.frame)")
+                }
+            }
+
+            // Retry shortly after kicking playback just in case the PiP controller
+            // needed the player to be actively rendering.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                guard let self else { return }
+                
+                // Re-check if PiP is possible
+                guard let retryController = self.pipController else { return }
+                
+                #if DEBUG
+                print("🔁 PIPVideoPlayerManager: Retrying PiP start...")
+                print("   - isPictureInPicturePossible: \(retryController.isPictureInPicturePossible)")
+                #endif
+                
+                if retryController.isPictureInPicturePossible {
+                    retryController.startPictureInPicture()
+                } else {
+                    // Force attempt anyway - sometimes isPictureInPicturePossible is wrong
+                    #if DEBUG
+                    print("🔁 PIPVideoPlayerManager: Force-attempting PiP start despite isPictureInPicturePossible being false")
+                    #endif
+                    retryController.startPictureInPicture()
+                }
+            }
+
+            return false
+        }
+
         controller.startPictureInPicture()
-        print("✅ PIPVideoPlayerManager: Picture-in-Picture started")
+        debugPrint("✅ PIPVideoPlayerManager: Picture-in-Picture started")
         return true
     }
     
     /// Stops Picture-in-Picture mode.
     func stopPictureInPicture() {
         pipController?.stopPictureInPicture()
-        print("⏹️ PIPVideoPlayerManager: Picture-in-Picture stopped")
+        debugPrint("⏹️ PIPVideoPlayerManager: Picture-in-Picture stopped")
     }
     
     /// Sets whether PiP should start automatically when the app goes to the background.
@@ -275,6 +346,12 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     /// - Returns: true if PiP controller exists, false otherwise
     var isPiPControllerReady: Bool {
         return pipController != nil
+    }
+    
+    /// Checks if PiP is actually possible right now (controller exists AND iOS says it's ready).
+    /// - Returns: true if PiP can be started immediately
+    var isPiPPossible: Bool {
+        return pipController?.isPictureInPicturePossible ?? false
     }
     
     /// Creates a player layer for use in UIKit views.
@@ -306,7 +383,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
             isPiPAvailable = false
         }
         
-        print("📱 PIPVideoPlayerManager: PiP available: \(isPiPAvailable)")
+        debugPrint("📱 PIPVideoPlayerManager: PiP available: \(isPiPAvailable)")
     }
     
     /// Sets up the AVPictureInPictureController for PiP functionality.
@@ -316,7 +393,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         }
         
         guard isPiPAvailable else {
-            print("⚠️ PIPVideoPlayerManager: PiP not available, skipping controller setup")
+            debugPrint("⚠️ PIPVideoPlayerManager: PiP not available, skipping controller setup")
             return
         }
         
@@ -333,12 +410,12 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         let layer: AVPlayerLayer
         if let existingLayer = self.playerLayer {
             layer = existingLayer
-            print("✅ PIPVideoPlayerManager: Using existing player layer from view hierarchy")
+            debugPrint("✅ PIPVideoPlayerManager: Using existing player layer from view hierarchy")
         } else {
             layer = AVPlayerLayer(player: player)
             layer.videoGravity = .resizeAspect
             self.playerLayer = layer
-            print("✅ PIPVideoPlayerManager: Created new player layer")
+            debugPrint("✅ PIPVideoPlayerManager: Created new player layer")
         }
         
         // Create PiP controller with the view controller for better control
@@ -356,13 +433,13 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
             // Enable automatic PiP start when app backgrounds
             controller.canStartPictureInPictureAutomaticallyFromInline = true
             
-            print("✅ PIPVideoPlayerManager: PiP controller created with content source (no controls)")
+            debugPrint("✅ PIPVideoPlayerManager: PiP controller created with content source (no controls)")
             
             if controller.isPictureInPicturePossible {
-                print("✅ PIPVideoPlayerManager: Picture-in-Picture ready")
+                debugPrint("✅ PIPVideoPlayerManager: Picture-in-Picture ready")
             } else {
-                print("⚠️ PIPVideoPlayerManager: PiP not possible yet")
-                print("   - Player rate: \(player.rate)")
+                debugPrint("⚠️ PIPVideoPlayerManager: PiP not possible yet")
+                debugPrint("   - Player rate: \(player.rate)")
             }
         } else {
             // Fallback for older iOS versions
@@ -374,7 +451,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
                     controller.canStartPictureInPictureAutomaticallyFromInline = true
                 }
                 
-                print("✅ PIPVideoPlayerManager: PiP controller created (legacy)")
+                debugPrint("✅ PIPVideoPlayerManager: PiP controller created (legacy)")
             }
         }
         
@@ -384,7 +461,9 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
                 code: -1,
                 userInfo: [NSLocalizedDescriptionKey: "Failed to create Picture-in-Picture controller"]
             )
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: Failed to create PiP controller")
+            #endif
             playbackError = error
         }
     }
@@ -393,16 +472,16 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     /// This should be called after the layer is added to a view.
     func setupPictureInPictureControllerWithExistingLayer() {
         guard pipController == nil else {
-            print("⚠️ PIPVideoPlayerManager: PiP controller already exists, skipping setup")
+            debugPrint("⚠️ PIPVideoPlayerManager: PiP controller already exists, skipping setup")
             return
         }
         
         guard let playerLayer = self.playerLayer else {
-            print("⚠️ PIPVideoPlayerManager: No player layer available yet, cannot set up PiP controller")
+            debugPrint("⚠️ PIPVideoPlayerManager: No player layer available yet, cannot set up PiP controller")
             return
         }
         
-        print("🔧 PIPVideoPlayerManager: Setting up PiP controller with existing layer")
+        debugPrint("🔧 PIPVideoPlayerManager: Setting up PiP controller with existing layer")
         setupPictureInPictureController()
     }
     
@@ -417,7 +496,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
                 case .readyToPlay:
                     self.isReadyToPlay = true
                     self.playbackError = nil
-                    print("✅ PIPVideoPlayerManager: Player item ready to play")
+                    debugPrint("✅ PIPVideoPlayerManager: Player item ready to play")
                     
                     // If player was waiting to play, start now
                     if self.player?.rate == 0 {
@@ -432,15 +511,17 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
                     )
                     self.isReadyToPlay = false
                     self.playbackError = error
+                    #if DEBUG
                     print("❌ PIPVideoPlayerManager: Player item failed: \(error.localizedDescription)")
+                    #endif
                     
                 case .unknown:
                     self.isReadyToPlay = false
-                    print("⚠️ PIPVideoPlayerManager: Player item status unknown")
+                    debugPrint("⚠️ PIPVideoPlayerManager: Player item status unknown")
                     
                 @unknown default:
                     self.isReadyToPlay = false
-                    print("⚠️ PIPVideoPlayerManager: Player item status unknown default")
+                    debugPrint("⚠️ PIPVideoPlayerManager: Player item status unknown default")
                 }
             }
         }
@@ -473,7 +554,9 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         
         Task { @MainActor [weak self] in
             self?.playbackError = error
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: Playback error: \(error.localizedDescription)")
+            #endif
         }
     }
     
@@ -481,7 +564,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
     @objc private func playerItemDidReachEnd(_ notification: Notification) {
         Task { @MainActor [weak self] in
             guard let self = self, let player = self.player else { return }
-            print("🔄 PIPVideoPlayerManager: Video reached end, looping...")
+            debugPrint("🔄 PIPVideoPlayerManager: Video reached end, looping...")
             player.seek(to: .zero)
             player.play()
         }
@@ -535,27 +618,27 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
     func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             self?.isPiPActive = true
-            print("🎬 PIPVideoPlayerManager: Picture-in-Picture will start")
+            debugPrint("🎬 PIPVideoPlayerManager: Picture-in-Picture will start")
         }
     }
     
     func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             self?.isPiPActive = true
-            print("✅ PIPVideoPlayerManager: Picture-in-Picture started")
+            debugPrint("✅ PIPVideoPlayerManager: Picture-in-Picture started")
         }
     }
     
     func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
-            print("⏹️ PIPVideoPlayerManager: Picture-in-Picture will stop")
+            debugPrint("⏹️ PIPVideoPlayerManager: Picture-in-Picture will stop")
         }
     }
     
     func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             self?.isPiPActive = false
-            print("✅ PIPVideoPlayerManager: Picture-in-Picture stopped")
+            debugPrint("✅ PIPVideoPlayerManager: Picture-in-Picture stopped")
         }
     }
     
@@ -563,13 +646,15 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
         Task { @MainActor [weak self] in
             self?.isPiPActive = false
             self?.playbackError = error
+            #if DEBUG
             print("❌ PIPVideoPlayerManager: Failed to start PiP: \(error.localizedDescription)")
+            #endif
         }
     }
     
     func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
         Task { @MainActor [weak self] in
-            print("🔄 PIPVideoPlayerManager: Restoring user interface for PiP stop")
+            debugPrint("🔄 PIPVideoPlayerManager: Restoring user interface for PiP stop")
             completionHandler(true)
         }
     }

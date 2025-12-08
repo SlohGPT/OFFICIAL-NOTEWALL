@@ -87,7 +87,9 @@ final class PaywallManager: NSObject, ObservableObject {
             handle(customerInfo: info)
         } catch {
             lastErrorMessage = "Unable to refresh customer info: \(error.localizedDescription)"
+            #if DEBUG
             print("❌ RevenueCat: \(error)")
+            #endif
         }
     }
 
@@ -104,7 +106,9 @@ final class PaywallManager: NSObject, ObservableObject {
         } catch {
             isLoadingOfferings = false
             lastErrorMessage = "Unable to load offerings: \(error.localizedDescription)"
+            #if DEBUG
             print("❌ RevenueCat: \(error)")
+            #endif
         }
     }
 
@@ -283,7 +287,9 @@ final class PaywallManager: NSObject, ObservableObject {
     }
     
     func trackPaywallView() {
+        #if DEBUG
         print("📊 PaywallManager: Paywall viewed. Reason: \(paywallTriggerReason)")
+        #endif
     }
     
     func resetForFreshInstall() {
@@ -306,6 +312,7 @@ enum PaywallTriggerReason: String {
     case limitReached = "limit_reached"
     case manual = "manual"
     case settings = "settings"
+    case exitIntercept = "exit_intercept"
     
     var title: String {
         switch self {
@@ -315,6 +322,8 @@ enum PaywallTriggerReason: String {
             return "Free Limit Reached"
         case .manual, .settings:
             return "Upgrade to NoteWall+"
+        case .exitIntercept:
+            return "Special Offer - 30% Off!"
         }
     }
     
@@ -326,6 +335,8 @@ enum PaywallTriggerReason: String {
             return "You've created your free wallpapers. Upgrade to keep creating unlimited wallpapers."
         case .manual, .settings:
             return "Get unlimited wallpapers, premium features, and support future development."
+        case .exitIntercept:
+            return "We'd love to keep you! Here's a special one-time discount just for you."
         }
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
+import UIKit
 
 @available(iOS 16.0, *)
 struct HomeScreenPhotoPickerView: View {
@@ -223,6 +224,10 @@ struct HomeScreenQuickPresetsView: View {
 
     private func applyPreset(_ preset: PresetOption) {
         guard preset != selectedPreset else { return }
+
+        // Light impact haptic for preset selection
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
 
         isSavingHomeScreenPhoto = true
         homeScreenStatusMessage = "Applying \(preset.title.lowercased()) preset…"
@@ -581,6 +586,10 @@ struct LockScreenBackgroundPickerView: View {
 
     private func selectPreset(_ preset: PresetOption) {
         print("🎨 LockScreenBackgroundPickerView: Selecting preset \(preset.title)")
+        
+        // Light impact haptic for preset selection
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
         
         isSavingBackground = false
         statusMessage = nil

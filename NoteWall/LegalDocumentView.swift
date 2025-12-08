@@ -200,7 +200,7 @@ NoteWall is a mobile application that allows users to create personalized lock s
 
 3.1 Free Trial
 • New users receive a limited number of free wallpaper exports
-• Premium subscriptions may include a free trial period (5-7 days)
+• Premium subscriptions may include a free trial period (3 days)
 • You will be charged at the end of the trial period unless you cancel before it ends
 
 3.2 Subscription Plans
@@ -368,7 +368,7 @@ Auto-Renewable Subscriptions:
 
 Free Trial:
 • New users receive 3 free wallpaper exports
-• Premium subscriptions include a free trial period (5-7 days depending on plan)
+• Premium subscriptions include a free trial period (3 days depending on plan)
 • You will be charged at the end of the trial period unless you cancel before it ends
 
 Refunds:

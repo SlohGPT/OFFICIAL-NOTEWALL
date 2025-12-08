@@ -5,6 +5,7 @@ import QuartzCore
 import AVKit
 import AVFoundation
 import AudioToolbox
+import StoreKit
 
 // Only log in debug builds to reduce console noise
 #if DEBUG
@@ -23,7 +24,6 @@ private enum OnboardingPage: Int, CaseIterable, Hashable {
     case addNotes
     case chooseWallpapers
     case allowPermissions
-    case storagePreferences
     case overview
 }
 
@@ -44,6 +44,8 @@ struct OnboardingView: View {
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("hasShownAutoUpdatePrompt") private var hasShownAutoUpdatePrompt = false
+    @AppStorage("hasRequestedAppReview") private var hasRequestedAppReview = false
+    @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
     @State private var didOpenShortcut = false
     @State private var isSavingHomeScreenPhoto = false
     @State private var homeScreenStatusMessage: String?
@@ -74,22 +76,38 @@ struct OnboardingView: View {
     @State private var onboardingNotes: [Note] = []
     @State private var currentNoteText = ""
     @FocusState private var isNoteFieldFocused: Bool
+    
+    // Widget selection tracking
+    @State private var hasSelectedWidgetOption = false
+    
+    // Post-onboarding paywall
+    @State private var showPostOnboardingPaywall = false
+    @StateObject private var paywallManager = PaywallManager.shared
+    
+    // Final step mockup preview
+    @State private var showMockupPreview = false
+    @State private var loadedWallpaperImage: UIImage?
+    @State private var useLightMockup: Bool = true
+    
+    // Transition animation from step 5 to step 6
+    @State private var showTransitionScreen = false
+    @State private var countdownNumber: Int = 3
+    @State private var showConfetti = false
+    @State private var hideProgressIndicator = false
+    @State private var transitionTextOpacity: Double = 0
+    @State private var countdownOpacity: Double = 0
+    
+    // Enhanced transition animation states
+    @State private var word1Visible = false
+    @State private var word2Visible = false
+    @State private var word3Visible = false
+    @State private var word4Visible = false
+    @State private var ringProgress: CGFloat = 0
+    @State private var countdownGlow: CGFloat = 0
+    @State private var particleBurst: Bool = false
+    @State private var gradientRotation: Double = 0
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7"
-    private let testFlightShortcutURL = "https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7"
-    
-    // Detect if running from TestFlight
-    private var isTestFlightBuild: Bool {
-        guard let path = Bundle.main.appStoreReceiptURL?.path else {
-            return false
-        }
-        return path.contains("sandboxReceipt")
-    }
-    
-    // Get the appropriate shortcut URL based on build type
-    private var currentShortcutURL: String {
-        return isTestFlightBuild ? testFlightShortcutURL : shortcutURL
-    }
 
     var body: some View {
         Group {
@@ -100,16 +118,37 @@ struct OnboardingView: View {
             }
         }
         .interactiveDismissDisabled()
-        .overlay(
-            // Player layer for PiP support - must be in view hierarchy
-            // Keep it off-screen but with proper video dimensions
-            HiddenPiPPlayerLayerView(playerManager: pipVideoPlayerManager)
-                .frame(width: 320, height: 568) // Proper video dimensions
-                .offset(x: -10000, y: 0) // Off-screen to the left
-                .allowsHitTesting(false)
-        )
+        .background {
+            // Player layer for PiP - positioned behind content but technically on-screen
+            // iOS requires the layer to be in the view hierarchy and not hidden/0-alpha
+            // Using .background ensures it's behind main content but still rendered
+            if shouldStartPiP {
+                GeometryReader { geometry in
+                    HiddenPiPPlayerLayerView(playerManager: pipVideoPlayerManager)
+                        .frame(width: 320, height: 568)
+                        // Position at bottom-right, mostly off-screen but 1 pixel visible
+                        .position(
+                            x: geometry.size.width - 1,
+                            y: geometry.size.height - 1
+                        )
+                        .allowsHitTesting(false)
+                }
+            }
+        }
         .task {
             HomeScreenImageManager.prepareStorageStructure()
+        }
+        .onAppear {
+            // CRITICAL: Reset shortcut launch state when onboarding appears
+            // This prevents shortcuts from running automatically when onboarding first opens
+            // (e.g., when user clicks "Reinstall Shortcut" button)
+            debugLog("📱 Onboarding: View appeared, resetting shortcut launch state")
+            isLaunchingShortcut = false
+            didTriggerShortcutRun = false
+            shortcutLaunchFallback?.cancel()
+            shortcutLaunchFallback = nil
+            wallpaperVerificationTask?.cancel()
+            wallpaperVerificationTask = nil
         }
         .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
             completeShortcutLaunch()
@@ -119,7 +158,7 @@ struct OnboardingView: View {
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
-                print("📱 Onboarding: App became active, currentPage: \(currentPage), didOpenShortcut: \(didOpenShortcut)")
+                debugLog("📱 Onboarding: App became active, currentPage: \(currentPage), didOpenShortcut: \(didOpenShortcut)")
                 // Stop PiP when returning to app
                 if pipVideoPlayerManager.isPiPActive {
                     pipVideoPlayerManager.stopPictureInPicture()
@@ -130,13 +169,13 @@ struct OnboardingView: View {
                 // Handle return from Shortcuts app after installing shortcut
                 // Only advance if we're still on the install shortcut step and shortcut was opened
                 if currentPage == .installShortcut && didOpenShortcut {
-                    print("📱 Onboarding: Detected return from Shortcuts app, navigating to add notes step immediately")
+                    debugLog("📱 Onboarding: Detected return from Shortcuts app, navigating to add notes step immediately")
                     // Navigate immediately - no delay needed
                     withAnimation(.easeInOut(duration: 0.25)) {
                         self.currentPage = .addNotes
                     }
                     self.didOpenShortcut = false
-                    print("✅ Onboarding: Now on page: \(self.currentPage)")
+                    debugLog("✅ Onboarding: Now on page: \(self.currentPage)")
                 }
                 // Only complete shortcut launch if we're on the chooseWallpapers step
                 if currentPage == .chooseWallpapers {
@@ -146,24 +185,24 @@ struct OnboardingView: View {
                 // PiP should automatically take over the already-playing video
                 // because we set canStartPictureInPictureAutomaticallyFromInline = true
                 if shouldStartPiP && currentPage == .installShortcut {
-                    print("🎬 Onboarding: App went to background")
-                    print("   - Video should already be playing")
-                    print("   - PiP should take over automatically")
+                    debugLog("🎬 Onboarding: App went to background")
+                    debugLog("   - Video should already be playing")
+                    debugLog("   - PiP should take over automatically")
                     
                     // If automatic PiP doesn't work, try manual start as fallback
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         if !self.pipVideoPlayerManager.isPiPActive {
-                            print("⚠️ Onboarding: Automatic PiP didn't start, trying manual start")
+                            debugLog("⚠️ Onboarding: Automatic PiP didn't start, trying manual start")
                             if self.pipVideoPlayerManager.isReadyToPlay && self.pipVideoPlayerManager.isPiPControllerReady {
                                 let success = self.pipVideoPlayerManager.startPictureInPicture()
                                 if success {
-                                    print("✅ Onboarding: PiP started manually")
+                                    debugLog("✅ Onboarding: PiP started manually")
                                 } else {
-                                    print("❌ Onboarding: Manual PiP start also failed")
+                                    debugLog("❌ Onboarding: Manual PiP start also failed")
                                 }
                             }
                         } else {
-                            print("✅ Onboarding: Automatic PiP is active")
+                            debugLog("✅ Onboarding: Automatic PiP is active")
                         }
                     }
                 }
@@ -183,6 +222,23 @@ struct OnboardingView: View {
                 shouldRestartOnboarding = false
             }
         }
+        .sheet(isPresented: $showPostOnboardingPaywall) {
+            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: true)
+                .onDisappear {
+                    // AFTER paywall is dismissed, NOW complete the setup
+                    // This prevents the onboarding from being dismissed prematurely
+                    hasCompletedSetup = true
+                    completedOnboardingVersion = onboardingVersion
+                    
+                    // Show review popup
+                    requestAppReviewIfNeeded()
+                    
+                    // Small delay before dismissing onboarding to let review popup appear
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        isPresented = false
+                    }
+                }
+        }
         .preferredColorScheme(.dark)
     }
 
@@ -201,56 +257,79 @@ struct OnboardingView: View {
     }
 
     private func onboardingPager(includePhotoPicker: Bool) -> some View {
-        VStack(spacing: 0) {
-            onboardingProgressIndicatorCompact
-                .padding(.top, 16)
-                .padding(.bottom, 12)
-                .frame(maxWidth: .infinity)
-                .background(
+        ZStack {
+            VStack(spacing: 0) {
+                // Progress indicator - hidden on overview step and during transition
+                if !hideProgressIndicator && !showTransitionScreen && currentPage != .overview {
+                    onboardingProgressIndicatorCompact
+                        .padding(.top, 16)
+                        .padding(.bottom, 12)
+                        .frame(maxWidth: .infinity)
+                        .background(
+                            Color(.systemBackground)
+                                .ignoresSafeArea()
+                        )
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
+                ZStack {
+                    // Solid background to prevent seeing underlying content during transitions
                     Color(.systemBackground)
                         .ignoresSafeArea()
+                    
+                    Group {
+                        switch currentPage {
+                        case .welcome:
+                            welcomeStep()
+                        case .installShortcut:
+                            installShortcutStep()
+                        case .addNotes:
+                            addNotesStep()
+                        case .chooseWallpapers:
+                            chooseWallpapersStep(includePhotoPicker: includePhotoPicker)
+                        case .allowPermissions:
+                            allowPermissionsStep()
+                        case .overview:
+                            overviewStep()
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .id(currentPage)
+                .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
+                .animation(.easeInOut(duration: 0.25), value: currentPage)
+                .gesture(
+                    DragGesture()
+                        .onEnded { gesture in
+                            handleSwipeGesture(gesture)
+                        }
                 )
 
-            ZStack {
-                // Solid background to prevent seeing underlying content during transitions
-                Color(.systemBackground)
-                    .ignoresSafeArea()
-                
-                Group {
-                    switch currentPage {
-                    case .welcome:
-                        welcomeStep()
-                    case .installShortcut:
-                        installShortcutStep()
-                    case .addNotes:
-                        addNotesStep()
-                    case .chooseWallpapers:
-                        chooseWallpapersStep(includePhotoPicker: includePhotoPicker)
-                    case .allowPermissions:
-                        allowPermissionsStep()
-                    case .storagePreferences:
-                        storagePreferencesStep()
-                    case .overview:
-                        overviewStep()
-                    }
+                // Hide button during transition
+                if !showTransitionScreen {
+                    primaryButtonSection
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .id(currentPage)
-            .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-            .animation(.easeInOut(duration: 0.25), value: currentPage)
-            .gesture(
-                DragGesture()
-                    .onEnded { gesture in
-                        handleSwipeGesture(gesture)
-                    }
-            )
-
-            primaryButtonSection
+            .opacity(showTransitionScreen ? 0 : 1)
+            
+            // Transition screen overlay
+            if showTransitionScreen {
+                transitionCountdownView
+                    .transition(.opacity)
+            }
+            
+            // Confetti overlay
+            if showConfetti {
+                ConfettiView()
+                    .allowsHitTesting(false)
+                    .ignoresSafeArea()
+            }
         }
         .background(Color(.systemBackground).ignoresSafeArea())
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .animation(.easeInOut(duration: 0.4), value: hideProgressIndicator)
+        .animation(.easeInOut(duration: 0.3), value: showTransitionScreen)
     }
 
     private var onboardingProgressIndicatorCompact: some View {
@@ -316,30 +395,33 @@ struct OnboardingView: View {
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
                     
-                    Text("Because if you see it 50x per day, you'll do it and will never forget anything again.")
-                        .font(.system(.title3))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 12)
+                    VStack(spacing: 8) {
+                        Text("You forget things for one simple reason: you don't see them. NoteWall fixes that.")
+                            .font(.system(.title3))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                        
+                    }
+                    .padding(.horizontal, 12)
                 }
                 
                 VStack(spacing: 16) {
                     welcomeHighlightCard(
-                        title: "Stay on track",
-                        subtitle: "Pin your priorities to the lock screen so the next action is always waiting for you.",
-                        icon: "checkmark.circle.fill"
-                    )
-                    
-                    welcomeHighlightCard(
-                        title: "Remember what matters",
-                        subtitle: "See gratitude notes, reminders, and personal cues right when you pick up your phone.",
-                        icon: "sparkles"
-                    )
-                    
-                    welcomeHighlightCard(
-                        title: "Move faster",
-                        subtitle: "Drop thoughts into NoteWall in seconds and turn them into wallpapers with one tap.",
+                        title: "Turn Every Pickup Into Focus",
+                        subtitle: "You pick up your phone up to 498× per day. Now each one becomes a reminder of what matters.",
                         icon: "bolt.fill"
+                    )
+                    
+                    welcomeHighlightCard(
+                        title: "Keep Your Goals Always in Sight",
+                        subtitle: "Your lock screen becomes a visual cue you can't ignore.",
+                        icon: "target"
+                    )
+                    
+                    welcomeHighlightCard(
+                        title: "Beat Scrolling Before It Starts",
+                        subtitle: "See your goals before TikTok, Instagram, or distractions.",
+                        icon: "stop.fill"
                     )
                 }
             }
@@ -390,7 +472,7 @@ struct OnboardingView: View {
                         .fontWeight(.bold)
                         .multilineTextAlignment(.center)
                     
-                    Text("This takes 30 seconds. A video guide will help you.")
+                    Text("This takes 40 seconds. A video guide will help you.")
                         .font(.system(.title3))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
@@ -617,13 +699,13 @@ struct OnboardingView: View {
     private func allowPermissionsStep() -> some View {
         GeometryReader { proxy in
             VStack(alignment: .leading, spacing: 0) {
-                Text("Allow Permissions")
+                Text("Allow 4 Permissions")
                     .font(.system(.largeTitle, design: .rounded))
                     .fontWeight(.bold)
                     .padding(.top, 24)
                     .padding(.horizontal, 24)
                 
-                Text("Click \"Allow\" for ALL permissions")
+                Text("Click \"Allow\" for exactly 4 permissions")
                     .font(.system(.title3))
                     .foregroundColor(.appAccent)
                     .fontWeight(.semibold)
@@ -648,179 +730,6 @@ struct OnboardingView: View {
             // Prepare video player (may already be preloaded from step 3)
             prepareNotificationsVideoPlayerIfNeeded()
         }
-    }
-    
-    private func storagePreferencesStep() -> some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 28) {
-                VStack(spacing: 16) {
-                    Image(systemName: "wand.and.stars")
-                        .font(.system(size: 60, weight: .semibold))
-                        .foregroundColor(.appAccent)
-                        .padding(.top, 8)
-                    
-                    Text("Choose Your Workflow")
-                        .font(.system(.largeTitle, design: .rounded))
-                        .fontWeight(.bold)
-                        .multilineTextAlignment(.center)
-                    
-                    Text("How would you like NoteWall to handle wallpaper updates when you delete notes?")
-                        .font(.system(.body))
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 12)
-                }
-                
-                VStack(spacing: 16) {
-                    // Option 1: Automatic (RECOMMENDED)
-                    storageOptionCard(
-                        isSelected: !saveWallpapersToPhotos,
-                        title: "Automatic",
-                        subtitle: "Recommended for seamless experience",
-                        description: "When you delete notes, your wallpaper updates automatically. Zero popups, clean Photos library.",
-                        icon: "bolt.fill",
-                        benefits: [
-                            "Wallpaper auto-updates when deleting notes",
-                            "No popups or confirmations",
-                            "Photos library stays clean", 
-                            "Saves to Files app only"
-                        ]
-                    ) {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                        withAnimation {
-                            saveWallpapersToPhotos = false
-                            autoUpdateWallpaperAfterDeletionRaw = "true"
-                        }
-                    }
-                    
-                    // Option 2: Manual
-                    storageOptionCard(
-                        isSelected: saveWallpapersToPhotos,
-                        title: "Manual",
-                        subtitle: "Full control over updates",
-                        description: "You decide when to update your wallpaper. Wallpapers saved to Photos library for easy sharing.",
-                        icon: "hand.tap.fill",
-                        benefits: [
-                            "Manual wallpaper updates only",
-                            "Full control over each update",
-                            "Wallpapers visible in Photos app",
-                            "Can share or edit in Photos"
-                        ]
-                    ) {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                        withAnimation {
-                            saveWallpapersToPhotos = true
-                            autoUpdateWallpaperAfterDeletionRaw = "false"
-                        }
-                    }
-                }
-                
-                // Info box
-                HStack(spacing: 12) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.appAccent)
-                    
-                    Text("You can change this anytime in Settings")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
-                )
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .padding(.horizontal, 24)
-            .padding(.vertical, 36)
-        }
-        .scrollAlwaysBounceIfAvailable()
-    }
-    
-    private func storageOptionCard(
-        isSelected: Bool,
-        title: String,
-        subtitle: String,
-        description: String,
-        icon: String,
-        benefits: [String],
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 12) {
-                    Image(systemName: icon)
-                        .font(.system(size: 28, weight: .semibold))
-                        .foregroundColor(isSelected ? .appAccent : .secondary)
-                        .frame(width: 40, height: 40)
-                    
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            Text(title)
-                                .font(.system(.title3, design: .rounded))
-                                .fontWeight(.bold)
-                            
-                            if title == "Files Only" {
-                                Text("⭐")
-                                    .font(.caption)
-                            }
-                            
-                            Spacer()
-                            
-                            // Checkmark circle
-                            Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 24, weight: .semibold))
-                                .foregroundColor(isSelected ? .appAccent : .secondary.opacity(0.3))
-                        }
-                        
-                        Text(subtitle)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(isSelected ? .appAccent : .secondary)
-                    }
-                }
-                
-                Text(description)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                
-                Divider()
-                    .padding(.vertical, 4)
-                
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(benefits, id: \.self) { benefit in
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(isSelected ? .appAccent : .secondary.opacity(0.6))
-                            
-                            Text(benefit)
-                                .font(.footnote)
-                                .foregroundColor(isSelected ? .primary : .secondary)
-                        }
-                    }
-                }
-            }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(isSelected ? Color.appAccent.opacity(0.08) : Color(.secondarySystemBackground))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .strokeBorder(
-                                isSelected ? Color.appAccent.opacity(0.5) : Color.clear,
-                                lineWidth: 2
-                            )
-                    )
-            )
-        }
-        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -927,6 +836,10 @@ struct OnboardingView: View {
                                         .font(.caption)
                                         .foregroundColor(lockScreenBackgroundStatusColor)
                                 }
+                                
+                                // Lock Screen Widgets Section - clear card-based design
+                                lockScreenWidgetsSection
+                                    .padding(.top, 24)
                             }
                             .transition(.opacity)
                         }
@@ -945,28 +858,626 @@ struct OnboardingView: View {
         .onAppear(perform: ensureCustomPhotoFlagIsAccurate)
         .scrollAlwaysBounceIfAvailable()
     }
+    
+    private var lockScreenWidgetsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Clear heading
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Do you use lock screen widgets?")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                
+                Text("This adjusts where your notes appear on the lock screen")
+                    .font(.caption)
+                    .foregroundColor(Color(.systemGray2))
+            }
+            
+            // Option buttons
+            HStack(spacing: 12) {
+                // Yes button (black)
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    withAnimation {
+                        hasLockScreenWidgets = true
+                        hasSelectedWidgetOption = true
+                    }
+                }) {
+                    Text("Yes")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color.black)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(hasSelectedWidgetOption && hasLockScreenWidgets ? Color.appAccent : Color.clear, lineWidth: 2.5)
+                                )
+                        )
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+                
+                // No button (gray - matches preset gray color)
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    withAnimation {
+                        hasLockScreenWidgets = false
+                        hasSelectedWidgetOption = true
+                    }
+                }) {
+                    Text("No")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(Color(red: 40 / 255, green: 40 / 255, blue: 40 / 255))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .strokeBorder(hasSelectedWidgetOption && !hasLockScreenWidgets ? Color.appAccent : Color.clear, lineWidth: 2.5)
+                                )
+                        )
+                        .foregroundColor(.white)
+                }
+                .buttonStyle(.plain)
+            }
+            
+            // Settings note
+            Text("You can change this anytime in Settings")
+                .font(.caption)
+                .foregroundColor(Color(.systemGray3))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(.systemGray6).opacity(0.3))
+        )
+    }
 
     private func overviewStep() -> some View {
-        VStack(spacing: 24) {
-            Text("Ready to Go")
-                .font(.system(.largeTitle, design: .rounded))
-                .fontWeight(.bold)
-                .padding(.top, 32)
-            
-            Text("You're all set! Start adding notes and updating your wallpaper.")
-                .font(.system(.title3))
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-            
-            Spacer(minLength: 40)
-            
-            AnimatedCheckmarkView()
-                .padding(.top, -60)
-            
-            Spacer()
+        // iPhone mockup preview - large and prominent, fills the screen
+        iPhoneMockupPreview
+            .opacity(showMockupPreview ? 1 : 0)
+            .scaleEffect(showMockupPreview ? 1 : 0.95)
+            .animation(.easeOut(duration: 0.5), value: showMockupPreview)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onAppear {
+            loadWallpaperForPreview()
+            // Trigger fade-in animation after a slight delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                withAnimation {
+                    showMockupPreview = true
+                }
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDisappear {
+            // Reset animation state for when user navigates back
+            showMockupPreview = false
+        }
+    }
+    
+    // MARK: - Transition Countdown View (Epic Version)
+    
+    private var transitionCountdownView: some View {
+        ZStack {
+            // Animated gradient background
+            animatedGradientBackground
+                .ignoresSafeArea()
+            
+            // Floating ambient particles
+            FloatingParticlesView()
+                .opacity(0.6)
+            
+            VStack(spacing: 0) {
+                Spacer()
+                
+                // Animated text - word by word
+                VStack(spacing: 12) {
+                    // "Ready for your new"
+                    HStack(spacing: 8) {
+                        AnimatedWord(text: "Ready", isVisible: word1Visible, delay: 0)
+                        AnimatedWord(text: "for", isVisible: word1Visible, delay: 0.1)
+                        AnimatedWord(text: "your", isVisible: word1Visible, delay: 0.2)
+                        AnimatedWord(text: "new", isVisible: word1Visible, delay: 0.3)
+                    }
+                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .foregroundColor(.white.opacity(0.7))
+                    
+                    // "PRODUCTIVITY HACK"
+                    HStack(spacing: 8) {
+                        AnimatedWord(text: "PRODUCTIVITY", isVisible: word2Visible, delay: 0, isAccent: true)
+                        AnimatedWord(text: "HACK", isVisible: word2Visible, delay: 0.15, isAccent: true)
+                        AnimatedWord(text: "?", isVisible: word2Visible, delay: 0.25, isAccent: true)
+                    }
+                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                    
+                    // "You'll never forget again"
+                    HStack(spacing: 5) {
+                        AnimatedWord(text: "So", isVisible: word3Visible, delay: 0)
+                        AnimatedWord(text: "you'll", isVisible: word3Visible, delay: 0.08)
+                        AnimatedWord(text: "never", isVisible: word3Visible, delay: 0.16)
+                        AnimatedWord(text: "forget", isVisible: word3Visible, delay: 0.24)
+                        AnimatedWord(text: "again", isVisible: word3Visible, delay: 0.32)
+                    }
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.5))
+                    .padding(.top, 8)
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+                
+                Spacer()
+                
+                // Epic countdown with ring - centered
+                ZStack {
+                    // Outer glow ring
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.appAccent.opacity(0.3), Color.appAccent.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: 3
+                        )
+                        .frame(width: 200, height: 200)
+                        .blur(radius: 8)
+                        .opacity(countdownOpacity)
+                    
+                    // Progress ring
+                    Circle()
+                        .trim(from: 0, to: ringProgress)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.appAccent, Color.appAccent.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        )
+                        .frame(width: 180, height: 180)
+                        .rotationEffect(.degrees(-90))
+                        .opacity(countdownOpacity)
+                    
+                    // Inner glow
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [Color.appAccent.opacity(0.2), Color.clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 90
+                            )
+                        )
+                        .frame(width: 180, height: 180)
+                        .opacity(countdownGlow)
+                    
+                    // Countdown number with effects
+                    Text("\(countdownNumber)")
+                        .font(.system(size: 100, weight: .black, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.white, Color.appAccent],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .shadow(color: Color.appAccent.opacity(0.5), radius: 20, x: 0, y: 0)
+                        .shadow(color: Color.appAccent.opacity(0.3), radius: 40, x: 0, y: 0)
+                        .scaleEffect(particleBurst ? 1.1 : 1.0)
+                        .opacity(countdownOpacity)
+                    
+                    // Particle burst effect
+                    if particleBurst {
+                        CountdownBurstView()
+                    }
+                }
+                .frame(width: 220, height: 220)
+                
+                Spacer()
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+    
+    private var animatedGradientBackground: some View {
+        ZStack {
+            // Base dark gradient
+            LinearGradient(
+                colors: [
+                    Color(red: 0.05, green: 0.05, blue: 0.12),
+                    Color(red: 0.02, green: 0.02, blue: 0.08),
+                    Color.black
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
+            // Animated accent glow - top
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.3), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 300
+                    )
+                )
+                .frame(width: 600, height: 600)
+                .offset(x: -100, y: -200)
+                .rotationEffect(.degrees(gradientRotation))
+            
+            // Animated accent glow - bottom
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.15), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 250
+                    )
+                )
+                .frame(width: 500, height: 500)
+                .offset(x: 150, y: 400)
+                .rotationEffect(.degrees(-gradientRotation * 0.5))
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
+                gradientRotation = 360
+            }
+        }
+    }
+    
+    private func startTransitionCountdown() {
+        // Reset all states
+        countdownNumber = 3
+        transitionTextOpacity = 0
+        countdownOpacity = 0
+        showConfetti = false
+        word1Visible = false
+        word2Visible = false
+        word3Visible = false
+        word4Visible = false
+        ringProgress = 0
+        countdownGlow = 0
+        particleBurst = false
+        gradientRotation = 0
+        
+        // Hide progress indicator
+        withAnimation(.easeOut(duration: 0.3)) {
+            hideProgressIndicator = true
+        }
+        
+        // Show transition screen
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                showTransitionScreen = true
+            }
+        }
+        
+        // Animate words in sequence
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                word1Visible = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                word2Visible = true
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                word3Visible = true
+            }
+        }
+        
+        // Start countdown after text
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            withAnimation(.easeOut(duration: 0.4)) {
+                countdownOpacity = 1
+            }
+            startCountdown()
+        }
+    }
+    
+    private func startCountdown() {
+        // Heavy haptic for countdown start
+        let heavyImpact = UIImpactFeedbackGenerator(style: .heavy)
+        let mediumImpact = UIImpactFeedbackGenerator(style: .medium)
+        
+        // Countdown: 3
+        countdownNumber = 3
+        heavyImpact.impactOccurred()
+        triggerBurst()
+        
+        // Animate ring to 25% (even spacing: 1/4 of circle)
+        withAnimation(.easeInOut(duration: 0.9)) {
+            ringProgress = 0.25
+        }
+        
+        // Pulse glow
+        withAnimation(.easeInOut(duration: 0.3)) {
+            countdownGlow = 0.8
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.easeOut(duration: 0.5)) {
+                countdownGlow = 0.2
+            }
+        }
+        
+        // Countdown: 2
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+                countdownNumber = 2
+            }
+            heavyImpact.impactOccurred()
+            triggerBurst()
+            
+            // Animate ring to 50% (even spacing: 2/4 of circle)
+            withAnimation(.easeInOut(duration: 0.9)) {
+                ringProgress = 0.50
+            }
+            
+            withAnimation(.easeInOut(duration: 0.3)) {
+                countdownGlow = 0.8
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeOut(duration: 0.5)) {
+                    countdownGlow = 0.2
+                }
+            }
+        }
+        
+        // Countdown: 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.5)) {
+                countdownNumber = 1
+            }
+            heavyImpact.impactOccurred()
+            triggerBurst()
+            
+            // Ring fills to 75% (even spacing: 3/4 of circle, leaving 25% for completion)
+            withAnimation(.easeInOut(duration: 0.7)) {
+                ringProgress = 0.75
+            }
+            
+            withAnimation(.easeInOut(duration: 0.3)) {
+                countdownGlow = 0.9
+            }
+            
+            // After a brief pause, complete the ring smoothly (final 25% to make it even)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                // Smooth completion animation - final 25% for even spacing
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    ringProgress = 1.0
+                    countdownGlow = 1.0
+                }
+            }
+        }
+        
+        // FINALE - GO! (trigger when ring completes)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.1) {
+            // Epic haptic sequence
+            let notification = UINotificationFeedbackGenerator()
+            notification.notificationOccurred(.success)
+            
+            // Double tap for impact
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                heavyImpact.impactOccurred()
+            }
+            
+            // Show confetti explosion
+            withAnimation(.easeOut(duration: 0.2)) {
+                showConfetti = true
+            }
+            
+            // Transition to overview
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+                showTransitionScreen = false
+                currentPage = .overview
+            }
+            
+            // Keep confetti longer for impact
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) {
+                withAnimation(.easeOut(duration: 0.8)) {
+                    showConfetti = false
+                }
+            }
+        }
+    }
+    
+    private func triggerBurst() {
+        particleBurst = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            particleBurst = false
+        }
+    }
+    
+    private var iPhoneMockupPreview: some View {
+        GeometryReader { geometry in
+            let availableHeight = geometry.size.height
+            let availableWidth = geometry.size.width
+            
+            // ⚙️ MOCKUP SIZE CONTROLS ⚙️
+            // iPhone mockup aspect ratio is approximately 1:2.16 (width:height)
+            let mockupAspectRatio: CGFloat = 1 / 2.16
+            
+            // 📏 HEIGHT MULTIPLIER: Controls mockup size (1.3 = 130% of screen height)
+            //    - Increase (e.g., 1.5) = LARGER mockup (more zoom effect)
+            //    - Decrease (e.g., 0.9) = SMALLER mockup (more space around it)
+            let maxMockupHeight = availableHeight * 1.3
+            
+            // 📐 WIDTH MULTIPLIER: Controls horizontal fill (1.0 = 100% of screen width)
+            //    - Increase (e.g., 1.1) = Mockup can extend beyond screen edges
+            //    - Decrease (e.g., 0.8) = More padding on sides
+            let mockupWidth = min(maxMockupHeight * mockupAspectRatio, availableWidth * 1.0)
+            let mockupHeight = mockupWidth / mockupAspectRatio
+            
+            // Screen insets within the mockup frame (percentage-based)
+            // These values must match the transparent screen window in the cropped mockup PNG
+            // The mockup bezel is about 2.5% on each side horizontally, 1% top/bottom
+            let screenInsetTop: CGFloat = mockupHeight * 0.012
+            let screenInsetBottom: CGFloat = mockupHeight * 0.012
+            let screenInsetHorizontal: CGFloat = mockupWidth * 0.042
+            
+            // Calculate screen dimensions - fits within the transparent window
+            let screenWidth = mockupWidth - (screenInsetHorizontal * 2)
+            let screenHeight = mockupHeight - screenInsetTop - screenInsetBottom
+            
+            // Corner radius that matches the mockup's screen corners (iPhone 14/15 style)
+            let screenCornerRadius = mockupWidth * 0.115
+            
+            // ⚙️ WALLPAPER DISPLAY - 1:1 TRUE REPRESENTATION ⚙️
+            // The wallpaper is shown exactly as it appears on real lock screen
+            // 🔧 ADJUST ZOOM: Change .scaleEffect(0.85) on line ~1352
+            //    - 0.85 = Current (85% size - zoomed out to show all content)
+            //    - 1.0 = No zoom (100% - may crop edges)
+            //    - 0.75 = More zoom out (75% - shows more but smaller)
+            //    - 0.9 = Less zoom out (90% - closer to edges)
+            
+            ZStack {
+                // Wallpaper layer (behind the mockup) - TRUE 1:1 size, no cropping
+                ZStack {
+                    if let wallpaper = loadedWallpaperImage {
+                        Image(uiImage: wallpaper)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit) // ✅ Maintains aspect ratio, shows full image
+                            .frame(maxWidth: screenWidth, maxHeight: screenHeight)
+                            .scaleEffect(0.75) // 🔍 Zoom out to 85% to show all content without cropping
+                    } else {
+                        // Fallback gradient if wallpaper not loaded
+                        RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(white: 0.15), Color(white: 0.08)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: screenWidth, height: screenHeight)
+                    }
+                }
+                .frame(width: screenWidth, height: screenHeight)
+                .clipped()
+                .mask(
+                    RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
+                )
+                
+                // iPhone mockup overlay (transparent screen window)
+                Image(useLightMockup ? "mockup_light" : "mockup_dark")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: mockupWidth, height: mockupHeight)
+            }
+            .frame(width: availableWidth, height: availableHeight)
+            .shadow(color: Color.black.opacity(0.35), radius: 25, x: 0, y: 12)
+            .offset(y: 0) // Center vertically in the available space
+        }
+    }
+    
+    private func loadWallpaperForPreview() {
+        // Load the user's generated lock screen wallpaper
+        if let url = HomeScreenImageManager.lockScreenWallpaperURL(),
+           FileManager.default.fileExists(atPath: url.path),
+           let image = UIImage(contentsOfFile: url.path) {
+            loadedWallpaperImage = image
+            // Determine which mockup to use based on wallpaper brightness
+            // SYNCED with WallpaperRenderer.textColorForBackground() - same threshold & logic
+            let brightness = averageBrightnessOfTextArea(image)
+            // brightness < 0.55 = dark image = WHITE notes = use mockup_dark (has white UI)
+            // brightness >= 0.55 = bright image = BLACK notes = use mockup_light (has black UI)
+            // useLightMockup = true means use "mockup_light", false means use "mockup_dark"
+            useLightMockup = brightness >= 0.55
+            debugLog("✅ Onboarding: Loaded wallpaper for preview")
+            debugLog("   📊 Text area brightness: \(String(format: "%.3f", brightness))")
+            debugLog("   🎨 Notes are \(brightness < 0.55 ? "WHITE" : "BLACK")")
+            debugLog("   📱 Using mockup_\(useLightMockup ? "light" : "dark")")
+        } else {
+            debugLog("⚠️ Onboarding: Could not load wallpaper for preview")
+            loadedWallpaperImage = nil
+            useLightMockup = false // Default to dark mockup (white UI) for dark fallback
+        }
+    }
+    
+    /// Calculates average brightness of the TEXT AREA of an image
+    /// SYNCED with WallpaperRenderer.averageBrightness() - same sampling region & formula
+    /// Returns brightness value 0.0 (black) to 1.0 (white)
+    private func averageBrightnessOfTextArea(_ image: UIImage) -> CGFloat {
+        let imageSize = image.size
+        
+        // Sample from the TEXT AREA (where notes appear on lock screen)
+        // Same region as WallpaperRenderer: top 38% to bottom 85%, left 80%
+        let textAreaRect = CGRect(
+            x: 0,
+            y: imageSize.height * 0.38,  // Start below clock/widgets area
+            width: imageSize.width * 0.8, // Left portion where text is
+            height: imageSize.height * 0.47 // Up to above flashlight area
+        )
+        
+        // Crop to text area first
+        guard let cgImage = image.cgImage,
+              let croppedCGImage = cgImage.cropping(to: CGRect(
+                x: textAreaRect.origin.x * CGFloat(cgImage.width) / imageSize.width,
+                y: textAreaRect.origin.y * CGFloat(cgImage.height) / imageSize.height,
+                width: textAreaRect.width * CGFloat(cgImage.width) / imageSize.width,
+                height: textAreaRect.height * CGFloat(cgImage.height) / imageSize.height
+              )) else {
+            return averageBrightnessFullImage(of: image)
+        }
+        
+        let croppedImage = UIImage(cgImage: croppedCGImage)
+        return averageBrightnessFullImage(of: croppedImage)
+        }
+    
+    /// Samples brightness from the entire image
+    private func averageBrightnessFullImage(of image: UIImage) -> CGFloat {
+        let sampleSize = CGSize(width: 12, height: 12)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+
+        let renderer = UIGraphicsImageRenderer(size: sampleSize, format: format)
+        let downsampled = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: sampleSize))
+        }
+
+        guard let cgImage = downsampled.cgImage,
+              let data = cgImage.dataProvider?.data,
+              let pointer = CFDataGetBytePtr(data) else {
+            return 0.5
+        }
+
+        let bytesPerPixel = cgImage.bitsPerPixel / 8
+        guard bytesPerPixel >= 3 else { return 0.5 }
+
+        var total: CGFloat = 0
+        let width = Int(sampleSize.width)
+        let height = Int(sampleSize.height)
+
+        for y in 0..<height {
+            for x in 0..<width {
+                let index = (y * cgImage.bytesPerRow) + (x * bytesPerPixel)
+                let r = CGFloat(pointer[index])
+                let g = CGFloat(pointer[index + 1])
+                let b = CGFloat(pointer[index + 2])
+                // ITU-R BT.601 formula (same as WallpaperRenderer)
+                total += (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+            }
+        }
+
+        return total / CGFloat(width * height)
     }
 
     private func demoVideoSection(minHeight: CGFloat) -> some View {
@@ -1025,8 +1536,6 @@ struct OnboardingView: View {
             return isLaunchingShortcut ? "Launching Shortcut…" : "Next"
         case .allowPermissions:
             return "Continue"
-        case .storagePreferences:
-            return "Continue"
         case .installShortcut:
             return didOpenShortcut ? "Next" : "Install"
         case .addNotes:
@@ -1044,8 +1553,6 @@ struct OnboardingView: View {
             return isLaunchingShortcut ? nil : "paintbrush.pointed.fill"
         case .allowPermissions:
             return "checkmark.shield.fill"
-        case .storagePreferences:
-            return "folder.fill"
         case .installShortcut:
             return "bolt.fill"
         case .addNotes:
@@ -1063,8 +1570,6 @@ struct OnboardingView: View {
             return !onboardingNotes.isEmpty
         case .allowPermissions:
             return true
-        case .storagePreferences:
-            return true
         case .chooseWallpapers:
             let hasHomeSelection = homeScreenUsesCustomPhoto || !homeScreenPresetSelectionRaw.isEmpty
             let hasLockSelection: Bool
@@ -1079,7 +1584,8 @@ struct OnboardingView: View {
             } else {
                 hasLockSelection = false
             }
-            return hasHomeSelection && hasLockSelection && !isSavingHomeScreenPhoto && !isSavingLockScreenBackground && !isLaunchingShortcut
+            let hasWidgetSelection = hasSelectedWidgetOption
+            return hasHomeSelection && hasLockSelection && hasWidgetSelection && !isSavingHomeScreenPhoto && !isSavingLockScreenBackground && !isLaunchingShortcut
         case .overview:
             return true
         }
@@ -1131,9 +1637,8 @@ struct OnboardingView: View {
         case .chooseWallpapers:
             startShortcutLaunch()
         case .allowPermissions:
-            advanceStep()
-        case .storagePreferences:
-            advanceStep()
+            // Start the transition animation with countdown and confetti
+            startTransitionCountdown()
         case .overview:
             completeOnboarding()
         }
@@ -1160,6 +1665,12 @@ struct OnboardingView: View {
         // Light impact haptic for going back
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
+        
+        // Reset transition states when going back from overview
+        if currentPage == .overview {
+            hideProgressIndicator = false
+            showConfetti = false
+        }
         
         withAnimation(.easeInOut) {
             currentPage = previous
@@ -1189,15 +1700,25 @@ struct OnboardingView: View {
             } else if currentPage == .chooseWallpapers && primaryButtonEnabled {
                 startShortcutLaunch()
             } else if currentPage == .allowPermissions {
-                advanceStep()
+                // Use transition countdown for swipe as well
+                startTransitionCountdown()
             }
         }
     }
 
     private func startShortcutLaunch() {
+        // CRITICAL: Only allow shortcut launch from step 4 (chooseWallpapers)
+        // This prevents shortcuts from running automatically when onboarding first appears
+        guard currentPage == .chooseWallpapers else {
+            debugLog("⚠️ Onboarding: startShortcutLaunch called but not on chooseWallpapers step (current: \(currentPage))")
+            return
+        }
+        
         guard !isSavingHomeScreenPhoto, !isSavingLockScreenBackground, !isLaunchingShortcut else { 
             return 
         }
+        
+        debugLog("✅ Onboarding: Starting shortcut launch from step 4 (chooseWallpapers)")
         
         HomeScreenImageManager.prepareStorageStructure()
         wallpaperVerificationTask?.cancel()
@@ -1224,14 +1745,14 @@ struct OnboardingView: View {
     }
 
     private func installShortcut() {
-        guard let url = URL(string: currentShortcutURL) else { return }
+        guard let url = URL(string: shortcutURL) else { return }
         
-        // Prepare PiP video before opening Shortcuts app
+        // Only prepare PiP video if not already loaded (it's prepared in onAppear of installShortcutStep)
+        if !pipVideoPlayerManager.hasLoadedVideo {
         preparePiPVideo()
+        }
         shouldStartPiP = true
         
-        // Prepare the video but DON'T start playing yet
-        // We'll start it when the app goes to background so user sees it from the beginning
         Task {
             // Wait for player to be ready
             var attempts = 0
@@ -1248,7 +1769,7 @@ struct OnboardingView: View {
             }
             
             if pipVideoPlayerManager.isReadyToPlay && pipVideoPlayerManager.isPiPControllerReady {
-                print("✅ Onboarding: Player and PiP controller ready")
+                debugLog("✅ Onboarding: Player and PiP controller ready")
                 
                 // Make sure video is at the beginning
                 await MainActor.run {
@@ -1258,50 +1779,89 @@ struct OnboardingView: View {
                 // CRITICAL: Start playing the video BEFORE opening Shortcuts
                 // iOS requires the video to be actively playing before PiP can work
                 _ = pipVideoPlayerManager.play()
-                print("✅ Onboarding: Started video playback")
+                debugLog("✅ Onboarding: Started video playback")
                 
-                // Wait a moment for playback to actually start (very brief)
+                // VERIFY playback actually started - this is the key fix!
+                // Wait a moment for playback to begin
                 try? await Task.sleep(nanoseconds: 200_000_000) // 0.2 seconds
                 
-                // Now open Shortcuts - PiP will take over when app backgrounds
+                // Check if video is actually playing
+                var playbackAttempts = 0
+                while !pipVideoPlayerManager.isPlaying && playbackAttempts < 10 {
+                    debugLog("⚠️ Onboarding: Playback not started yet, retrying... (attempt \(playbackAttempts + 1))")
+                    await MainActor.run {
+                        // Force play again
+                        pipVideoPlayerManager.getPlayer()?.playImmediately(atRate: 1.0)
+                    }
+                    try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+                    playbackAttempts += 1
+                }
+                
+                if pipVideoPlayerManager.isPlaying {
+                    debugLog("✅ Onboarding: Verified video is playing (rate > 0)")
+                } else {
+                    debugLog("⚠️ Onboarding: Video may not be playing, but proceeding anyway")
+                }
+                
+                
+                // Open Shortcuts immediately - PiP will start AUTOMATICALLY when app backgrounds
+                // Thanks to: canStartPictureInPictureAutomaticallyFromInline = true
+                debugLog("🚀 Onboarding: Opening Shortcuts - PiP will start automatically when app backgrounds")
                 await MainActor.run {
                     UIApplication.shared.open(url) { success in
                         DispatchQueue.main.async {
                             if success {
                                 self.didOpenShortcut = true
-                                print("✅ Onboarding: Opened Shortcuts, PiP will take over automatically")
+                                debugLog("✅ Onboarding: Opened Shortcuts")
                             } else {
-                                print("⚠️ Onboarding: Shortcut URL open failed. This may be due to:")
-                                print("   - iCloud Drive connectivity issues")
-                                print("   - Pending iCloud terms acceptance")
-                                print("   - Network connectivity problems")
-                                print("   - Shortcuts app privacy settings")
+                                debugLog("⚠️ Onboarding: Shortcut URL open failed. This may be due to:")
+                                debugLog("   - iCloud Drive connectivity issues")
+                                debugLog("   - Pending iCloud terms acceptance")
+                                debugLog("   - Network connectivity problems")
+                                debugLog("   - Shortcuts app privacy settings")
                                 self.shouldStartPiP = false
-                                // Stop playback if Shortcuts didn't open
+                                // Stop PiP and playback if Shortcuts didn't open
+                                self.pipVideoPlayerManager.stopPictureInPicture()
                                 self.pipVideoPlayerManager.stop()
                             }
                         }
                     }
                 }
             } else {
-                print("❌ Onboarding: Cannot prepare PiP - Player ready: \(self.pipVideoPlayerManager.isReadyToPlay), Controller ready: \(self.pipVideoPlayerManager.isPiPControllerReady)")
+                debugLog("❌ Onboarding: Cannot prepare PiP - Player ready: \(self.pipVideoPlayerManager.isReadyToPlay), Controller ready: \(self.pipVideoPlayerManager.isPiPControllerReady)")
+                // Still open the Shortcuts URL even if PiP isn't ready
+                await MainActor.run {
+                    UIApplication.shared.open(url) { success in
+                        DispatchQueue.main.async {
+                            if success {
+                                self.didOpenShortcut = true
+                            }
+                        }
+                    }
+                }
             }
         }
     }
     
     private func preparePiPVideo() {
-        guard let bundleURL = Bundle.main.url(forResource: "pip-guide-video", withExtension: "mp4") else {
-            print("⚠️ Onboarding: PiP demo video not found in bundle")
+        // Don't reload if video is already loaded - this prevents resetting the player
+        if pipVideoPlayerManager.hasLoadedVideo {
+            debugLog("✅ Onboarding: PiP video already loaded, skipping reload")
             return
         }
         
-        print("🎬 Onboarding: Preparing PiP video from: \(bundleURL.path)")
+        guard let bundleURL = Bundle.main.url(forResource: "pip-slow-guide-video", withExtension: "mp4") else {
+            debugLog("⚠️ Onboarding: PiP demo video not found in bundle")
+            return
+        }
+        
+        debugLog("🎬 Onboarding: Preparing PiP video from: \(bundleURL.path)")
         
         // Load the video
         let loaded = pipVideoPlayerManager.loadVideo(url: bundleURL)
         
         if loaded {
-            print("✅ Onboarding: Video loaded, waiting for player to be ready")
+            debugLog("✅ Onboarding: Video loaded, waiting for player to be ready")
             
             // Wait for player to be ready, then set up the layer
             Task {
@@ -1312,7 +1872,7 @@ struct OnboardingView: View {
                 }
                 
                 if pipVideoPlayerManager.isReadyToPlay {
-                    print("✅ Onboarding: Player is ready")
+                    debugLog("✅ Onboarding: Player is ready")
                     
                     // Trigger a state update to make the view add the layer
                     await MainActor.run {
@@ -1332,29 +1892,31 @@ struct OnboardingView: View {
         let generator = UINotificationFeedbackGenerator()
         generator.notificationOccurred(.success)
         
-        hasCompletedSetup = true
-        completedOnboardingVersion = onboardingVersion
-        shouldShowTroubleshootingBanner = true // Show troubleshooting banner on home screen
-        hasShownAutoUpdatePrompt = true // Mark as shown since user chose preference in onboarding
+        // NOTE: hasCompletedSetup and completedOnboardingVersion are set AFTER paywall is dismissed
+        // to prevent the onboarding from being dismissed before the paywall sheet can be shown.
+        // See the .sheet(isPresented: $showPostOnboardingPaywall) onDisappear handler.
         
-        // Ensure auto-update preference is set based on user's choice in step 6
-        // If they haven't explicitly set it (which they should have), set it now
-        if autoUpdateWallpaperAfterDeletionRaw.isEmpty {
-            // Default to automatic if Files Only was chosen, manual if Photos Library
-            autoUpdateWallpaperAfterDeletionRaw = saveWallpapersToPhotos ? "false" : "true"
-        }
+        shouldShowTroubleshootingBanner = true // Show troubleshooting banner on home screen
+        hasShownAutoUpdatePrompt = true // No longer needed but keep for compatibility
+        
+        // Always use automatic wallpaper updates - this is the default app behavior
+        autoUpdateWallpaperAfterDeletionRaw = "true"
+        saveWallpapersToPhotos = false // Files only for clean experience
         
         NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
         
-        isPresented = false
+        // Show soft paywall after onboarding completion
+        // hasCompletedSetup will be set after paywall is dismissed
+        // Review popup will be shown after paywall is dismissed
+        showPostOnboardingPaywall = true
     }
 
     
 
     private func prepareDemoVideoPlayerIfNeeded() {
         guard demoVideoPlayer == nil else { return }
-        guard let bundleURL = Bundle.main.url(forResource: "pip-guide-video", withExtension: "mp4") else {
-            print("⚠️ Onboarding: Demo video not found in bundle")
+        guard let bundleURL = Bundle.main.url(forResource: "pip-slow-guide-video", withExtension: "mp4") else {
+            debugLog("⚠️ Onboarding: Demo video not found in bundle")
             return
         }
 
@@ -1459,7 +2021,7 @@ struct OnboardingView: View {
             return 
         }
         
-        print("🔍 Onboarding: Preparing notifications video player...")
+        debugLog("🔍 Onboarding: Preparing notifications video player...")
         
         // Try to find the video file
         guard let bundleURL = Bundle.main.url(forResource: "notifications", withExtension: "mov") else {
@@ -1586,6 +2148,17 @@ struct OnboardingView: View {
     }
 
     private func finalizeWallpaperSetup() {
+        // CRITICAL: Only allow wallpaper setup from step 4 (chooseWallpapers) when user explicitly clicks CTA
+        // This prevents shortcuts from running automatically when onboarding first appears
+        guard currentPage == .chooseWallpapers, isLaunchingShortcut else {
+            debugLog("⚠️ Onboarding: finalizeWallpaperSetup called but not in correct context")
+            debugLog("   - Current page: \(currentPage)")
+            debugLog("   - Is launching shortcut: \(isLaunchingShortcut)")
+            return
+        }
+        
+        debugLog("✅ Onboarding: Finalizing wallpaper setup from step 4")
+        
         // Don't track onboarding wallpaper for paywall limit
         let request = WallpaperUpdateRequest(skipDeletionPrompt: true, trackForPaywall: false)
         
@@ -1608,6 +2181,34 @@ struct OnboardingView: View {
         didTriggerShortcutRun = false
         if currentPage == .chooseWallpapers {
             currentPage = .allowPermissions
+        }
+    }
+    
+    private func requestAppReviewIfNeeded() {
+        #if DEBUG
+        // In DEBUG builds, always show review for testing (ignore the "already shown" flag)
+        print("🌟 DEBUG: Requesting app review (DEBUG mode - always showing)")
+        #else
+        // In production, only request review once
+        guard !hasRequestedAppReview else {
+            print("🌟 Review already requested, skipping")
+            return
+        }
+        #endif
+        
+        hasRequestedAppReview = true
+        print("🌟 Requesting app review after onboarding completion")
+        
+        // Small delay to let the onboarding dismissal complete smoothly
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            print("🌟 Triggering SKStoreReviewController.requestReview()")
+            if let windowScene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: windowScene)
+                print("🌟 Review request sent to window scene")
+            } else {
+                print("🌟 No active window scene found")
+            }
         }
     }
 
@@ -1721,8 +2322,8 @@ struct OnboardingView: View {
 
     @available(iOS 16.0, *)
     private func handlePickedHomeScreenData(_ data: Data) {
-        print("📸 Onboarding: Handling picked home screen data")
-        print("   Data size: \(data.count) bytes")
+        debugLog("📸 Onboarding: Handling picked home screen data")
+        debugLog("   Data size: \(data.count) bytes")
         isSavingHomeScreenPhoto = true
         homeScreenStatusMessage = "Saving photo…"
         homeScreenStatusColor = .gray
@@ -1732,12 +2333,12 @@ struct OnboardingView: View {
                 guard let image = UIImage(data: data) else {
                     throw HomeScreenImageManagerError.unableToEncodeImage
                 }
-                print("   Image size: \(image.size)")
+                debugLog("   Image size: \(image.size)")
                 try HomeScreenImageManager.saveHomeScreenImage(image)
-                print("✅ Onboarding: Saved custom home screen photo")
+                debugLog("✅ Onboarding: Saved custom home screen photo")
                 if let url = HomeScreenImageManager.homeScreenImageURL() {
-                    print("   File path: \(url.path)")
-                    print("   File exists: \(FileManager.default.fileExists(atPath: url.path))")
+                    debugLog("   File path: \(url.path)")
+                    debugLog("   File exists: \(FileManager.default.fileExists(atPath: url.path))")
                 }
 
                 await MainActor.run {
@@ -1745,11 +2346,11 @@ struct OnboardingView: View {
                     homeScreenStatusMessage = nil
                     homeScreenStatusColor = .gray
                     homeScreenPresetSelectionRaw = ""
-                    print("   homeScreenUsesCustomPhoto set to: true")
-                    print("   homeScreenPresetSelectionRaw cleared")
+                    debugLog("   homeScreenUsesCustomPhoto set to: true")
+                    debugLog("   homeScreenPresetSelectionRaw cleared")
                 }
             } catch {
-                print("❌ Onboarding: Failed to save home screen photo: \(error)")
+                debugLog("❌ Onboarding: Failed to save home screen photo: \(error)")
                 await MainActor.run {
                     homeScreenStatusMessage = error.localizedDescription
                     homeScreenStatusColor = .red
@@ -2019,8 +2620,6 @@ private extension OnboardingPage {
             return "Add Notes"
         case .allowPermissions:
             return "Allow Permissions"
-        case .storagePreferences:
-            return "Storage Preferences"
         case .chooseWallpapers:
             return "Choose Wallpapers"
         case .overview:
@@ -2040,8 +2639,6 @@ private extension OnboardingPage {
             return "Choose Wallpapers"
         case .allowPermissions:
             return "Allow Permissions"
-        case .storagePreferences:
-            return "Storage Options"
         case .overview:
             return "All Set"
         }
@@ -2059,10 +2656,8 @@ private extension OnboardingPage {
             return "Step 4"
         case .allowPermissions:
             return "Step 5"
-        case .storagePreferences:
-            return "Step 6"
         case .overview:
-            return "Step 7"
+            return "Step 6"
         }
     }
 }
@@ -2346,21 +2941,20 @@ private extension OnboardingView {
 
 // MARK: - Hidden PiP Player Layer View
 
-/// A hidden UIView that contains the player layer for PiP support.
-/// PiP requires the player layer to be in the view hierarchy, even if hidden.
+/// A UIView that contains the player layer for PiP support.
+/// PiP requires the player layer to be genuinely visible on screen.
 private struct HiddenPiPPlayerLayerView: UIViewRepresentable {
     @ObservedObject var playerManager: PIPVideoPlayerManager
     
     func makeUIView(context: Context) -> PiPContainerView {
         let view = PiPContainerView()
         view.backgroundColor = .clear
-        // PiP requires a reasonable frame size with proper aspect ratio
-        view.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
-        view.alpha = 1.0 // Must be visible for automatic PiP
-        view.isHidden = false
-        view.clipsToBounds = true
+        view.frame = CGRect(x: 0, y: 0, width: 320, height: 568) // Proper video size
+        view.alpha = 1.0 // Must NOT be 0 for PiP
+        view.isHidden = false // Must NOT be hidden for PiP
+        view.clipsToBounds = false // Allow layer to render
         
-        print("🔧 HiddenPiPPlayerLayerView: Creating view with frame: \(view.frame)")
+        debugLog("🔧 HiddenPiPPlayerLayerView: Creating view for PiP (size: 320x568)")
         
         // Store a reference to the manager
         view.playerManager = playerManager
@@ -2369,31 +2963,25 @@ private struct HiddenPiPPlayerLayerView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: PiPContainerView, context: Context) {
+        // Ensure view has proper size for PiP
+        if uiView.bounds.width == 0 || uiView.bounds.height == 0 {
+            uiView.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        }
+        
+        // Update existing player layer frame if it exists
+        if let playerLayer = uiView.layer.sublayers?.first as? AVPlayerLayer {
+            // Use fixed size for PiP (not view bounds which might be wrong)
+            playerLayer.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+        }
+        
         // When player is loaded and layer hasn't been added yet
         if playerManager.hasLoadedVideo && uiView.layer.sublayers?.isEmpty != false {
-            print("🔧 HiddenPiPPlayerLayerView: Player loaded, adding layer")
+            debugLog("🔧 HiddenPiPPlayerLayerView: Player loaded, adding layer")
             if let playerLayer = playerManager.createPlayerLayer() {
-                playerLayer.frame = uiView.bounds
+                // Use fixed size for PiP
+                playerLayer.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
                 uiView.layer.addSublayer(playerLayer)
-                print("✅ HiddenPiPPlayerLayerView: Added player layer with frame: \(playerLayer.frame)")
-                print("   - View in window: \(uiView.window != nil)")
-                
-                // Set up PiP controller after a delay to ensure view is in hierarchy
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    if uiView.window != nil {
-                        print("✅ HiddenPiPPlayerLayerView: View is in window, setting up PiP controller")
-                        self.playerManager.setupPictureInPictureControllerWithExistingLayer()
-                    } else {
-                        print("⚠️ HiddenPiPPlayerLayerView: View not in window, retrying...")
-                        // Retry after another delay
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                            if uiView.window != nil {
-                                print("✅ HiddenPiPPlayerLayerView: View now in window, setting up PiP controller")
-                                self.playerManager.setupPictureInPictureControllerWithExistingLayer()
-                            }
-                        }
-                    }
-                }
+                debugLog("✅ HiddenPiPPlayerLayerView: Added player layer (320x568)")
             }
         }
     }
@@ -2402,23 +2990,418 @@ private struct HiddenPiPPlayerLayerView: UIViewRepresentable {
 /// Container view for PiP player layer
 private class PiPContainerView: UIView {
     weak var playerManager: PIPVideoPlayerManager?
+    private var hasPreparedPiP = false
     
-    override func didMoveToWindow() {
-        super.didMoveToWindow()
+    override func layoutSubviews() {
+        super.layoutSubviews()
         
-        if window != nil {
-            print("✅ PiPContainerView: View added to window")
-            // If we have a layer but no PiP controller, set it up
-            if layer.sublayers?.isEmpty == false,
+        // Ensure view has proper size even if SwiftUI gives us wrong frame
+        if bounds.width == 0 || bounds.height == 0 {
+            frame = CGRect(x: frame.origin.x, y: frame.origin.y, width: 320, height: 568)
+        }
+        
+        // Keep player layer at fixed size for PiP
+        if let playerLayer = layer.sublayers?.first as? AVPlayerLayer {
+            playerLayer.frame = CGRect(x: 0, y: 0, width: 320, height: 568)
+            
+            // Set up PiP controller once layer is ready
+            if !hasPreparedPiP,
                let manager = playerManager,
-               !manager.isPiPControllerReady {
-                print("🔧 PiPContainerView: Setting up PiP controller now that view is in window")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+               !manager.isPiPControllerReady,
+               window != nil {
+                hasPreparedPiP = true
+                debugLog("✅ PiPContainerView: Setting up PiP controller")
+                
+                // Small delay to ensure everything is stable
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     manager.setupPictureInPictureControllerWithExistingLayer()
                 }
             }
         }
     }
+    
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        
+        if window != nil {
+            debugLog("✅ PiPContainerView: View added to window (frame: \(frame), bounds: \(bounds))")
+        }
+    }
 }
 
+// MARK: - Animated Word Component
 
+struct AnimatedWord: View {
+    let text: String
+    let isVisible: Bool
+    let delay: Double
+    var isAccent: Bool = false
+    
+    @State private var scale: CGFloat = 0.3
+    @State private var opacity: Double = 0
+    @State private var yOffset: CGFloat = 20
+    
+    var body: some View {
+        Text(text)
+            .foregroundStyle(
+                isAccent ?
+                LinearGradient(
+                    colors: [Color.appAccent, Color.appAccent.opacity(0.8)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ) :
+                LinearGradient(
+                    colors: [.white.opacity(0.7), .white.opacity(0.5)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .shadow(color: isAccent ? Color.appAccent.opacity(0.5) : .clear, radius: 10, x: 0, y: 0)
+            .scaleEffect(scale)
+            .opacity(opacity)
+            .offset(y: yOffset)
+            .onChange(of: isVisible) { visible in
+                if visible {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                            scale = 1.0
+                            opacity = 1.0
+                            yOffset = 0
+                        }
+                    }
+                }
+            }
+    }
+}
+
+// MARK: - Floating Ambient Particles
+
+struct FloatingParticlesView: View {
+    @State private var particles: [FloatingParticle] = []
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                ForEach(particles) { particle in
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [particle.color.opacity(0.6), particle.color.opacity(0)],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: particle.size / 2
+                            )
+                        )
+                        .frame(width: particle.size, height: particle.size)
+                        .position(x: particle.x, y: particle.y)
+                        .blur(radius: particle.blur)
+                }
+            }
+            .onAppear {
+                createParticles(in: geometry.size)
+                animateParticles(in: geometry.size)
+            }
+        }
+    }
+    
+    private func createParticles(in size: CGSize) {
+        particles = (0..<25).map { _ in
+            FloatingParticle(
+                x: CGFloat.random(in: 0...size.width),
+                y: CGFloat.random(in: 0...size.height),
+                size: CGFloat.random(in: 4...20),
+                color: [Color.appAccent, .white, Color.appAccent.opacity(0.5)].randomElement()!,
+                blur: CGFloat.random(in: 0...3),
+                speed: Double.random(in: 3...8)
+            )
+        }
+    }
+    
+    private func animateParticles(in size: CGSize) {
+        for i in particles.indices {
+            let particle = particles[i]
+            withAnimation(
+                .easeInOut(duration: particle.speed)
+                .repeatForever(autoreverses: true)
+            ) {
+                particles[i].y = CGFloat.random(in: 0...size.height)
+                particles[i].x = particle.x + CGFloat.random(in: -50...50)
+            }
+        }
+    }
+}
+
+struct FloatingParticle: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    let size: CGFloat
+    let color: Color
+    let blur: CGFloat
+    let speed: Double
+}
+
+// MARK: - Countdown Burst Effect
+
+struct CountdownBurstView: View {
+    @State private var particles: [BurstParticle] = []
+    
+    var body: some View {
+        ZStack {
+            ForEach(particles) { particle in
+                Circle()
+                    .fill(particle.color)
+                    .frame(width: particle.size, height: particle.size)
+                    .offset(x: particle.offsetX, y: particle.offsetY)
+                    .opacity(particle.opacity)
+                    .blur(radius: 1)
+            }
+        }
+        .onAppear {
+            createBurst()
+        }
+    }
+    
+    private func createBurst() {
+        particles = (0..<16).map { i in
+            let angle = Double(i) * (360.0 / 16.0) * .pi / 180.0
+            return BurstParticle(
+                angle: angle,
+                size: CGFloat.random(in: 4...8),
+                color: [Color.appAccent, .white, Color.appAccent.opacity(0.7)].randomElement()!
+            )
+        }
+        
+        // Animate burst outward
+        for i in particles.indices {
+            let angle = particles[i].angle
+            let distance: CGFloat = CGFloat.random(in: 60...100)
+            
+            withAnimation(.easeOut(duration: 0.4)) {
+                particles[i].offsetX = cos(angle) * distance
+                particles[i].offsetY = sin(angle) * distance
+                particles[i].opacity = 0
+            }
+        }
+    }
+}
+
+struct BurstParticle: Identifiable {
+    let id = UUID()
+    let angle: Double
+    let size: CGFloat
+    let color: Color
+    var offsetX: CGFloat = 0
+    var offsetY: CGFloat = 0
+    var opacity: Double = 1
+}
+
+// MARK: - Epic Confetti View (Explosion Style)
+
+struct ConfettiView: View {
+    @State private var particles: [ConfettiParticle] = []
+    
+    private let colors: [Color] = [
+        .appAccent,
+        Color(red: 1, green: 0.84, blue: 0),     // Gold
+        Color(red: 0.3, green: 0.85, blue: 0.5), // Green
+        Color(red: 1, green: 0.4, blue: 0.4),    // Coral
+        Color(red: 0.4, green: 0.7, blue: 1),    // Sky Blue
+        Color(red: 1, green: 0.6, blue: 0.8),    // Pink
+        Color(red: 0.7, green: 0.5, blue: 1),    // Lavender
+        .white
+    ]
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Central flash
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [.white.opacity(0.8), .clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                    )
+                    .frame(width: 300, height: 300)
+                    .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
+                    .opacity(particles.isEmpty ? 0 : 1)
+                    .animation(.easeOut(duration: 0.3), value: particles.isEmpty)
+                
+                ForEach(particles) { particle in
+                    ConfettiPiece(particle: particle, centerX: geometry.size.width / 2, centerY: geometry.size.height / 2)
+                }
+            }
+            .onAppear {
+                createExplosion(in: geometry.size)
+            }
+        }
+    }
+    
+    private func createExplosion(in size: CGSize) {
+        let centerX = size.width / 2
+        let centerY = size.height / 2
+        
+        // Create particles that explode from center
+        particles = (0..<120).map { i in
+            let angle = Double.random(in: 0...(2 * .pi))
+            let velocity = CGFloat.random(in: 200...600)
+            let targetX = centerX + cos(angle) * velocity
+            let targetY = centerY + sin(angle) * velocity - CGFloat.random(in: 100...300) // Bias upward
+            
+            return ConfettiParticle(
+                x: centerX,
+                y: centerY,
+                color: colors.randomElement()!,
+                rotation: Double.random(in: 0...360),
+                scale: CGFloat.random(in: 0.6...1.4),
+                shape: ConfettiShape.allCases.randomElement()!,
+                delay: Double.random(in: 0...0.15),
+                duration: Double.random(in: 2.0...3.5),
+                targetX: targetX,
+                targetY: targetY + size.height * 0.5 // Fall below screen
+            )
+        }
+    }
+}
+
+struct ConfettiParticle: Identifiable {
+    let id = UUID()
+    let x: CGFloat
+    let y: CGFloat
+    let color: Color
+    let rotation: Double
+    let scale: CGFloat
+    let shape: ConfettiShape
+    let delay: Double
+    let duration: Double
+    var targetX: CGFloat = 0
+    var targetY: CGFloat = 0
+}
+
+enum ConfettiShape: CaseIterable {
+    case circle
+    case rectangle
+    case star
+}
+
+struct ConfettiPiece: View {
+    let particle: ConfettiParticle
+    let centerX: CGFloat
+    let centerY: CGFloat
+    
+    @State private var currentX: CGFloat
+    @State private var currentY: CGFloat
+    @State private var currentRotation: Double
+    @State private var opacity: Double = 1
+    @State private var currentScale: CGFloat = 0.1
+    
+    init(particle: ConfettiParticle, centerX: CGFloat, centerY: CGFloat) {
+        self.particle = particle
+        self.centerX = centerX
+        self.centerY = centerY
+        self._currentX = State(initialValue: particle.x)
+        self._currentY = State(initialValue: particle.y)
+        self._currentRotation = State(initialValue: particle.rotation)
+    }
+    
+    var body: some View {
+        confettiShape()
+            .fill(particle.color)
+            .frame(width: 12 * particle.scale, height: 16 * particle.scale)
+            .rotationEffect(.degrees(currentRotation))
+            .scaleEffect(currentScale)
+            .position(x: currentX, y: currentY)
+            .opacity(opacity)
+            .shadow(color: particle.color.opacity(0.5), radius: 3, x: 0, y: 0)
+            .onAppear {
+                // Initial pop scale
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.5).delay(particle.delay)) {
+                    currentScale = particle.scale
+                }
+                
+                // Explosion outward then gravity fall
+                withAnimation(
+                    Animation.timingCurve(0.2, 0.8, 0.2, 1, duration: particle.duration)
+                        .delay(particle.delay)
+                ) {
+                    currentX = particle.targetX
+                    currentY = particle.targetY
+                    currentRotation += Double.random(in: 540...1080)
+                }
+                
+                // Fade out
+                withAnimation(
+                    .easeIn(duration: 0.6)
+                    .delay(particle.delay + particle.duration - 0.6)
+                ) {
+                    opacity = 0
+                }
+            }
+    }
+    
+    private func confettiShape() -> AnyShape {
+        switch particle.shape {
+        case .circle:
+            return AnyShape(Circle())
+        case .rectangle:
+            return AnyShape(RoundedRectangle(cornerRadius: 2))
+        case .star:
+            return AnyShape(StarShape())
+        }
+    }
+}
+
+struct StarShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let outerRadius = min(rect.width, rect.height) / 2
+        let innerRadius = outerRadius * 0.4
+        let points = 5
+        
+        var path = Path()
+        
+        for i in 0..<(points * 2) {
+            let radius = i.isMultiple(of: 2) ? outerRadius : innerRadius
+            let angle = Double(i) * .pi / Double(points) - .pi / 2
+            let point = CGPoint(
+                x: center.x + CGFloat(cos(angle)) * radius,
+                y: center.y + CGFloat(sin(angle)) * radius
+            )
+            
+            if i == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct TriangleShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
+        path.closeSubpath()
+        return path
+    }
+}
+
+// Type eraser for Shape protocol
+struct AnyShape: Shape {
+    private let _path: (CGRect) -> Path
+    
+    init<S: Shape>(_ shape: S) {
+        _path = shape.path(in:)
+    }
+    
+    func path(in rect: CGRect) -> Path {
+        return _path(rect)
+    }
+}

@@ -80,28 +80,13 @@ final class ShortcutSetupViewModel: ObservableObject {
     /// Creates a new ViewModel instance.
     /// - Parameters:
     ///   - shortcutURL: The iCloud Shortcut URL to open for installation
-    ///   - testFlightShortcutURL: Alternative URL for TestFlight builds
-    init(shortcutURL: String? = nil, testFlightShortcutURL: String? = nil) {
-        // Determine which shortcut URL to use
-        let isTestFlightBuild: Bool = {
-            guard let path = Bundle.main.appStoreReceiptURL?.path else {
-                return false
-            }
-            return path.contains("sandboxReceipt")
-        }()
-        
-        let urlString = isTestFlightBuild ? (testFlightShortcutURL ?? shortcutURL) : shortcutURL
-        
-        if let urlString = urlString {
+    init(shortcutURL: String? = nil) {
+        if let urlString = shortcutURL {
             self.shortcutURL = URL(string: urlString)
         } else {
-            // Default shortcut URL (local/Xcode build)
+            // Default shortcut URL
             self.shortcutURL = URL(string: "https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7")
         }
-        
-        // Note: Both production and TestFlight builds now use: https://www.icloud.com/shortcuts/37aa5bd3a1274af1b502c8eeda60fbf7
-        // This shortcut is configured to automatically use "Wallpaper 2" (Index 1, first user wallpaper)
-        // which works for all users regardless of how many wallpapers they have
         
         // Check if setup is already complete
         if ShortcutVerificationService.hasCompletedSetup() {

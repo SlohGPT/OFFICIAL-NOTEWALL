@@ -110,18 +110,6 @@ enum CrashReporter {
         #endif
     }
     
-    // MARK: - Force Crash (Testing Only)
-    
-    /// Force a crash for testing (DEBUG only)
-    static func forceCrash() {
-        #if DEBUG
-        fatalError("Test crash - CrashReporter.forceCrash() called")
-        #else
-        // Never crash in production!
-        logError("forceCrash() called in production - ignoring")
-        #endif
-    }
-    
     // MARK: - Log Levels
     
     enum LogLevel: String {

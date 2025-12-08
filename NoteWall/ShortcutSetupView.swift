@@ -24,16 +24,13 @@ struct ShortcutSetupView: View {
     /// Creates a new ShortcutSetupView.
     /// - Parameters:
     ///   - shortcutURL: The iCloud Shortcut URL to open for installation
-    ///   - testFlightShortcutURL: Alternative URL for TestFlight builds
     ///   - onComplete: Callback when setup is complete
     init(
         shortcutURL: String? = nil,
-        testFlightShortcutURL: String? = nil,
         onComplete: @escaping () -> Void = {}
     ) {
         let vm = ShortcutSetupViewModel(
-            shortcutURL: shortcutURL,
-            testFlightShortcutURL: testFlightShortcutURL
+            shortcutURL: shortcutURL
         )
         _viewModel = StateObject(wrappedValue: vm)
         self.onComplete = onComplete

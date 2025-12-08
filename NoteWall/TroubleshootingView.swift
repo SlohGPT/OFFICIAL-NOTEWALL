@@ -12,9 +12,16 @@ struct TroubleshootingView: View {
     @State private var floatOffset: CGFloat = 0
     @State private var progressWidth: CGFloat = 0
     
+    // Scanning states
+    @State private var isScanning = false
+    @State private var scanningStep: ScanningStep = .verifyingShortcut
+    @State private var scanProgress: Double = 0
+    @State private var detectedIssues: [String] = []
+    
     private var stepProgress: CGFloat {
         switch currentStep {
         case .start: return 0
+        case .scanning: return 0.15
         case .issue1: return 0.33
         case .issue2: return 0.66
         case .support: return 1.0
@@ -37,6 +44,12 @@ struct TroubleshootingView: View {
                         startView
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                                removal: .opacity.combined(with: .move(edge: .leading))
+                            ))
+                    case .scanning:
+                        scanningView
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .trailing)),
                                 removal: .opacity.combined(with: .move(edge: .leading))
                             ))
                     case .issue1:
@@ -261,8 +274,10 @@ struct TroubleshootingView: View {
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                    currentStep = .issue1
+                        currentStep = .scanning
                         animateIn = true
+                        // Start the scanning animation
+                        startScanning()
                     }
                 }
             }) {
@@ -781,7 +796,7 @@ struct TroubleshootingView: View {
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
                     
-                    if let url = URL(string: "mailto:support@notewall.app") {
+                    if let url = URL(string: "mailto:iosnotewall@gmail.com") {
                         UIApplication.shared.open(url)
                     }
                 }) {
@@ -800,7 +815,7 @@ struct TroubleshootingView: View {
                             Text("Email Support")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.white)
-                            Text("support@notewall.app")
+                            Text("iosnotewall@gmail.com")
                                 .font(.system(size: 13))
                                 .foregroundColor(.appAccent)
                         }
@@ -832,7 +847,7 @@ struct TroubleshootingView: View {
                     let generator = UIImpactFeedbackGenerator(style: .light)
                     generator.impactOccurred()
                     
-                    if let url = URL(string: "https://twitter.com/notewall") {
+                    if let url = URL(string: "https://x.com/billikkarol3") {
                         UIApplication.shared.open(url)
                     }
                 }) {
@@ -851,7 +866,7 @@ struct TroubleshootingView: View {
                             Text("Twitter / X")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.white)
-                            Text("@notewall")
+                            Text("@billikkarol3")
                                 .font(.system(size: 13))
                                 .foregroundColor(.appAccent)
                         }
@@ -899,11 +914,154 @@ struct TroubleshootingView: View {
         }
     }
     
+    // MARK: - Scanning View
+    
+    private var scanningView: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            
+            // Animated icon
+            ZStack {
+                Circle()
+                    .fill(Color.appAccent.opacity(0.2))
+                    .frame(width: 120, height: 120)
+                
+                Image(systemName: scanningStep.icon)
+                    .font(.system(size: 50))
+                    .foregroundColor(.appAccent)
+                    .rotationEffect(.degrees(isScanning ? 360 : 0))
+                    .animation(
+                        isScanning ? .linear(duration: 2).repeatForever(autoreverses: false) : .default,
+                        value: isScanning
+                    )
+            }
+            .opacity(animateIn ? 1 : 0)
+            .scaleEffect(animateIn ? 1 : 0.8)
+            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: animateIn)
+            .padding(.bottom, 32)
+            
+            // Title and description
+            VStack(spacing: 12) {
+                Text(scanningStep.title)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                
+                Text("Please wait while we check your setup...")
+                    .font(.system(size: 17))
+                    .foregroundColor(.white.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
+            .padding(.horizontal, 32)
+            .opacity(animateIn ? 1 : 0)
+            .offset(y: animateIn ? 0 : 20)
+            .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.1), value: animateIn)
+            
+            // Progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    // Background track
+                    Capsule()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 6)
+                    
+                    // Progress fill
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.appAccent, Color.appAccent.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geo.size.width * scanProgress, height: 6)
+                        .shadow(color: Color.appAccent.opacity(0.5), radius: 4, x: 0, y: 0)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: scanProgress)
+                }
+            }
+            .frame(height: 6)
+            .padding(.horizontal, 40)
+            .padding(.top, 40)
+            .opacity(animateIn ? 1 : 0)
+            .animation(.easeOut.delay(0.3), value: animateIn)
+            
+            // Spinner
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .appAccent))
+                .scaleEffect(1.2)
+                .padding(.top, 32)
+            
+            Spacer()
+        }
+    }
+    
+    // MARK: - Scanning Logic
+    
+    private func startScanning() {
+        isScanning = true
+        scanProgress = 0
+        scanningStep = .verifyingShortcut
+        
+        Task {
+            await runScanningSequence()
+        }
+    }
+    
+    private func runScanningSequence() async {
+        // Step 1: Verifying Shortcut
+        scanningStep = .verifyingShortcut
+        await animateScanProgress(to: 0.33, duration: 2.5)
+        
+        // Step 2: Regenerating Wallpaper
+        scanningStep = .regeneratingWallpaper
+        await animateScanProgress(to: 0.66, duration: 2.5)
+        
+        // Step 3: Checking Permissions
+        scanningStep = .checkingPermissions
+        await animateScanProgress(to: 1.0, duration: 2.5)
+        
+        // Complete - transition to troubleshooting steps
+        scanningStep = .complete
+        
+        await MainActor.run {
+            isScanning = false
+            
+            // Wait a moment, then transition to issue1
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    animateIn = false
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        currentStep = .issue1
+                        animateIn = true
+                    }
+                }
+            }
+        }
+    }
+    
+    private func animateScanProgress(to targetProgress: Double, duration: Double) async {
+        let steps = 30
+        let stepDuration = duration / Double(steps)
+        let startProgress = scanProgress
+        let progressIncrement = (targetProgress - startProgress) / Double(steps)
+        
+        for i in 0..<steps {
+            try? await Task.sleep(nanoseconds: UInt64(stepDuration * 1_000_000_000))
+            await MainActor.run {
+                scanProgress = startProgress + (progressIncrement * Double(i + 1))
+            }
+        }
+    }
+    
     // MARK: - Navigation
     
     private func goToPreviousStep() {
         switch currentStep {
         case .start: break
+        case .scanning: currentStep = .start
         case .issue1: currentStep = .start
         case .issue2: currentStep = .issue1
         case .support: currentStep = .issue2
@@ -915,9 +1073,56 @@ struct TroubleshootingView: View {
 
 private enum TroubleshootingStep {
     case start
+    case scanning
     case issue1
     case issue2
     case support
+}
+
+private enum ScanningStep {
+    case verifyingShortcut
+    case regeneratingWallpaper
+    case checkingPermissions
+    case complete
+    
+    var title: String {
+        switch self {
+        case .verifyingShortcut:
+            return "Verifying Shortcut"
+        case .regeneratingWallpaper:
+            return "Regenerating Wallpaper"
+        case .checkingPermissions:
+            return "Checking Permissions"
+        case .complete:
+            return "Scan Complete"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .verifyingShortcut:
+            return "link"
+        case .regeneratingWallpaper:
+            return "photo.on.rectangle"
+        case .checkingPermissions:
+            return "checkmark.shield.fill"
+        case .complete:
+            return "checkmark.circle.fill"
+        }
+    }
+    
+    var progressValue: Double {
+        switch self {
+        case .verifyingShortcut:
+            return 0.33
+        case .regeneratingWallpaper:
+            return 0.66
+        case .checkingPermissions:
+            return 0.85
+        case .complete:
+            return 1.0
+        }
+    }
 }
 
 private struct TroubleshootingHeroIcon: View {

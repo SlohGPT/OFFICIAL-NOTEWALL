@@ -12,7 +12,11 @@ struct WallpaperRenderer {
     private static let minFontSize: CGFloat = 52
     
     /// Horizontal padding on each side
-    private static let horizontalPadding: CGFloat = 80
+    /// 🔧 ADJUST THIS to control space from screen edges
+    ///    - 80 = Previous (closer to edge)  
+    ///    - 100 = More space from edge (recommended)
+    ///    - 120 = Even more space
+    private static let horizontalPadding: CGFloat = 100
     
     /// Canvas width
     private static let canvasWidth: CGFloat = 1290
@@ -27,10 +31,15 @@ struct WallpaperRenderer {
     
     /// Top padding when user HAS widgets (just below widgets)
     /// Balanced to clear widgets but not too far
-    private static let topPaddingWithWidgets: CGFloat = 1020
+    private static let topPaddingWithWidgets: CGFloat = 1030
     
     /// Top padding when user has NO widgets (closer to clock)
-    private static let topPaddingNoWidgets: CGFloat = 700
+    /// ADJUST THIS VALUE to control gap between clock and first note
+    /// - 700 = very close to clock (original)
+    /// - 780 = slight gap below clock
+    /// - 850 = comfortable gap below clock (recommended)
+    /// - 900+ = larger gap
+    private static let topPaddingNoWidgets: CGFloat = 850
     
     /// Bottom safe area padding (above flashlight/camera icons)
     /// Increased to ensure notes never overlap flashlight/camera
