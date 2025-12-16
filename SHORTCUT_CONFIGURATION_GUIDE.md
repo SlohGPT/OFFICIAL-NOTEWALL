@@ -68,3 +68,7 @@ If users report needing to manually select folders:
 
 **Solution:** Provide clear troubleshooting steps in the app's help section.
 
+
+
+
+

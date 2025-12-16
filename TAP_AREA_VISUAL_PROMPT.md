@@ -65,3 +65,7 @@ If the visual shows the tap area doesn't align with the "Allow" button:
 - Make smaller: Decrease `permissionTapAreaSize` (e.g., 80, 60)
 
 
+
+
+
+

@@ -117,3 +117,7 @@ The detection logic is in:
 - `NoteWall/OnboardingView.swift`
 - Function: `updatePermissionCount()` (around line 1945)
 
+
+
+
+

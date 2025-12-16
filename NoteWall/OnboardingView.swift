@@ -52,6 +52,7 @@ struct OnboardingView: View {
     @State private var didOpenShortcut = false
     @State private var shouldAdvanceToInstallStep = false
     @State private var advanceToInstallStepTimer: Timer?
+    @State private var isInstallingShortcut = false
     @State private var isSavingHomeScreenPhoto = false
     @State private var homeScreenStatusMessage: String?
     @State private var homeScreenStatusColor: Color = .gray
@@ -69,9 +70,24 @@ struct OnboardingView: View {
     @State private var demoVideoLooper: AVPlayerLooper?
     @State private var notificationsVideoPlayer: AVQueuePlayer?
     @State private var notificationsVideoLooper: AVPlayerLooper?
+    @State private var welcomeVideoPlayer: AVQueuePlayer?
+    @State private var welcomeVideoLooper: AVPlayerLooper?
+    @State private var isWelcomeVideoMuted: Bool = false
+    @State private var isWelcomeVideoPaused: Bool = false
+    @State private var welcomeVideoProgress: Double = 0.0
+    @State private var welcomeVideoDuration: Double = 0.0
+    @State private var welcomeVideoProgressTimer: Timer?
+    @State private var stuckGuideVideoPlayer: AVQueuePlayer?
+    @State private var stuckGuideVideoLooper: AVPlayerLooper?
+    @State private var isStuckVideoMuted: Bool = false
+    @State private var isStuckVideoPaused: Bool = false
+    @State private var stuckVideoProgress: Double = 0.0
+    @State private var stuckVideoDuration: Double = 0.0
+    @State private var stuckVideoProgressTimer: Timer?
     @StateObject private var pipVideoPlayerManager = PIPVideoPlayerManager()
     @State private var shouldStartPiP = false
     private let demoVideoPlaybackRate: Float = 1.5
+    private let stuckVideoResourceName = "how-to-fix-guide"
     
     // Post-onboarding troubleshooting
     @State private var showTroubleshooting = false
@@ -233,6 +249,24 @@ struct OnboardingView: View {
             if page == .chooseWallpapers {
                 HomeScreenImageManager.prepareStorageStructure()
             }
+            
+            // Pause video when leaving video introduction step
+            if page != .videoIntroduction {
+                if let player = welcomeVideoPlayer, player.rate > 0 {
+                    player.pause()
+                    isWelcomeVideoPaused = true
+                    debugLog("⏸️ Welcome video paused (page changed away from step 2)")
+                }
+            }
+            
+            // Resume video when entering video introduction step
+            if page == .videoIntroduction {
+                if let player = welcomeVideoPlayer, player.rate == 0 {
+                    player.play()
+                    isWelcomeVideoPaused = false
+                    debugLog("▶️ Welcome video resumed (entering step 2)")
+                }
+            }
         }
         .onChange(of: shouldRestartOnboarding) { shouldRestart in
             if shouldRestart {
@@ -241,6 +275,22 @@ struct OnboardingView: View {
                     currentPage = .welcome
                 }
                 shouldRestartOnboarding = false
+            }
+        }
+        .onChange(of: showInstallSheet) { isShowing in
+            if !isShowing && currentPage == .videoIntroduction && !isInstallingShortcut {
+                // Resume video if sheet is dismissed and we're still on step 2 (but not if installing shortcut)
+                if let player = welcomeVideoPlayer, player.rate == 0 {
+                    player.play()
+                    isWelcomeVideoPaused = false
+                    debugLog("▶️ Welcome video resumed (install sheet dismissed)")
+                }
+            }
+            // Reset flag after a short delay
+            if !isShowing && isInstallingShortcut {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isInstallingShortcut = false
+                }
             }
         }
         .sheet(isPresented: $showInstallSheet) {
@@ -326,6 +376,8 @@ struct OnboardingView: View {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
                     
+                    // Set flag to prevent video from auto-resuming
+                    isInstallingShortcut = true
                     showInstallSheet = false
                     // Set flag to advance to step 3 when app backgrounds
                     shouldAdvanceToInstallStep = true
@@ -510,6 +562,16 @@ struct OnboardingView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: showHelpSheet) { isShowing in
+            if !isShowing && currentPage == .videoIntroduction {
+                // Resume video if help sheet is dismissed and we're still on step 2
+                if let player = welcomeVideoPlayer, player.rate == 0 {
+                    player.play()
+                    isWelcomeVideoPaused = false
+                    debugLog("▶️ Welcome video resumed (help sheet dismissed)")
+                }
+            }
+        }
         .sheet(isPresented: $showHelpSheet) {
             helpOptionsSheet
         }
@@ -693,6 +755,12 @@ struct OnboardingView: View {
                             withAnimation(.easeInOut(duration: 0.4)) {
                                 showTextVersion = false
                             }
+                            // Resume video playback
+                            if let player = welcomeVideoPlayer, player.rate == 0 {
+                                player.play()
+                                isWelcomeVideoPaused = false
+                                debugLog("▶️ Welcome video resumed")
+                            }
                         }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.left")
@@ -714,6 +782,12 @@ struct OnboardingView: View {
                             Button(action: {
                                 withAnimation(.easeInOut(duration: 0.4)) {
                                     showTextVersion = true
+                                }
+                                // Pause video playback
+                                if let player = welcomeVideoPlayer, player.rate > 0 {
+                                    player.pause()
+                                    isWelcomeVideoPaused = true
+                                    debugLog("⏸️ Welcome video paused")
                                 }
                             }) {
                                 HStack(spacing: 8) {
@@ -909,34 +983,207 @@ struct OnboardingView: View {
                         .animation(.easeInOut(duration: 0.4), value: showTextVersion)
                     } else {
                         // Video Content
-                        // Video 1 (Introduction)
-                        // Using standard VideoPlayer for inline playback
-                        VStack(spacing: 0) {
-                            if let url = Bundle.main.url(forResource: "notifications", withExtension: "mov") {
-                                VideoPlayer(player: AVPlayer(url: url))
-                                    .aspectRatio(9/16, contentMode: .fit)
-                                    .frame(width: UIScreen.main.bounds.width * 0.7)
-                                    .cornerRadius(16)
-                                    .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
-                                    .transition(.asymmetric(
-                                        insertion: .move(edge: .leading).combined(with: .opacity),
-                                        removal: .move(edge: .trailing).combined(with: .opacity)
-                                    ))
-                            } else {
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.gray.opacity(0.2))
-                                    .aspectRatio(9/16, contentMode: .fit)
-                                    .frame(width: UIScreen.main.bounds.width * 0.7)
-                                    .overlay(
-                                        VStack(spacing: 8) {
-                                            Image(systemName: "video.slash")
-                                                .font(.largeTitle)
-                                                .foregroundColor(.white.opacity(0.6))
-                                            Text("Video not found")
-                                                .font(.caption)
-                                                .foregroundColor(.white.opacity(0.6))
+                        // Welcome Video (Introduction) - Auto-playing, looping, with custom controls
+                        ZStack {
+                            // Original centered video layout
+                            VStack(spacing: 0) {
+                                if Bundle.main.url(forResource: "welcome-video", withExtension: "mp4") != nil {
+                                    if let player = welcomeVideoPlayer {
+                                        AutoPlayingLoopingVideoPlayer(player: player)
+                                            .aspectRatio(9/16, contentMode: .fit)
+                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .cornerRadius(16)
+                                            .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
+                                            .transition(.asymmetric(
+                                                insertion: .move(edge: .leading).combined(with: .opacity),
+                                                removal: .move(edge: .trailing).combined(with: .opacity)
+                                            ))
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .aspectRatio(9/16, contentMode: .fit)
+                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .overlay(
+                                                VStack(spacing: 8) {
+                                                    ProgressView()
+                                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                    Text("Loading video...")
+                                                        .font(.caption)
+                                                        .foregroundColor(.white.opacity(0.6))
+                                                }
+                                            )
+                                    }
+                                } else {
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.gray.opacity(0.2))
+                                        .aspectRatio(9/16, contentMode: .fit)
+                                        .frame(width: UIScreen.main.bounds.width * 0.7)
+                                        .overlay(
+                                            VStack(spacing: 8) {
+                                                Image(systemName: "video.slash")
+                                                    .font(.largeTitle)
+                                                    .foregroundColor(.white.opacity(0.6))
+                                                Text("Video not found")
+                                                    .font(.caption)
+                                                    .foregroundColor(.white.opacity(0.6))
+                                            }
+                                        )
+                                }
+                            }
+                            
+                            // Overlay buttons (positioned in black space outside video)
+                            if welcomeVideoPlayer != nil {
+                                let videoWidth = UIScreen.main.bounds.width * 0.7
+                                let leftEdge = (UIScreen.main.bounds.width - videoWidth) / 2
+                                let rightEdge = leftEdge + videoWidth
+                                let leftSpace = leftEdge
+                                let rightSpace = UIScreen.main.bounds.width - rightEdge
+                                
+                                VStack {
+                                    Spacer()
+                                    
+                                    HStack(spacing: 0) {
+                                        // Backward arrow button in left black space
+                                        HStack {
+                                            Spacer()
+                                            VStack {
+                                                Spacer()
+                                                Button(action: {
+                                                    seekVideo(by: -3.0)
+                                                }) {
+                                                    Image("skipBackward3s")
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .frame(width: 44, height: 44)
+                                                }
+                                                .padding(.trailing, 8) // 8px from video edge
+                                                Spacer()
+                                            }
                                         }
-                                    )
+                                        .frame(width: leftSpace)
+                                        
+                                        // Video area (spacer)
+                                        Spacer()
+                                            .frame(width: videoWidth)
+                                        
+                                        // Forward arrow button in right black space
+                                        HStack {
+                                            VStack {
+                                                Spacer()
+                                                Button(action: {
+                                                    seekVideo(by: 3.0)
+                                                }) {
+                                                    Image("skipForward3s")
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fit)
+                                                        .frame(width: 44, height: 44)
+                                                }
+                                                .padding(.leading, 8) // 8px from video edge
+                                                Spacer()
+                                            }
+                                            Spacer()
+                                        }
+                                        .frame(width: rightSpace)
+                                    }
+                                    .frame(width: UIScreen.main.bounds.width)
+                                    
+                                    Spacer()
+                                }
+                                .frame(width: UIScreen.main.bounds.width)
+                                
+                                // Progress bar (top of video, only spans video width, accounting for rounded corners)
+                                VStack {
+                                    HStack {
+                                        Spacer()
+                                            .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                        
+                                        GeometryReader { geometry in
+                                            let availableWidth = geometry.size.width - 22 // Subtract padding (12 left + 10 right)
+                                            let progressWidth = availableWidth * CGFloat(welcomeVideoProgress)
+                                            
+                                            ZStack(alignment: .leading) {
+                                                // Background bar
+                                                Rectangle()
+                                                    .fill(Color.white.opacity(0.2))
+                                                    .frame(height: 3)
+                                                
+                                                // Progress bar (turquoise)
+                                                Rectangle()
+                                                    .fill(Color.appAccent)
+                                                    .frame(width: progressWidth, height: 3)
+                                            }
+                                            .padding(.leading, 12) // Offset to account for rounded corners on left
+                                            .padding(.trailing, 10) // Offset to account for rounded corners on right
+                                        }
+                                        .frame(width: UIScreen.main.bounds.width * 0.7, height: 3)
+                                        
+                                        Spacer()
+                                            .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                    }
+                                    .padding(.top, 0)
+                                    
+                                    Spacer()
+                                }
+                                
+                                // Mute button (top-left corner of video, higher z-index)
+                                VStack {
+                                    HStack {
+                                        Button(action: {
+                                            toggleMute()
+                                        }) {
+                                            Image(systemName: isWelcomeVideoMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(.white)
+                                                .frame(width: 36, height: 36)
+                                                .background(
+                                                    Circle()
+                                                        .fill(Color.black.opacity(0.6))
+                                                        .overlay(
+                                                            Circle()
+                                                                .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                                                        )
+                                                )
+                                        }
+                                        .padding(.leading, UIScreen.main.bounds.width * 0.15 + 12)
+                                        .padding(.top, 12)
+                                        Spacer()
+                                    }
+                                    Spacer()
+                                }
+                                
+                                // Pause/Start button (bottom center of video)
+                                VStack {
+                                    Spacer()
+                                    HStack {
+                                        Spacer()
+                                        Button(action: {
+                                            if let player = welcomeVideoPlayer {
+                                                if player.rate > 0 {
+                                                    player.pause()
+                                                    isWelcomeVideoPaused = true
+                                                    debugLog("⏸️ Welcome video paused (pause button tapped)")
+                                                } else {
+                                                    player.play()
+                                                    isWelcomeVideoPaused = false
+                                                    debugLog("▶️ Welcome video resumed (start button tapped)")
+                                                }
+                                            }
+                                        }) {
+                                            Text(isWelcomeVideoPaused ? "S T A R T" : "P A U S E")
+                                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                .foregroundColor(.white)
+                                                .tracking(3) // Spaced-out letters
+                                                .padding(.horizontal, 20)
+                                                .padding(.vertical, 10)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(Color.gray.opacity(0.3)) // Low opacity grey background
+                                                )
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.bottom, 16)
+                                }
                             }
                         }
                         .transition(.asymmetric(
@@ -944,11 +1191,22 @@ struct OnboardingView: View {
                             removal: .move(edge: .trailing).combined(with: .opacity)
                         ))
                         .animation(.easeInOut(duration: 0.4), value: showTextVersion)
+                        .onAppear {
+                            setupWelcomeVideoPlayer()
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
             }
+        }
+        .onAppear {
+            // Ensure video is set up and playing when step appears
+            setupWelcomeVideoPlayer()
+        }
+        .onDisappear {
+            // Stop progress tracking when leaving the step
+            stopWelcomeVideoProgressTracking()
         }
     }
     
@@ -1001,6 +1259,19 @@ struct OnboardingView: View {
                 endPoint: .bottom
             )
             .ignoresSafeArea()
+            .onAppear {
+                // Set up video player when modal appears - force setup
+                debugLog("📱 Troubleshooting modal appeared - setting up video")
+                setupStuckVideoPlayerIfNeeded()
+                
+                // If video player is still nil after a brief delay, try again
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    if self.stuckGuideVideoPlayer == nil {
+                        debugLog("⚠️ Video player still nil after 0.5s, retrying setup...")
+                        self.setupStuckVideoPlayerIfNeeded()
+                    }
+                }
+            }
             
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 24) {
@@ -1011,6 +1282,7 @@ struct OnboardingView: View {
                                 withAnimation(.easeInOut(duration: 0.4)) {
                                     showTroubleshootingTextVersion = false
                                 }
+                                resumeStuckVideoIfNeeded()
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.left")
@@ -1028,12 +1300,14 @@ struct OnboardingView: View {
                                 )
                                 .shadow(color: Color.appAccent.opacity(0.3), radius: 8, x: 0, y: 4)
                             }
+                            .padding(.leading, 0) // Text version page: minimal padding
                         } else {
                             HStack(spacing: 12) {
                                 Button(action: {
                                     withAnimation(.easeInOut(duration: 0.4)) {
                                         showTroubleshootingTextVersion = true
                                     }
+                                    pauseStuckVideo()
                                 }) {
                                     HStack(spacing: 8) {
                                         Image(systemName: "text.alignleft")
@@ -1061,6 +1335,7 @@ struct OnboardingView: View {
                                     // Medium haptic feedback
                                     let generator = UIImpactFeedbackGenerator(style: .medium)
                                     generator.impactOccurred()
+                                    pauseStuckVideo()
                                     showHelpSheet = true
                                 }) {
                                     HStack(spacing: 8) {
@@ -1081,6 +1356,7 @@ struct OnboardingView: View {
                                     )
                                 }
                             }
+                            .padding(.leading, 48) // Video page: more padding
                         }
                         Spacer()
                         
@@ -1089,6 +1365,7 @@ struct OnboardingView: View {
                             // Light haptic feedback
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
+                            stopStuckVideoPlayback()
                             showTroubleshooting = false
                             showTroubleshootingTextVersion = false
                         }) {
@@ -1096,8 +1373,8 @@ struct OnboardingView: View {
                                 .font(.system(size: 28))
                                 .foregroundColor(.secondary)
                         }
+                        .padding(.trailing, showTroubleshootingTextVersion ? 0 : 48) // 8 for text version, 40 for video
                     }
-                    .padding(.horizontal, 24)
                     .padding(.top, 20)
                     
                     if !showTroubleshootingTextVersion {
@@ -1125,28 +1402,187 @@ struct OnboardingView: View {
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
-                                // Video 3 (Troubleshooting)
-                                if let url = Bundle.main.url(forResource: "notifications", withExtension: "mov") {
-                                    VideoPlayer(player: AVPlayer(url: url))
-                                        .aspectRatio(9/16, contentMode: .fit)
-                                        .frame(width: UIScreen.main.bounds.width * 0.7)
-                                        .cornerRadius(16)
-                                        .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
-                                } else {
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color.gray.opacity(0.2))
-                                        .aspectRatio(9/16, contentMode: .fit)
-                                        .frame(width: UIScreen.main.bounds.width * 0.7)
-                                        .overlay(
-                                            VStack(spacing: 8) {
-                                                Image(systemName: "video.slash")
-                                                    .font(.largeTitle)
-                                                    .foregroundColor(.white.opacity(0.6))
-                                                Text("Video not found")
-                                                    .font(.caption)
-                                                    .foregroundColor(.white.opacity(0.6))
+                                ZStack {
+                                    // Video player - always try to show video
+                                    if let player = stuckGuideVideoPlayer {
+                                        AutoPlayingLoopingVideoPlayer(player: player)
+                                            .aspectRatio(9/16, contentMode: .fit)
+                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .cornerRadius(16)
+                                            .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
+                                    } else {
+                                        // Loading state while video is being set up
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .fill(Color.gray.opacity(0.2))
+                                            .aspectRatio(9/16, contentMode: .fit)
+                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .overlay(
+                                                VStack(spacing: 8) {
+                                                    ProgressView()
+                                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                                    Text("Loading video...")
+                                                        .font(.caption)
+                                                        .foregroundColor(.white.opacity(0.6))
+                                                }
+                                            )
+                                    }
+                                    
+                                    // Overlay controls styled the same as the intro video
+                                    let videoWidth = UIScreen.main.bounds.width * 0.7
+                                    let leftEdge = (UIScreen.main.bounds.width - videoWidth) / 2
+                                    let rightEdge = leftEdge + videoWidth
+                                    let leftSpace = leftEdge
+                                    let rightSpace = UIScreen.main.bounds.width - rightEdge
+                                    
+                                    VStack {
+                                        Spacer()
+                                        
+                                        HStack(spacing: 0) {
+                                            // Backward button
+                                            HStack {
+                                                Spacer()
+                                                VStack {
+                                                    Spacer()
+                                                    Button(action: {
+                                                        seekStuckVideo(by: -3.0)
+                                                    }) {
+                                                        Image("skipBackward3s")
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fit)
+                                                            .frame(width: 44, height: 44)
+                                                            .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
+                                                    }
+                                                    .padding(.trailing, 8)
+                                                    .disabled(stuckGuideVideoPlayer == nil)
+                                                    Spacer()
+                                                }
                                             }
-                                        )
+                                            .frame(width: leftSpace)
+                                            
+                                            Spacer()
+                                                .frame(width: videoWidth)
+                                            
+                                            // Forward button
+                                            HStack {
+                                                VStack {
+                                                    Spacer()
+                                                    Button(action: {
+                                                        seekStuckVideo(by: 3.0)
+                                                    }) {
+                                                        Image("skipForward3s")
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fit)
+                                                            .frame(width: 44, height: 44)
+                                                            .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
+                                                    }
+                                                    .padding(.leading, 8)
+                                                    .disabled(stuckGuideVideoPlayer == nil)
+                                                    Spacer()
+                                                }
+                                                Spacer()
+                                            }
+                                            .frame(width: rightSpace)
+                                        }
+                                        .frame(width: UIScreen.main.bounds.width)
+                                        
+                                        Spacer()
+                                    }
+                                    .frame(width: UIScreen.main.bounds.width)
+                                    
+                                    // Progress bar
+                                    VStack {
+                                        HStack {
+                                            Spacer()
+                                                .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                            
+                                            GeometryReader { geometry in
+                                                let availableWidth = geometry.size.width - 22
+                                                let progressWidth = availableWidth * CGFloat(stuckVideoProgress)
+                                                
+                                                ZStack(alignment: .leading) {
+                                                    Rectangle()
+                                                        .fill(Color.white.opacity(0.2))
+                                                        .frame(height: 3)
+                                                    
+                                                    Rectangle()
+                                                        .fill(Color.appAccent)
+                                                        .frame(width: progressWidth, height: 3)
+                                                }
+                                                .padding(.leading, 12)
+                                                .padding(.trailing, 10)
+                                            }
+                                            .frame(width: UIScreen.main.bounds.width * 0.7, height: 3)
+                                            
+                                            Spacer()
+                                                .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                        }
+                                        .padding(.top, 0)
+                                        
+                                        Spacer()
+                                    }
+                                    
+                                    // Mute button
+                                    VStack {
+                                        HStack {
+                                            Button(action: {
+                                                toggleStuckVideoMute()
+                                            }) {
+                                                Image(systemName: isStuckVideoMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
+                                                    .font(.system(size: 16, weight: .semibold))
+                                                    .foregroundColor(.white)
+                                                    .frame(width: 36, height: 36)
+                                                    .background(
+                                                        Circle()
+                                                            .fill(Color.black.opacity(0.6))
+                                                            .overlay(
+                                                                Circle()
+                                                                    .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                                                            )
+                                                    )
+                                                    .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
+                                            }
+                                            .disabled(stuckGuideVideoPlayer == nil)
+                                            .padding(.leading, UIScreen.main.bounds.width * 0.15 + 12)
+                                            .padding(.top, 12)
+                                            Spacer()
+                                        }
+                                        Spacer()
+                                    }
+                                    
+                                    // Pause/Start button
+                                    VStack {
+                                        Spacer()
+                                        HStack {
+                                            Spacer()
+                                            Button(action: {
+                                                if let player = stuckGuideVideoPlayer {
+                                                    if player.rate > 0 {
+                                                        pauseStuckVideo()
+                                                    } else {
+                                                        resumeStuckVideoIfNeeded(forcePlay: true)
+                                                    }
+                                                }
+                                            }) {
+                                                Text(isStuckVideoPaused ? "S T A R T" : "P A U S E")
+                                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                    .foregroundColor(.white)
+                                                    .tracking(3)
+                                                    .padding(.horizontal, 20)
+                                                    .padding(.vertical, 10)
+                                                    .background(
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(Color.gray.opacity(0.3))
+                                                    )
+                                                    .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
+                                            }
+                                            .disabled(stuckGuideVideoPlayer == nil)
+                                            Spacer()
+                                        }
+                                        .padding(.bottom, 16)
+                                    }
+                                }
+                                .onAppear {
+                                    setupStuckVideoPlayerIfNeeded()
                                 }
                             }
                             .padding(.horizontal, 24)
@@ -1170,12 +1606,20 @@ struct OnboardingView: View {
                             .padding(.top, 8)
                             
                             // Primary CTA Button - Brand Style
-                        Button(action: {
-                            // Medium haptic for important action
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-                            openWallpaperSettings()
-                        }) {
+            Button(action: {
+                // Medium haptic for important action
+                let generator = UIImpactFeedbackGenerator(style: .medium)
+                generator.impactOccurred()
+                stopStuckVideoPlayback()
+                
+                // Save instruction wallpaper to Photos first, then open Photos
+                saveInstructionWallpaperToPhotos()
+                
+                // Small delay to ensure image is saved before opening Photos
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    openWallpaperSettings()
+                }
+            }) {
                                 HStack(spacing: 12) {
                                     Image(systemName: "photo.on.rectangle")
                                         .font(.system(size: 18, weight: .semibold))
@@ -1203,10 +1647,11 @@ struct OnboardingView: View {
                                 )
                                 .shadow(color: Color.appAccent.opacity(0.3), radius: 12, x: 0, y: 6)
                         }
-                        .padding(.horizontal, 24)
+                        .padding(.horizontal, 48)
                         
                             // Secondary Button
                         Button(action: {
+                        stopStuckVideoPlayback()
                             showTroubleshooting = false
                         }) {
                             Text("I'll Do This Later")
@@ -1221,7 +1666,16 @@ struct OnboardingView: View {
                         troubleshootingTextGuide
                     }
                 }
+                .padding(.horizontal, 24)
                 .padding(.bottom, 40)
+            }
+        }
+        .onDisappear {
+            stopStuckVideoPlayback()
+        }
+        .onChange(of: showHelpSheet) { isShowing in
+            if isShowing {
+                pauseStuckVideo()
             }
         }
     }
@@ -1426,7 +1880,14 @@ struct OnboardingView: View {
                 // Medium haptic for important action
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
-                openWallpaperSettings()
+                
+                // Save instruction wallpaper to Photos first, then open Photos
+                saveInstructionWallpaperToPhotos()
+                
+                // Small delay to ensure image is saved before opening Photos
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    openWallpaperSettings()
+                }
             }) {
                     HStack(spacing: 12) {
                         Image(systemName: "photo.on.rectangle")
@@ -1684,15 +2145,13 @@ struct OnboardingView: View {
                                     .shadow(color: Color.appAccent.opacity(0.3), radius: 12, x: 0, y: 6)
                                 }
                                 
-                                Button(action: {
-                                    // Medium haptic for important troubleshooting action
-                                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                                    generator.impactOccurred()
-                                    
-                                    // Save instruction wallpaper to Photos before showing troubleshooting
-                                    saveInstructionWallpaperToPhotos()
-                                    showTroubleshooting = true
-                                }) {
+                        Button(action: {
+                            // Medium haptic for important troubleshooting action
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+                            
+                            showTroubleshooting = true
+                        }) {
                                     HStack(spacing: 12) {
                                         Image(systemName: "wrench.and.screwdriver.fill")
                                             .font(.system(size: 20, weight: .semibold))
@@ -1710,6 +2169,31 @@ struct OnboardingView: View {
                                                     .strokeBorder(Color.white.opacity(0.2), lineWidth: 1.5)
                                             )
                                     )
+                                }
+                                
+                                // Subtle CTA to replay video
+                                Button(action: {
+                                    // Light haptic for subtle action
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    
+                                    // Replay the video - open Shortcuts app with PiP video
+                                    installShortcut()
+                                }) {
+                                    VStack(spacing: 2) {
+                                        Text("Accidentally clicked or cancelled?")
+                                            .font(.system(size: 14, weight: .medium))
+                                        if #available(iOS 15.0, *) {
+                                            Text(createUnderlinedText("Tap here to replay the video"))
+                                                .font(.system(size: 14, weight: .medium))
+                                        } else {
+                                            Text("Tap here to replay the video")
+                                                .font(.system(size: 14, weight: .medium))
+                                        }
+                                    }
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.top, 8)
                                 }
                             }
                             .padding(.horizontal, 24)
@@ -3076,6 +3560,12 @@ struct OnboardingView: View {
         case .welcome:
             advanceStep()
         case .videoIntroduction:
+             // Pause video when showing install sheet
+             if let player = welcomeVideoPlayer, player.rate > 0 {
+                 player.pause()
+                 isWelcomeVideoPaused = true
+                 debugLog("⏸️ Welcome video paused (install sheet appearing)")
+             }
              // Show install sheet instead of advancing
              showInstallSheet = true
         case .installShortcut:
@@ -3111,6 +3601,15 @@ struct OnboardingView: View {
             return 
         }
         
+        // Pause video when leaving video introduction step
+        if currentPage == .videoIntroduction {
+            if let player = welcomeVideoPlayer, player.rate > 0 {
+                player.pause()
+                isWelcomeVideoPaused = true
+                debugLog("⏸️ Welcome video paused (leaving step 2)")
+            }
+        }
+        
         // Light impact haptic for page transition
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
@@ -3136,6 +3635,15 @@ struct OnboardingView: View {
         
         withAnimation(.easeInOut) {
             currentPage = previous
+        }
+        
+        // Resume video when returning to video introduction step
+        if previous == .videoIntroduction {
+            if let player = welcomeVideoPlayer, player.rate == 0 {
+                player.play()
+                isWelcomeVideoPaused = false
+                debugLog("▶️ Welcome video resumed (returning to step 2)")
+            }
         }
     }
     
@@ -3607,6 +4115,244 @@ struct OnboardingView: View {
         // This prevents race conditions with the VideoPlayer view setup
     }
     
+    private func setupWelcomeVideoPlayer() {
+        guard welcomeVideoPlayer == nil else {
+            // If player already exists, just ensure it's playing
+            if let player = welcomeVideoPlayer, player.rate == 0 {
+                player.play()
+            }
+            return
+        }
+        
+        debugLog("🔍 Onboarding: Setting up welcome video player...")
+        
+        // Try to find the video file
+        guard let bundleURL = Bundle.main.url(forResource: "welcome-video", withExtension: "mp4") else {
+            debugLog("❌ welcome-video.mp4 not found in bundle!")
+            return
+        }
+        
+        debugLog("✅ Found welcome-video.mp4 at: \(bundleURL.path)")
+        
+        // Create asset and player item
+        let asset = AVAsset(url: bundleURL)
+        let item = AVPlayerItem(asset: asset)
+        
+        // Create looping player
+        let queuePlayer = AVQueuePlayer()
+        let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        
+        // Configure player for autoplay and looping
+        queuePlayer.isMuted = isWelcomeVideoMuted // Sync with state
+        queuePlayer.automaticallyWaitsToMinimizeStalling = false
+        
+        // Store everything
+        welcomeVideoPlayer = queuePlayer
+        welcomeVideoLooper = looper
+        
+        debugLog("✅ Welcome video player created")
+        
+        // Get video duration
+        Task {
+            let duration = try? await asset.load(.duration)
+            await MainActor.run {
+                if let duration = duration {
+                    welcomeVideoDuration = duration.seconds
+                    debugLog("📹 Welcome video duration: \(welcomeVideoDuration) seconds")
+                }
+            }
+        }
+        
+        // Set up progress tracking timer
+        startWelcomeVideoProgressTracking()
+        
+        // Start playing automatically
+        queuePlayer.play()
+        isWelcomeVideoPaused = false
+        debugLog("▶️ Welcome video started playing")
+    }
+    
+    private func startWelcomeVideoProgressTracking() {
+        // Stop any existing timer
+        welcomeVideoProgressTimer?.invalidate()
+        
+        // Create new timer to update progress
+        welcomeVideoProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            guard let player = self.welcomeVideoPlayer else { return }
+            
+            let currentTime = CMTimeGetSeconds(player.currentTime())
+            let duration = self.welcomeVideoDuration > 0 ? self.welcomeVideoDuration : CMTimeGetSeconds(player.currentItem?.duration ?? .zero)
+            
+            if duration > 0 {
+                // Calculate progress, handling looping
+                var progress = currentTime / duration
+                
+                // If video loops and we're past the duration, reset progress
+                if progress >= 1.0 {
+                    progress = 0.0
+                }
+                
+                self.welcomeVideoProgress = min(max(progress, 0), 1)
+            }
+        }
+    }
+    
+    private func stopWelcomeVideoProgressTracking() {
+        welcomeVideoProgressTimer?.invalidate()
+        welcomeVideoProgressTimer = nil
+    }
+    
+    private func seekVideo(by seconds: Double) {
+        guard let player = welcomeVideoPlayer else { return }
+        
+        // Get current time
+        let currentTime = player.currentTime()
+        let currentSeconds = CMTimeGetSeconds(currentTime)
+        
+        // Calculate new time
+        let newSeconds = max(0, currentSeconds + seconds)
+        let newTime = CMTime(seconds: newSeconds, preferredTimescale: currentTime.timescale)
+        
+        // Seek to new time
+        player.seek(to: newTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        
+        debugLog("⏩ Video seeked by \(seconds) seconds to \(newSeconds)s")
+    }
+    
+    private func toggleMute() {
+        guard let player = welcomeVideoPlayer else { return }
+        
+        isWelcomeVideoMuted.toggle()
+        player.isMuted = isWelcomeVideoMuted
+        
+        debugLog(isWelcomeVideoMuted ? "🔇 Welcome video muted" : "🔊 Welcome video unmuted")
+    }
+    
+    // MARK: - Stuck/Troubleshooting Video Controls
+    
+    private func setupStuckVideoPlayerIfNeeded() {
+        guard stuckGuideVideoPlayer == nil else {
+            debugLog("⚠️ Stuck guide video player already exists")
+            return
+        }
+        
+        debugLog("🔍 Setting up stuck guide video player...")
+        debugLog("   - Looking for resource: \(stuckVideoResourceName)")
+        
+        guard let url = Bundle.main.url(forResource: stuckVideoResourceName, withExtension: "mp4") ??
+                        Bundle.main.url(forResource: stuckVideoResourceName, withExtension: "mov") else {
+            debugLog("❌ Stuck guide video not found in bundle!")
+            debugLog("   - Tried: \(stuckVideoResourceName).mp4")
+            debugLog("   - Tried: \(stuckVideoResourceName).mov")
+            debugLog("   - Bundle path: \(Bundle.main.bundlePath)")
+            
+            // List video files in bundle for debugging
+            if let files = try? FileManager.default.contentsOfDirectory(atPath: Bundle.main.bundlePath) {
+                let videoFiles = files.filter { $0.hasSuffix(".mp4") || $0.hasSuffix(".mov") }
+                debugLog("   - Video files in bundle: \(videoFiles)")
+            }
+            
+            debugLog("⚠️ Stuck guide video not found. Placeholder image will be shown.")
+            return
+        }
+        
+        debugLog("✅ Found stuck guide video at: \(url.path)")
+        
+        let asset = AVAsset(url: url)
+        let item = AVPlayerItem(asset: asset)
+        let queuePlayer = AVQueuePlayer()
+        let looper = AVPlayerLooper(player: queuePlayer, templateItem: item)
+        
+        queuePlayer.isMuted = isStuckVideoMuted
+        queuePlayer.automaticallyWaitsToMinimizeStalling = false
+        
+        stuckGuideVideoPlayer = queuePlayer
+        stuckGuideVideoLooper = looper
+        
+        debugLog("✅ Stuck guide video player created")
+        
+        Task {
+            let duration = try? await asset.load(.duration)
+            await MainActor.run {
+                if let duration = duration {
+                    stuckVideoDuration = duration.seconds
+                    debugLog("📹 Stuck guide video duration: \(stuckVideoDuration) seconds")
+                }
+            }
+        }
+        
+        startStuckVideoProgressTracking()
+        queuePlayer.play()
+        isStuckVideoPaused = false
+        debugLog("▶️ Stuck guide video started")
+    }
+    
+    private func startStuckVideoProgressTracking() {
+        stuckVideoProgressTimer?.invalidate()
+        stuckVideoProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            guard let player = self.stuckGuideVideoPlayer else { return }
+            let currentTime = CMTimeGetSeconds(player.currentTime())
+            let duration = self.stuckVideoDuration > 0 ? self.stuckVideoDuration : CMTimeGetSeconds(player.currentItem?.duration ?? .zero)
+            
+            if duration > 0 {
+                var progress = currentTime / duration
+                if progress >= 1.0 {
+                    progress = 0.0
+                }
+                self.stuckVideoProgress = min(max(progress, 0), 1)
+            }
+        }
+    }
+    
+    private func stopStuckVideoProgressTracking() {
+        stuckVideoProgressTimer?.invalidate()
+        stuckVideoProgressTimer = nil
+    }
+    
+    private func seekStuckVideo(by seconds: Double) {
+        guard let player = stuckGuideVideoPlayer else { return }
+        
+        let currentTime = player.currentTime()
+        let currentSeconds = CMTimeGetSeconds(currentTime)
+        let newSeconds = max(0, currentSeconds + seconds)
+        let newTime = CMTime(seconds: newSeconds, preferredTimescale: currentTime.timescale)
+        
+        player.seek(to: newTime, toleranceBefore: .zero, toleranceAfter: .zero)
+        
+        debugLog("⏩ Stuck guide seeked by \(seconds) seconds to \(newSeconds)s")
+    }
+    
+    private func toggleStuckVideoMute() {
+        guard let player = stuckGuideVideoPlayer else { return }
+        isStuckVideoMuted.toggle()
+        player.isMuted = isStuckVideoMuted
+        debugLog(isStuckVideoMuted ? "🔇 Stuck guide muted" : "🔊 Stuck guide unmuted")
+    }
+    
+    private func pauseStuckVideo() {
+        guard let player = stuckGuideVideoPlayer else { return }
+        player.pause()
+        isStuckVideoPaused = true
+        debugLog("⏸️ Stuck guide paused")
+    }
+    
+    private func resumeStuckVideoIfNeeded(forcePlay: Bool = false) {
+        guard let player = stuckGuideVideoPlayer else { return }
+        guard forcePlay || !showTroubleshootingTextVersion else { return }
+        player.play()
+        isStuckVideoPaused = false
+        debugLog("▶️ Stuck guide resumed")
+    }
+    
+    private func stopStuckVideoPlayback() {
+        if let player = stuckGuideVideoPlayer {
+            player.pause()
+            player.seek(to: .zero)
+        }
+        isStuckVideoPaused = true
+        stopStuckVideoProgressTracking()
+    }
+    
     private func saveOnboardingNotes() {
         guard !onboardingNotes.isEmpty else { return }
         
@@ -3885,6 +4631,14 @@ struct OnboardingView: View {
     /// Floating help button with glowy outline (performance optimized)
     private var helpButton: some View {
         Button(action: {
+            // Pause video when showing help sheet (if on step 2)
+            if currentPage == .videoIntroduction {
+                if let player = welcomeVideoPlayer, player.rate > 0 {
+                    player.pause()
+                    isWelcomeVideoPaused = true
+                    debugLog("⏸️ Welcome video paused (help sheet appearing)")
+                }
+            }
             // Medium haptic feedback
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
@@ -4489,6 +5243,14 @@ struct OnboardingView: View {
         let osVersion = UIDevice.current.systemVersion
         let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
         return "Device: \(device), iOS: \(osVersion), App: v\(appVersion)"
+    }
+    
+    /// Creates underlined text compatible with all iOS versions
+    @available(iOS 15.0, *)
+    private func createUnderlinedText(_ text: String) -> AttributedString {
+        var attributedString = AttributedString(text)
+        attributedString.underlineStyle = .single
+        return attributedString
     }
     
     /// Returns human-readable name for current onboarding page
@@ -5754,5 +6516,43 @@ struct AnyShape: Shape {
     
     func path(in rect: CGRect) -> Path {
         return _path(rect)
+    }
+}
+
+// MARK: - Auto-Playing Looping Video Player
+
+struct AutoPlayingLoopingVideoPlayer: UIViewRepresentable {
+    let player: AVQueuePlayer
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView()
+        view.backgroundColor = .clear
+        
+        let playerLayer = AVPlayerLayer(player: player)
+        playerLayer.videoGravity = .resizeAspect
+        playerLayer.frame = view.bounds
+        view.layer.addSublayer(playerLayer)
+        
+        // Store player layer in context for updates
+        context.coordinator.playerLayer = playerLayer
+        
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        if let playerLayer = context.coordinator.playerLayer {
+            // Update frame when view bounds change
+            DispatchQueue.main.async {
+                playerLayer.frame = uiView.bounds
+            }
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+    
+    class Coordinator {
+        var playerLayer: AVPlayerLayer?
     }
 }

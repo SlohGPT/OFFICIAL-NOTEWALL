@@ -32,6 +32,8 @@
 		D1000001000000000000001 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000001000000000000001 /* CrashReporter.swift */; };
 		E1000001000000000000002 /* pip-slow-guide-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E2000001000000000000002 /* pip-slow-guide-video.mp4 */; };
 		F1000001000000000000001 /* notifications.mov in Resources */ = {isa = PBXBuildFile; fileRef = F2000001000000000000001 /* notifications.mov */; };
+		G1000001000000000000001 /* welcome-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = G2000001000000000000001 /* welcome-video.mp4 */; };
+		H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = H2000001000000000000001 /* how-to-fix-guide.mp4 */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 				486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
 				346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434025501223443399045143 /* AutoFixWorkflowView.swift */; };
@@ -77,6 +79,8 @@
 		D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TroubleshootingView.swift; sourceTree = "<group>"; };
 		E2000001000000000000002 /* pip-slow-guide-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pip-slow-guide-video.mp4"; sourceTree = "<group>"; };
 		F2000001000000000000001 /* notifications.mov */ = {isa = PBXFileReference; lastKnownFileType = video.quicktime; path = notifications.mov; sourceTree = "<group>"; };
+		G2000001000000000000001 /* welcome-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "welcome-video.mp4"; sourceTree = "<group>"; };
+		H2000001000000000000001 /* how-to-fix-guide.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "how-to-fix-guide.mp4"; sourceTree = "<group>"; };
 		179742655116427522430919 /* QuickActionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QuickActionsManager.swift"; sourceTree = "<group>"; };
 				571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ExitFeedbackView.swift"; sourceTree = "<group>"; };
 				434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AutoFixWorkflowView.swift"; sourceTree = "<group>"; };
@@ -120,6 +124,8 @@
 				A5000003000000000000001 /* Products */,
 				E2000001000000000000002 /* pip-slow-guide-video.mp4 */,
 				F2000001000000000000001 /* notifications.mov */,
+				G2000001000000000000001 /* welcome-video.mp4 */,
+				H2000001000000000000001 /* how-to-fix-guide.mp4 */,
 				425035A22ED5ADB20064014E /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -242,6 +248,8 @@
 				A1000009000000000000001 /* Assets.xcassets in Resources */,
 				E1000001000000000000002 /* pip-slow-guide-video.mp4 in Resources */,
 				F1000001000000000000001 /* notifications.mov in Resources */,
+				G1000001000000000000001 /* welcome-video.mp4 in Resources */,
+				H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
