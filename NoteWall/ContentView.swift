@@ -985,13 +985,13 @@ private struct MainContentView: View {
                     UpdateWallpaperButtonView(context: context)
                 }
             }
-            .overlay(alignment: .topTrailing) {
-                EditModeMenuButton(context: context)
-                    .padding(.top, -45)
-                    .padding(.trailing, 16)
-            }
             .navigationTitle("NoteWall")
             .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    EditModeMenuButton(context: context)
+                }
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .onAppear {
@@ -1117,14 +1117,11 @@ private struct EditModeMenuButton: View {
                 toggleEditMode()
             }) {
                 Image(systemName: context.isEditMode.wrappedValue ? "xmark" : "ellipsis")
-                    .font(.system(size: 16, weight: .bold))
-                    .symbolRenderingMode(.monochrome)
-                    .foregroundStyle(Color.white)
-                    .frame(width: 28, height: 28)
+                    .font(.system(size: 20, weight: .bold)) // Slightly larger for better visibility without circle
+                    .foregroundColor(.white)
+                    .frame(width: 44, height: 44) // Ensure good touch target
+                    .contentShape(Rectangle()) // Ensure entire 44x44 area is tappable
             }
-            .buttonStyle(EditModeChipButtonStyle(isActive: context.isEditMode.wrappedValue))
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
             .accessibilityLabel(context.isEditMode.wrappedValue ? "Close editing" : "Edit notes")
             .highPriorityGesture(
                 TapGesture()
@@ -1194,29 +1191,7 @@ private struct EditModeMenuButton: View {
     }
 }
 
-private struct EditModeChipButtonStyle: ButtonStyle {
-    let isActive: Bool
 
-    func makeBody(configuration: Configuration) -> some View {
-        let pressed = configuration.isPressed
-        return configuration.label
-            .frame(width: 28, height: 28)
-            .background(
-                Circle()
-                    .fill(Color.black)
-                    .overlay(
-                        Circle()
-                            .stroke(
-                                Color.white.opacity(pressed ? 1.0 : 0.95),
-                                lineWidth: pressed ? 3.5 : (isActive ? 3.0 : 2.5)
-                            )
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
-            .scaleEffect(pressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.12), value: pressed)
-    }
-}
 
 
 private struct NoteRowContainer: View {

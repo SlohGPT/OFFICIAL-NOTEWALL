@@ -2,6 +2,7 @@ import SwiftUI
 import PhotosUI
 import UIKit
 import Combine
+import StoreKit
 
 struct SettingsView: View {
     @AppStorage("savedNotes") private var savedNotesData: Data = Data()
@@ -348,6 +349,24 @@ struct SettingsView: View {
 
     private var supportSection: some View {
             Section(header: Text("Help & Support")) {
+                Button(action: {
+                    // Light impact haptic for review button
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    openAppStoreReview()
+                }) {
+                    HStack {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(.appAccent)
+                        Text("Write a Review")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                    }
+                }
+                
                 Button(action: {
                     showExitFeedback = true
                 }) {
@@ -1107,6 +1126,14 @@ private extension SettingsView {
     private func openSubscriptionManagement() {
         if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
             UIApplication.shared.open(url)
+        }
+    }
+    
+    private func openAppStoreReview() {
+        // Request native Apple review popup
+        if let windowScene = UIApplication.shared.connectedScenes
+            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+            SKStoreReviewController.requestReview(in: windowScene)
         }
     }
     

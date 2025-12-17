@@ -20,6 +20,141 @@ private func debugLog(_ message: String) {
 }
 #endif
 
+// MARK: - Video URL Helper
+/// Gets video URL from Config (remote) or bundle (fallback)
+/// This allows videos to be hosted online to reduce app bundle size
+private func getVideoURL(for resourceName: String, withExtension ext: String = "mp4") -> URL? {
+    // Try remote URL first from Config
+    if let remoteURLString = Config.videoURLs[resourceName],
+       let remoteURL = URL(string: remoteURLString),
+       remoteURLString != "https://your-cdn-url.com/videos/\(resourceName).mp4" { // Check if placeholder URL
+        debugLog("🌐 Using remote video URL for \(resourceName): \(remoteURLString)")
+        return remoteURL
+    }
+    
+    // Fallback to bundle if enabled or if remote URL is placeholder
+    if Config.useBundleVideosAsFallback {
+        if let bundleURL = Bundle.main.url(forResource: resourceName, withExtension: ext) {
+            debugLog("📦 Using bundle video for \(resourceName) (fallback mode)")
+            return bundleURL
+        }
+    }
+    
+    // If remote URL is placeholder, try bundle as last resort
+    if let bundleURL = Bundle.main.url(forResource: resourceName, withExtension: ext) {
+        debugLog("📦 Using bundle video for \(resourceName) (remote URL not configured)")
+        return bundleURL
+    }
+    
+    debugLog("❌ Video not found: \(resourceName).\(ext)")
+    return nil
+}
+
+// MARK: - Video Player Without Controls (for Step 6)
+struct VideoPlayerNoControlsView: UIViewRepresentable {
+    let player: AVPlayer
+    
+    func makeUIView(context: Context) -> UIView {
+        let view = PlayerUIView(player: player)
+        return view
+    }
+    
+    func updateUIView(_ uiView: UIView, context: Context) {
+        // No update needed - player is managed externally
+    }
+    
+    class PlayerUIView: UIView {
+        private var playerLayer: AVPlayerLayer
+        
+        init(player: AVPlayer) {
+            playerLayer = AVPlayerLayer(player: player)
+            super.init(frame: .zero)
+            
+            playerLayer.videoGravity = .resizeAspect
+            layer.addSublayer(playerLayer)
+        }
+        
+        required init?(coder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            playerLayer.frame = bounds
+        }
+    }
+}
+
+// MARK: - Video Player With Controls and Top Crop
+struct CroppedVideoPlayerView: UIViewControllerRepresentable {
+    let player: AVPlayer
+    let topCrop: CGFloat
+    
+    func makeUIViewController(context: Context) -> UIViewController {
+        let containerVC = ContainerViewController()
+        let playerVC = AVPlayerViewController()
+        playerVC.player = player
+        playerVC.showsPlaybackControls = true
+        // Use resizeAspect to show full width of video (no side cropping)
+        // Container will clip top/bottom to remove black bar
+        playerVC.videoGravity = .resizeAspect
+        
+        containerVC.addChild(playerVC)
+        containerVC.view.addSubview(playerVC.view)
+        containerVC.playerViewController = playerVC
+        containerVC.topCrop = topCrop
+        // Enable clipping to ensure overflow is discarded
+        containerVC.view.clipsToBounds = true
+        
+        return containerVC
+    }
+    
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        if let containerVC = uiViewController as? ContainerViewController {
+            containerVC.topCrop = topCrop
+            containerVC.view.setNeedsLayout()
+        }
+    }
+    
+    class ContainerViewController: UIViewController {
+        var playerViewController: AVPlayerViewController?
+        var topCrop: CGFloat = 0
+        
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.backgroundColor = .clear
+        }
+        
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            
+            guard let playerVC = playerViewController else { return }
+            
+            // With resizeAspect, the video shows full width and fits within container
+            // Shift the video upward by topCrop to push the black bar outside visible bounds
+            let containerHeight = view.bounds.height
+            let containerWidth = view.bounds.width
+            
+            // Make the player view taller than container to accommodate the upward shift
+            // The video will fit within this frame with aspect-fit (showing full width), and the container will clip the excess
+            let expandedHeight = containerHeight + topCrop
+            
+            // Position player view shifted upward - this pushes the top black bar outside visible area
+            // Bottom excess will also be clipped by the container
+            playerVC.view.frame = CGRect(
+                x: 0,
+                y: -topCrop, // Negative offset shifts video up, pushing black bar outside container
+                width: containerWidth,
+                height: expandedHeight
+            )
+            
+            // Force layout update
+            playerVC.view.setNeedsLayout()
+            playerVC.view.layoutIfNeeded()
+        }
+    }
+}
+
 private enum OnboardingPage: Int, CaseIterable, Hashable {
     case welcome
     case videoIntroduction
@@ -70,6 +205,7 @@ struct OnboardingView: View {
     @State private var demoVideoLooper: AVPlayerLooper?
     @State private var notificationsVideoPlayer: AVQueuePlayer?
     @State private var notificationsVideoLooper: AVPlayerLooper?
+    @State private var notificationsVideoAspectRatio: CGFloat?
     @State private var welcomeVideoPlayer: AVQueuePlayer?
     @State private var welcomeVideoLooper: AVPlayerLooper?
     @State private var isWelcomeVideoMuted: Bool = false
@@ -265,6 +401,50 @@ struct OnboardingView: View {
                     player.play()
                     isWelcomeVideoPaused = false
                     debugLog("▶️ Welcome video resumed (entering step 2)")
+                }
+                // Always restart progress tracking when entering step 2
+                startWelcomeVideoProgressTracking()
+            }
+            
+            // Auto-play notifications video when entering step 6
+            if page == .allowPermissions {
+                prepareNotificationsVideoPlayerIfNeeded()
+                
+                // Start playback with multiple retry attempts
+                func startVideoPlayback() {
+                    if let player = self.notificationsVideoPlayer {
+                        // Ensure looper is active for continuous looping
+                        if let looper = self.notificationsVideoLooper {
+                            if looper.status == .failed, let item = player.currentItem {
+                                // Recreate looper if needed
+                                let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                                self.notificationsVideoLooper = newLooper
+                            }
+                        }
+                        
+                        player.seek(to: .zero)
+                        player.play()
+                        
+                        // Verify playback started
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            if player.rate == 0 {
+                                player.seek(to: .zero)
+                                player.play()
+                                debugLog("▶️ Notifications video retry (entering step 6)")
+                            } else {
+                                debugLog("▶️ Notifications video playing and looping (entering step 6)")
+                            }
+                        }
+                    } else {
+                        // Player not ready, try again
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            startVideoPlayback()
+                        }
+                    }
+                }
+                
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    startVideoPlayback()
                 }
             }
         }
@@ -591,7 +771,7 @@ struct OnboardingView: View {
 
     private var onboardingProgressIndicatorCompact: some View {
         HStack(alignment: .center, spacing: 12) {
-            ForEach(OnboardingPage.allCases, id: \.self) { page in
+            ForEach(OnboardingPage.allCases.filter { $0 != .overview }, id: \.self) { page in
                 Button(action: {
                     // Only allow navigation to previous steps (not future ones)
                     if page.rawValue < currentPage.rawValue {
@@ -613,7 +793,7 @@ struct OnboardingView: View {
         .padding(.horizontal, 4)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Onboarding progress")
-        .accessibilityValue("\(currentPage.accessibilityLabel) of \(OnboardingPage.allCases.count)")
+        .accessibilityValue("\(currentPage.accessibilityLabel) of \(OnboardingPage.allCases.filter { $0 != .overview }.count)")
     }
 
     private var primaryButtonSection: some View {
@@ -658,15 +838,7 @@ struct OnboardingView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 28) {
                 VStack(spacing: 16) {
-                    Image("OnboardingLogo")
-                        .resizable()
-                        .interpolation(.high)
-                        .antialiased(true)
-                        .scaledToFit()
-                        .frame(width: 110, height: 110)
-                        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.18), radius: 18, x: 0, y: 10)
-                        .accessibilityHidden(true)
+                    AppIconAnimationView(size: 110)
                     
                     Text("Welcome to NoteWall")
                         .font(.system(.largeTitle, design: .rounded))
@@ -1147,15 +1319,8 @@ struct OnboardingView: View {
                                         .padding(.leading, UIScreen.main.bounds.width * 0.15 + 12)
                                         .padding(.top, 12)
                                         Spacer()
-                                    }
-                                    Spacer()
-                                }
-                                
-                                // Pause/Start button (bottom center of video)
-                                VStack {
-                                    Spacer()
-                                    HStack {
-                                        Spacer()
+                                        
+                                        // Pause/Play button (top-right corner of video)
                                         Button(action: {
                                             if let player = welcomeVideoPlayer {
                                                 if player.rate > 0 {
@@ -1165,24 +1330,28 @@ struct OnboardingView: View {
                                                 } else {
                                                     player.play()
                                                     isWelcomeVideoPaused = false
-                                                    debugLog("▶️ Welcome video resumed (start button tapped)")
+                                                    startWelcomeVideoProgressTracking()
+                                                    debugLog("▶️ Welcome video resumed (play button tapped)")
                                                 }
                                             }
                                         }) {
-                                            Text(isWelcomeVideoPaused ? "S T A R T" : "P A U S E")
-                                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                            Image(systemName: isWelcomeVideoPaused ? "play.fill" : "pause.fill")
+                                                .font(.system(size: 16, weight: .semibold))
                                                 .foregroundColor(.white)
-                                                .tracking(3) // Spaced-out letters
-                                                .padding(.horizontal, 20)
-                                                .padding(.vertical, 10)
+                                                .frame(width: 36, height: 36)
                                                 .background(
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .fill(Color.gray.opacity(0.3)) // Low opacity grey background
+                                                    Circle()
+                                                        .fill(Color.black.opacity(0.6))
+                                                        .overlay(
+                                                            Circle()
+                                                                .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                                                        )
                                                 )
                                         }
-                                        Spacer()
+                                        .padding(.trailing, UIScreen.main.bounds.width * 0.15 + 12)
+                                        .padding(.top, 12)
                                     }
-                                    .padding(.bottom, 16)
+                                    Spacer()
                                 }
                             }
                         }
@@ -1203,6 +1372,16 @@ struct OnboardingView: View {
         .onAppear {
             // Ensure video is set up and playing when step appears
             setupWelcomeVideoPlayer()
+            // Small delay to ensure view hierarchy is ready, then force play
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                if let player = self.welcomeVideoPlayer {
+                    if player.rate == 0 && !self.isWelcomeVideoPaused {
+                        player.play()
+                        self.startWelcomeVideoProgressTracking()
+                        debugLog("▶️ Welcome video force-started after appear delay")
+                    }
+                }
+            }
         }
         .onDisappear {
             // Stop progress tracking when leaving the step
@@ -1269,6 +1448,9 @@ struct OnboardingView: View {
                     if self.stuckGuideVideoPlayer == nil {
                         debugLog("⚠️ Video player still nil after 0.5s, retrying setup...")
                         self.setupStuckVideoPlayerIfNeeded()
+                    } else {
+                        // Force ensure playing after delay for returning visits
+                        self.ensureStuckVideoPlaying()
                     }
                 }
             }
@@ -1283,6 +1465,10 @@ struct OnboardingView: View {
                                     showTroubleshootingTextVersion = false
                                 }
                                 resumeStuckVideoIfNeeded()
+                                // Ensure progress tracking restarts after a small delay
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    self.ensureStuckVideoPlaying()
+                                }
                             }) {
                                 HStack(spacing: 8) {
                                     Image(systemName: "arrow.left")
@@ -1521,7 +1707,7 @@ struct OnboardingView: View {
                                         Spacer()
                                     }
                                     
-                                    // Mute button
+                                    // Mute button (top-left) and Pause/Play button (top-right)
                                     VStack {
                                         HStack {
                                             Button(action: {
@@ -1545,15 +1731,8 @@ struct OnboardingView: View {
                                             .padding(.leading, UIScreen.main.bounds.width * 0.15 + 12)
                                             .padding(.top, 12)
                                             Spacer()
-                                        }
-                                        Spacer()
-                                    }
-                                    
-                                    // Pause/Start button
-                                    VStack {
-                                        Spacer()
-                                        HStack {
-                                            Spacer()
+                                            
+                                            // Pause/Play button (top-right corner of video)
                                             Button(action: {
                                                 if let player = stuckGuideVideoPlayer {
                                                     if player.rate > 0 {
@@ -1563,22 +1742,25 @@ struct OnboardingView: View {
                                                     }
                                                 }
                                             }) {
-                                                Text(isStuckVideoPaused ? "S T A R T" : "P A U S E")
-                                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                                Image(systemName: isStuckVideoPaused ? "play.fill" : "pause.fill")
+                                                    .font(.system(size: 16, weight: .semibold))
                                                     .foregroundColor(.white)
-                                                    .tracking(3)
-                                                    .padding(.horizontal, 20)
-                                                    .padding(.vertical, 10)
+                                                    .frame(width: 36, height: 36)
                                                     .background(
-                                                        RoundedRectangle(cornerRadius: 8)
-                                                            .fill(Color.gray.opacity(0.3))
+                                                        Circle()
+                                                            .fill(Color.black.opacity(0.6))
+                                                            .overlay(
+                                                                Circle()
+                                                                    .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
+                                                            )
                                                     )
                                                     .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
                                             }
                                             .disabled(stuckGuideVideoPlayer == nil)
-                                            Spacer()
+                                            .padding(.trailing, UIScreen.main.bounds.width * 0.15 + 12)
+                                            .padding(.top, 12)
                                         }
-                                        .padding(.bottom, 16)
+                                        Spacer()
                                     }
                                 }
                                 .onAppear {
@@ -2388,89 +2570,271 @@ struct OnboardingView: View {
     }
     
     private func noteIndex(for note: Note) -> Int {
-        return onboardingNotes.firstIndex(where: { $0.id == note.id }) ?? 0
+        return onboardingNotes.firstIndex(where: { $0.id ==
+            note.id }) ?? 0
     }
 
     @State private var hasConfirmedPermissions: Bool = false // Simple checkbox state
 
     private func allowPermissionsStep() -> some View {
         GeometryReader { proxy in
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Allow 3 Permissions")
-                    .font(.system(.largeTitle, design: .rounded))
-                    .fontWeight(.bold)
-                    .padding(.top, 24)
-                    .padding(.horizontal, 24)
-                
-                // Instructions
-                Text("When the shortcut runs, you'll be asked to grant 3 permissions. After granting all permissions, check the box below.")
-                    .font(.system(.body))
-                    .foregroundColor(.secondary)
-                    .padding(.top, 12)
-                    .padding(.horizontal, 24)
-                
-                // Video section
-                notificationsVideoSection(minHeight: proxy.size.height - 300)
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-                
-                Spacer()
-                
-                // Confirmation checkbox
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        hasConfirmedPermissions.toggle()
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 0) {
+                    // Title
+                    Text("Allow 3 Permissions")
+                        .font(.system(.largeTitle, design: .rounded))
+                        .fontWeight(.bold)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.top, 24)
+                        .padding(.horizontal, 24)
+                    
+                    // Arrows pointing up - indicating where permissions will appear
+                    HStack(spacing: 20) {
+                        ForEach(0..<3, id: \.self) { _ in
+                            VStack(spacing: 4) {
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 20, weight: .bold))
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .opacity(0.5)
+                            }
+                            .foregroundColor(.appAccent)
+                        }
                     }
-                    // Light haptic feedback
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                }) {
-                    HStack(spacing: 16) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(hasConfirmedPermissions ? Color.appAccent : Color.clear)
-                                .frame(width: 28, height: 28)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                        .strokeBorder(hasConfirmedPermissions ? Color.appAccent : Color.white.opacity(0.3), lineWidth: 2)
-                                )
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                    
+                    // Hint text - larger, single row
+                    Text("Permission popups appear here")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(.appAccent)
+                        .lineLimit(1)
+                        .padding(.bottom, 8)
+                    
+                    // Title below hint text
+                    Text("click ALLOW for all")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(.white)
+                        .padding(.bottom, 24)
+                    
+                    // Video at true size (no mockup frame) - full width, cropped height to reduce margins
+                    if let player = notificationsVideoPlayer {
+                        let availableWidth = proxy.size.width - 48 // Account for horizontal padding
+                        // Smaller container height to zoom out - shows full width of video
+                        let containerHeight: CGFloat = availableWidth * 0.6 // Smaller container for zoom out effect
+                        let topCrop: CGFloat = 10 // Shift video up to remove black bar from top
+                        
+                        // Use custom cropped video player with controls - no fallback
+                        CroppedVideoPlayerView(
+                            player: player,
+                            topCrop: topCrop
+                        )
+                        .frame(width: availableWidth, height: containerHeight)
+                        .clipped()
+                        .contentShape(Rectangle())
+                        .padding(.horizontal, 24)
+                        .padding(.top, 20)
+                        .padding(.bottom, 12) // Remove bottom padding - video content will determine spacing
+                        .onAppear {
+                            // Ensure video plays automatically and loops when view appears
+                            func startPlayback() {
+                                // Ensure looper is active for continuous looping
+                                if let looper = notificationsVideoLooper, looper.status == .failed {
+                                    // Recreate looper if it failed
+                                    if let item = player.currentItem {
+                                        let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                                        notificationsVideoLooper = newLooper
+                                    }
+                                }
+                                
+                                // Start playback
+                                player.seek(to: .zero)
+                                player.play()
+                                
+                                // Verify it's playing, retry if needed
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                    if player.rate == 0 {
+                                        player.seek(to: .zero)
+                                        player.play()
+                                        debugLog("✅ VideoPlayer - retry playback")
+                                    } else {
+                                        debugLog("✅ VideoPlayer playing and looping")
+                                    }
+                                }
+                            }
                             
-                            if hasConfirmedPermissions {
-                                Image(systemName: "checkmark")
-                                    .font(.system(size: 16, weight: .bold))
-                                    .foregroundColor(.white)
+                            DispatchQueue.main.async {
+                                startPlayback()
+                            }
+                            
+                            // Also try after a delay in case player isn't ready yet
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                if player.rate == 0 {
+                                    startPlayback()
+                                }
                             }
                         }
-                        
-                        Text("I've granted all 3 permissions")
-                            .font(.system(.body, design: .rounded))
-                            .fontWeight(.medium)
-                            .foregroundColor(.white)
-                        
-                        Spacer()
+                        .onDisappear {
+                            // Don't pause - let it continue playing in background if needed
+                            // Only pause if we're leaving the step entirely
+                            debugLog("⚠️ VideoPlayer disappeared")
+                        }
+                    } else {
+                        // Placeholder while loading
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .appAccent))
+                            Text("Loading...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                        .padding(.horizontal, 24)
+                        .onAppear {
+                            prepareNotificationsVideoPlayerIfNeeded()
+                        }
                     }
-                    .padding(20)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .fill(hasConfirmedPermissions ? Color.appAccent.opacity(0.2) : Color.white.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                    .strokeBorder(hasConfirmedPermissions ? Color.appAccent.opacity(0.5) : Color.white.opacity(0.2), lineWidth: 1.5)
-                            )
-                    )
+                    
+                    // Text below video
+                    Text("(this is how it should look)")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .padding(.top, 12)
+                    
+                    // No spacer - video bottom padding removed, button will have its own top padding
+                    
+                    // Confirmation button - Premium styled
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            hasConfirmedPermissions.toggle()
+                        }
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                    }) {
+                        HStack(alignment: .firstTextBaseline, spacing: 12) {
+                            Image(systemName: hasConfirmedPermissions ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(hasConfirmedPermissions ? Color.appAccent : Color.white.opacity(0.4))
+                            
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text("I've granted all 3")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                                Text("Permissions")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(hasConfirmedPermissions ? Color.appAccent.opacity(0.15) : Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .strokeBorder(hasConfirmedPermissions ? Color.appAccent.opacity(0.4) : Color.white.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 16) // Spacing above button
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .onAppear {
             debugLog("📱 Allow Permissions step appeared")
-            // Reset confirmation state when page appears
             hasConfirmedPermissions = false
             
-            // Prepare video player (may already be preloaded from step 5)
+            // CRITICAL: Configure audio session for notifications video playback
+            // The PiP video player might have set it to a different mode
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                try AVAudioSession.sharedInstance().setActive(true)
+                debugLog("✅ Audio session configured for notifications video")
+            } catch {
+                debugLog("⚠️ Failed to configure audio session: \(error)")
+            }
+            
             prepareNotificationsVideoPlayerIfNeeded()
+            
+            // Ensure video starts playing automatically and loops - try multiple times to handle timing
+            func startVideoPlayback() {
+                if let player = self.notificationsVideoPlayer {
+                    // Ensure looper is active for continuous looping
+                    if let looper = self.notificationsVideoLooper {
+                        if looper.status == .failed, let item = player.currentItem {
+                            // Recreate looper if it failed
+                            let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                            self.notificationsVideoLooper = newLooper
+                            debugLog("🔄 Recreated video looper")
+                        }
+                    }
+                    
+                    // Start playback
+                    player.seek(to: .zero)
+                    player.play()
+                    debugLog("▶️ Attempted to start notifications video (rate: \(player.rate))")
+                    
+                    // Verify playback started and retry if needed
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        if player.rate == 0 {
+                            // Retry with audio session reconfiguration
+                            do {
+                                try AVAudioSession.sharedInstance().setActive(false)
+                                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                                try AVAudioSession.sharedInstance().setActive(true)
+                            } catch {
+                                debugLog("⚠️ Failed to reconfigure audio session: \(error)")
+                            }
+                            player.seek(to: .zero)
+                            player.play()
+                            debugLog("✅ Retry: Started notifications video playback (rate: \(player.rate))")
+                        } else {
+                            debugLog("✅ Notifications video playing and looping (rate: \(player.rate))")
+                        }
+                    }
+                } else {
+                    // Player not created yet, wait and try again
+                    debugLog("⚠️ Player not ready, retrying in 0.3s")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        startVideoPlayback()
+                    }
+                }
+            }
+            
+            // Start playback attempt immediately and with delays
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                startVideoPlayback()
+            }
+            
+            // Also try after a longer delay to ensure it starts
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                if let player = self.notificationsVideoPlayer, player.rate == 0 {
+                    debugLog("⚠️ Video still not playing after 0.5s, forcing restart")
+                    startVideoPlayback()
+                }
+            }
+            
+            // Final retry after 1 second
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                if let player = self.notificationsVideoPlayer, player.rate == 0 {
+                    debugLog("⚠️ Video still not playing after 1.0s, final retry")
+                    // Force audio session reset
+                    do {
+                        try AVAudioSession.sharedInstance().setActive(false)
+                        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                        try AVAudioSession.sharedInstance().setActive(true)
+                    } catch {
+                        debugLog("⚠️ Failed to reset audio session: \(error)")
+                    }
+                    player.seek(to: .zero)
+                    player.play()
+                }
+            }
         }
     }
     
@@ -3699,9 +4063,17 @@ struct OnboardingView: View {
     private func installShortcut() {
         guard let url = URL(string: shortcutURL) else { return }
         
-        // Prepare PiP video if not already loaded
-        // The 1x1 pixel container is created immediately in PIPVideoPlayerManager.loadVideo()
-        if !pipVideoPlayerManager.hasLoadedVideo {
+        // If user is on "Ready to Try Again" page (userWentToSettings == true),
+        // we need to reload the video with the fix guide version
+        // Otherwise, prepare PiP video if not already loaded
+        if userWentToSettings {
+            // Stop any active PiP and reload with the correct video for the fix flow
+            pipVideoPlayerManager.stopPictureInPicture()
+            pipVideoPlayerManager.stop()
+            // Force reload by calling preparePiPVideo which will load the fix guide
+            // preparePiPVideo checks userWentToSettings to determine which video to use
+            preparePiPVideo()
+        } else if !pipVideoPlayerManager.hasLoadedVideo {
             preparePiPVideo()
         }
         shouldStartPiP = true
@@ -3826,21 +4198,27 @@ struct OnboardingView: View {
     }
     
     private func preparePiPVideo() {
-        // Don't reload if video is already loaded - this prevents resetting the player
-        if pipVideoPlayerManager.hasLoadedVideo {
+        // Determine which video to use based on whether user went to Settings (fix flow)
+        let videoResourceName = userWentToSettings ? "fix-guide-final-version" : "pip-guide-new"
+        
+        // If userWentToSettings is true, always reload (we're switching to fix guide)
+        // Otherwise, only load if not already loaded
+        let needsReload = userWentToSettings || !pipVideoPlayerManager.hasLoadedVideo
+        
+        if !needsReload {
             debugLog("✅ Onboarding: PiP video already loaded, skipping reload")
             return
         }
         
-        guard let bundleURL = Bundle.main.url(forResource: "pip-slow-guide-video", withExtension: "mp4") else {
-            debugLog("⚠️ Onboarding: PiP demo video not found in bundle")
+        guard let videoURL = getVideoURL(for: videoResourceName) else {
+            debugLog("⚠️ Onboarding: PiP demo video not found for resource: \(videoResourceName)")
             return
         }
         
-        debugLog("🎬 Onboarding: Preparing PiP video from: \(bundleURL.path)")
+        debugLog("🎬 Onboarding: Preparing PiP video from: \(videoURL.absoluteString) (resource: \(videoResourceName))")
         
-        // Load the video
-        let loaded = pipVideoPlayerManager.loadVideo(url: bundleURL)
+        // Load the video (this will call performCleanup() internally if needed)
+        let loaded = pipVideoPlayerManager.loadVideo(url: videoURL)
         
         if loaded {
             debugLog("✅ Onboarding: Video loaded, waiting for player to be ready")
@@ -3897,7 +4275,7 @@ struct OnboardingView: View {
 
     private func prepareDemoVideoPlayerIfNeeded() {
         guard demoVideoPlayer == nil else { return }
-        guard let bundleURL = Bundle.main.url(forResource: "pip-slow-guide-video", withExtension: "mp4") else {
+        guard let bundleURL = Bundle.main.url(forResource: "pip-guide-new", withExtension: "mp4") else {
             debugLog("⚠️ Onboarding: Demo video not found in bundle")
             return
         }
@@ -3997,16 +4375,30 @@ struct OnboardingView: View {
     }
     
     private func prepareNotificationsVideoPlayerIfNeeded() {
-        guard notificationsVideoPlayer == nil else { 
-            print("⚠️ Video player already exists, skipping preparation")
-            return 
+        // If player already exists, ensure it's playing (don't skip)
+        if let existingPlayer = notificationsVideoPlayer {
+            print("⚠️ Video player already exists, ensuring playback")
+            // Ensure audio session is configured for playback
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("⚠️ Failed to configure audio session: \(error)")
+            }
+            // Force playback if not playing
+            if existingPlayer.rate == 0 {
+                existingPlayer.seek(to: .zero)
+                existingPlayer.play()
+                print("▶️ Restarted existing notifications video player")
+            }
+            return
         }
         
         debugLog("🔍 Onboarding: Preparing notifications video player...")
         
         // Try to find the video file
-        guard let bundleURL = Bundle.main.url(forResource: "notifications", withExtension: "mov") else {
-            print("❌ CRITICAL: notifications.mov not found in bundle!")
+        guard let bundleURL = Bundle.main.url(forResource: "notifications-of-permissions", withExtension: "mp4") else {
+            print("❌ CRITICAL: notifications-of-permissions.mp4 not found in bundle!")
             print("📁 Bundle path: \(Bundle.main.bundlePath)")
             
             // List ALL video files in bundle for debugging
@@ -4017,7 +4409,7 @@ struct OnboardingView: View {
             return
         }
         
-        print("✅ Found notifications.mov at: \(bundleURL.path)")
+        print("✅ Found notifications-of-permissions.mp4 at: \(bundleURL.path)")
         
         // Verify file is accessible and has content
         let fileManager = FileManager.default
@@ -4063,10 +4455,20 @@ struct OnboardingView: View {
             DispatchQueue.main.async {
                 switch playerItem.status {
                 case .readyToPlay:
-                    print("✅ notifications.mov player item READY TO PLAY (Allow Permissions step)")
+                    print("✅ notifications-of-permissions.mp4 player item READY TO PLAY (Allow Permissions step)")
                     print("   - Duration: \(playerItem.duration.seconds) seconds")
                     if let videoTrack = playerItem.asset.tracks(withMediaType: .video).first {
-                        print("   - Natural size: \(videoTrack.naturalSize)")
+                        let videoSize = videoTrack.naturalSize
+                        let aspectRatio = videoSize.width / videoSize.height
+                        self.notificationsVideoAspectRatio = aspectRatio
+                        print("   - Natural size: \(videoSize)")
+                        print("   - Aspect ratio: \(aspectRatio)")
+                    }
+                    // Auto-play when ready if we're on the allowPermissions step
+                    if self.currentPage == .allowPermissions, let player = self.notificationsVideoPlayer {
+                        player.seek(to: .zero)
+                        player.play()
+                        print("   - Auto-playing video (step 6 is active)")
                     }
                 case .failed:
                     print("❌ Player item FAILED")
@@ -4094,6 +4496,16 @@ struct OnboardingView: View {
             if let error = notification.userInfo?[AVPlayerItemFailedToPlayToEndTimeErrorKey] as? Error {
                 print("   Error: \(error.localizedDescription)")
             }
+        }
+        
+        // Configure audio session for notifications video playback
+        // This ensures it works even after PiP video has been used
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+            try AVAudioSession.sharedInstance().setActive(true)
+            print("✅ Audio session configured for notifications video")
+        } catch {
+            print("⚠️ Failed to configure audio session: \(error)")
         }
         
         // Create looping player
@@ -4126,16 +4538,16 @@ struct OnboardingView: View {
         
         debugLog("🔍 Onboarding: Setting up welcome video player...")
         
-        // Try to find the video file
-        guard let bundleURL = Bundle.main.url(forResource: "welcome-video", withExtension: "mp4") else {
-            debugLog("❌ welcome-video.mp4 not found in bundle!")
+        // Try to find the video file (remote URL or bundle fallback)
+        guard let videoURL = getVideoURL(for: "welcome-video") else {
+            debugLog("❌ welcome-video.mp4 not found!")
             return
         }
         
-        debugLog("✅ Found welcome-video.mp4 at: \(bundleURL.path)")
+        debugLog("✅ Found welcome-video at: \(videoURL.absoluteString)")
         
         // Create asset and player item
-        let asset = AVAsset(url: bundleURL)
+        let asset = AVAsset(url: videoURL)
         let item = AVPlayerItem(asset: asset)
         
         // Create looping player
@@ -4231,8 +4643,10 @@ struct OnboardingView: View {
     // MARK: - Stuck/Troubleshooting Video Controls
     
     private func setupStuckVideoPlayerIfNeeded() {
-        guard stuckGuideVideoPlayer == nil else {
-            debugLog("⚠️ Stuck guide video player already exists")
+        // If player already exists, just ensure it's playing and tracking
+        if stuckGuideVideoPlayer != nil {
+            debugLog("⚠️ Stuck guide video player already exists - ensuring playback")
+            ensureStuckVideoPlaying()
             return
         }
         
@@ -4341,6 +4755,10 @@ struct OnboardingView: View {
         guard forcePlay || !showTroubleshootingTextVersion else { return }
         player.play()
         isStuckVideoPaused = false
+        // Ensure progress tracking is running
+        if stuckVideoProgressTimer == nil || !stuckVideoProgressTimer!.isValid {
+            startStuckVideoProgressTracking()
+        }
         debugLog("▶️ Stuck guide resumed")
     }
     
@@ -4351,6 +4769,24 @@ struct OnboardingView: View {
         }
         isStuckVideoPaused = true
         stopStuckVideoProgressTracking()
+    }
+    
+    /// Ensures the stuck video is playing and progress is being tracked.
+    /// Call this when returning to the troubleshooting modal.
+    private func ensureStuckVideoPlaying() {
+        guard let player = stuckGuideVideoPlayer else { return }
+        
+        // Restart progress tracking if not running
+        if stuckVideoProgressTimer == nil || !stuckVideoProgressTimer!.isValid {
+            startStuckVideoProgressTracking()
+            debugLog("📊 Stuck video progress tracking restarted")
+        }
+        
+        // Ensure video is playing if not paused and not in text version
+        if player.rate == 0 && !isStuckVideoPaused && !showTroubleshootingTextVersion {
+            player.play()
+            debugLog("▶️ Stuck video resumed (ensureStuckVideoPlaying)")
+        }
     }
     
     private func saveOnboardingNotes() {
@@ -4813,8 +5249,8 @@ struct OnboardingView: View {
                     // 2. Email Feedback
                     supportOptionCard(
                         icon: "envelope.fill",
-                        title: "Send Feedback",
-                        subtitle: "Share your thoughts via email",
+                        title: "Get Help via Email",
+                        subtitle: "We're here to help you",
                         accentColor: .blue
                     ) {
                         openEmailFeedback()

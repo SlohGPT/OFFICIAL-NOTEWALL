@@ -478,15 +478,15 @@ final class PromoCodeManager {
         #endif
     }
     
+    /// Gets used codes for a specific type (for admin/testing purposes) - completely separate
+    func getUsedCodesForTesting(type: PromoCodeType) -> [String] {
+        return Array(getUsedCodes(type: type))
+    }
+    
     #if DEBUG
     /// Gets all promo codes for a type (for testing purposes only)
     func getAllCodes(type: PromoCodeType) -> [String] {
         return getCodes(type: type)
-    }
-    
-    /// Gets used codes for a specific type (for testing purposes only) - completely separate
-    func getUsedCodesForTesting(type: PromoCodeType) -> [String] {
-        return Array(getUsedCodes(type: type))
     }
     
     /// Resets used codes for a specific type (for testing purposes only)

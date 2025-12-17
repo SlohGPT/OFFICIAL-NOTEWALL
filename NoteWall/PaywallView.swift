@@ -28,6 +28,7 @@ struct PaywallView: View {
     @State private var showCodeError = false
     @FocusState private var isCodeFieldFocused: Bool
     @State private var showLifetimeSheet = false
+    @State private var showPromoCodeSheet = false
     @State private var hasInitializedPlanSelection = false
     @State private var benefitCarouselIndex = 0
     @State private var isUserDraggingBenefits = false
@@ -37,6 +38,8 @@ struct PaywallView: View {
     @State private var shouldDismissAfterPromoCode = false
     @State private var showNotificationPrePrompt = false
     @State private var pendingPackage: Package?
+    @State private var particleData: [ParticleData] = []
+    @State private var particleAnimationTime: Double = 0
 
     private let benefitSlides: [BenefitSlide] = [
         BenefitSlide(
@@ -75,6 +78,7 @@ struct PaywallView: View {
     @GestureState private var benefitDragOffset: CGFloat = 0
     
     private let benefitsAutoScrollTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
+    private let particleAnimationTimer = Timer.publish(every: 0.033, on: .main, in: .common).autoconnect() // ~30fps for smooth, efficient animation
     
     init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true, applyExitInterceptDiscount: Bool = false) {
         self.triggerReason = triggerReason
@@ -84,18 +88,18 @@ struct PaywallView: View {
     
     var body: some View {
         ZStack {
-            // Enhanced background with subtle accent glows
+            // Enhanced background with subtle accent glows and floating particles
             paywallBackground
                 .ignoresSafeArea()
+                .drawingGroup() // Optimize background rendering
             
-            if currentStep == 1 {
-                step1PlanSelection
-                    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-            } else {
-                step2TrialExplanation
-                    .transition(.asymmetric(insertion: .move(edge: .trailing), removal: .move(edge: .leading)))
-            }
+            // Floating particles (dots) - same as lifetime sheet
+            floatingParticles
+            
+            step1PlanSelection
         }
+        .ignoresSafeArea(.all) // Extend background to all edges including bottom
+        // Note: Don't use drawingGroup on entire body - it breaks scrolling and interactivity
         .alert("Error", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -292,11 +296,6 @@ struct PaywallView: View {
             }
             initializePlanSelection()
         }
-        .onChange(of: shouldShowTrialStep) { hasTrial in
-            if !hasTrial {
-                currentStep = 1
-            }
-        }
         .sheet(isPresented: $showLifetimeSheet) {
             LifetimePlanSheet(
                 priceText: lifetimePriceText,
@@ -310,6 +309,22 @@ struct PaywallView: View {
                 },
                 onDismiss: {
                     showLifetimeSheet = false
+                }
+            )
+        }
+        .sheet(isPresented: $showPromoCodeSheet) {
+            PromoCodeInputView(
+                isPresented: $showPromoCodeSheet,
+                onSuccess: {
+                    // Dismiss promo code sheet first
+                    showPromoCodeSheet = false
+                    // Set paywall manager flag to false (this will help dismiss the paywall)
+                    PaywallManager.shared.shouldShowPaywall = false
+                    // Trigger paywall dismissal after a short delay
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        // Post notification to trigger dismissal
+                        NotificationCenter.default.post(name: .dismissPaywallAfterPromoCode, object: nil)
+                    }
                 }
             )
         }
@@ -335,47 +350,96 @@ struct PaywallView: View {
     
     private var paywallBackground: some View {
         ZStack {
-            // Base dark gradient - richer than pure black
+            // Base dark gradient - matching lifetime sheet
             LinearGradient(
                 colors: [
-                    Color(red: 0.05, green: 0.05, blue: 0.08),
-                    Color(red: 0.01, green: 0.01, blue: 0.04)
+                    Color(red: 0.06, green: 0.06, blue: 0.12),
+                    Color(red: 0.02, green: 0.02, blue: 0.06)
                 ],
                 startPoint: .top,
                 endPoint: .bottom
             )
             
-            // Accent color glow orb - top left
+            // Accent glow orbs - matching lifetime sheet
             Circle()
                 .fill(
                     RadialGradient(
-                        colors: [Color.appAccent.opacity(0.12), Color.clear],
+                        colors: [Color.appAccent.opacity(0.3), Color.clear],
                         center: .center,
                         startRadius: 0,
-                        endRadius: 180
+                        endRadius: 200
                     )
                 )
-                .frame(width: 360, height: 360)
-                .offset(x: -120, y: -180)
+                .frame(width: 400, height: 400)
+                .offset(x: -100, y: -200)
+                .blur(radius: 60)
+            
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.2), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 150
+                    )
+                )
+                .frame(width: 300, height: 300)
+                .offset(x: 150, y: 300)
                 .blur(radius: 50)
             
-            // Accent color glow orb - bottom right
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.appAccent.opacity(0.08), Color.clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 140
-                    )
-                )
-                .frame(width: 280, height: 280)
-                .offset(x: 140, y: 320)
-                .blur(radius: 40)
-            
-            // Very subtle noise/texture overlay for depth
+            // Subtle noise texture overlay for depth
             Rectangle()
-                .fill(Color.white.opacity(0.015))
+                .fill(Color.white.opacity(0.02))
+        }
+        .compositingGroup() // Optimize background composition
+    }
+    
+    // Floating particles (dots) - smooth animation using linear interpolation
+    private var floatingParticles: some View {
+        GeometryReader { geo in
+            ForEach(particleData.indices, id: \.self) { i in
+                let particle = particleData[i]
+                // Calculate smooth animation phase with proper wrapping
+                let totalCycle = particle.duration * 2
+                let currentTime = particleAnimationTime + particle.delay
+                let wrappedTime = currentTime.truncatingRemainder(dividingBy: totalCycle)
+                let normalizedPhase = wrappedTime / totalCycle
+                
+                // Use smooth sine wave for natural floating motion
+                let offset = sin(normalizedPhase * .pi * 2) * 20
+                
+                Circle()
+                    .fill(Color.appAccent.opacity(particle.opacity))
+                    .frame(width: particle.size, height: particle.size)
+                    .offset(
+                        x: particle.x * geo.size.width,
+                        y: particle.y * geo.size.height + offset
+                    )
+                    .opacity(animateIn ? 1 : 0)
+            }
+        }
+        .compositingGroup() // First composite particles
+        .drawingGroup() // Then render as single layer for maximum performance
+        .allowsHitTesting(false)
+        .onAppear {
+            if particleData.isEmpty {
+                particleData = (0..<12).map { _ in
+                    ParticleData(
+                        opacity: Double.random(in: 0.1...0.4),
+                        size: CGFloat.random(in: 3...8),
+                        x: Double.random(in: 0...1),
+                        y: Double.random(in: 0...1),
+                        duration: Double.random(in: 4...6), // Longer duration for smoother, slower motion
+                        delay: Double.random(in: 0...3) // Spread out delays for more natural movement
+                    )
+                }
+            }
+        }
+        .onReceive(particleAnimationTimer) { _ in
+            if animateIn {
+                // Smooth continuous animation - increment matches timer interval for consistent speed
+                particleAnimationTime += 0.033
+            }
         }
     }
     
@@ -442,25 +506,13 @@ struct PaywallView: View {
                         .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.4), value: animateIn)
                 }
                 
-                // Continue button (goes to step 2 or purchase directly)
+                // Purchase button
                 Button(action: {
-                    if shouldShowTrialStep {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                        currentStep = 2
-                        animateIn = false
-                    }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        withAnimation {
-                            animateIn = true
-                        }
-                        }
-                    } else {
-                        handlePurchase()
-                    }
+                    handlePurchase()
                 }) {
                     VStack(spacing: 4) {
                         HStack(spacing: 8) {
-                            if !shouldShowTrialStep && (isPurchasing || paywallManager.isLoadingOfferings) {
+                            if isPurchasing || paywallManager.isLoadingOfferings {
                                 ProgressView()
                                     .progressViewStyle(CircularProgressViewStyle(tint: .white))
                             } else {
@@ -471,15 +523,8 @@ struct PaywallView: View {
                                     .lineLimit(2)
                             }
                         }
-                        
-                        // Show redemption reminder for exit-intercept
-                        if applyExitInterceptDiscount && !isPurchasing && !paywallManager.isLoadingOfferings {
-                            Text("(Redeem code NOTEWALL30 for 30% off the yearly plan)")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.white.opacity(0.7))
-                        }
                     }
-                    .frame(height: applyExitInterceptDiscount ? 70 : 60)
+                    .frame(height: 60)
                     .frame(maxWidth: .infinity)
                     .background(Color.appAccent)
                     .foregroundColor(.white)
@@ -487,7 +532,7 @@ struct PaywallView: View {
                     .shadow(color: Color.appAccent.opacity(0.4), radius: 12, x: 0, y: 6)
                 }
                 .padding(.horizontal, 24)
-                .disabled(!shouldShowTrialStep && (isPurchasing || paywallManager.isLoadingOfferings))
+                .disabled(isPurchasing || paywallManager.isLoadingOfferings)
                 .opacity(animateIn ? 1 : 0)
                 .scaleEffect(animateIn ? 1 : 0.9)
                 .animation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.7), value: animateIn)
@@ -538,11 +583,14 @@ struct PaywallView: View {
         }
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.clear) // Ensure VStack background is transparent
         }
+        .background(Color.clear) // Ensure ScrollView content area is transparent
     }
     
-    // MARK: - Step 2: Trial Explanation
+    // MARK: - Step 2: Trial Explanation (REMOVED - No longer using trials)
     
+    // This view has been removed as we're switching to lifetime-only purchases
     private var step2TrialExplanation: some View {
         paywallScrollView {
         VStack(spacing: 20) {
@@ -677,18 +725,7 @@ struct PaywallView: View {
 
     private var logoHeader: some View {
         VStack(spacing: 16) {
-            Image("OnboardingLogo")
-                .resizable()
-                .interpolation(.high)
-                .antialiased(true)
-                .scaledToFit()
-                .frame(width: 160, height: 160)
-                .cornerRadius(44)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 44)
-                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.25), radius: 16, x: 0, y: 7)
+            AppIconAnimationView(size: 160)
         }
         .padding(.horizontal, 12)
     }
@@ -802,14 +839,18 @@ struct PaywallView: View {
                     ForEach(Array(slides.enumerated()), id: \.offset) { idx, slide in
                         benefitCard(slide: slide)
                             .frame(width: cardWidth, height: cardHeight, alignment: .topLeading)
+                            .id("benefit-\(idx)")
                     }
                 }
+                .zIndex(10)
                 .offset(x: baseOffset + benefitDragOffset)
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: benefitCarouselIndex)
                 .frame(width: screenWidth, height: cardHeight, alignment: .leading)
                 .clipped()
+                .compositingGroup() // First composite
+                .drawingGroup() // Then render as single layer for smooth scrolling
                 .gesture(
-                    DragGesture()
+                    DragGesture(minimumDistance: 5) // Add minimum distance to reduce gesture conflicts
                         .updating($benefitDragOffset) { value, state, _ in
                             state = value.translation.width
                         }
@@ -845,7 +886,10 @@ struct PaywallView: View {
             let timeSinceLastSwipe = Date().timeIntervalSince(lastManualSwipeTime)
             guard timeSinceLastSwipe >= 2.0 else { return }
             
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+            // Use transaction to optimize animation
+            var transaction = Transaction(animation: .spring(response: 0.45, dampingFraction: 0.85))
+            transaction.disablesAnimations = false
+            withTransaction(transaction) {
                 benefitCarouselIndex = min(benefitCarouselIndex + 1, slides.count - 1)
             }
             stabilizeCarouselIndex(originalCount: originalCount, totalCount: slides.count)
@@ -904,21 +948,23 @@ struct PaywallView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(red: 27/255, green: 28/255, blue: 37/255).opacity(0.6))
+                .fill(Color(red: 27/255, green: 28/255, blue: 37/255).opacity(0.95))
         )
+        .compositingGroup() // Optimize rendering
+        .zIndex(10)
     }
     
     private var lifetimePrompt: some View {
         VStack(spacing: 6) {
-            Text("Want a lifetime solution?")
+            Text("Have a special promo code?")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
             
             Button(action: {
-                showLifetimeSheet = true
+                showPromoCodeSheet = true
             }) {
-                Text("Unlock once, own NoteWall+ forever →")
+                Text("Redeem your code here →")
                     .font(.footnote)
                     .fontWeight(.semibold)
                     .foregroundColor(.appAccent)
@@ -1014,10 +1060,10 @@ struct PaywallView: View {
     }
     
     private var primaryPackages: [Package] {
-        // Only show Monthly and Yearly in main paywall (exclude Lifetime)
+        // Show Lifetime and Monthly in main paywall (Lifetime replaces Yearly)
         availablePackages.filter { 
             let kind = planKind(for: $0)
-            return kind == .monthly || kind == .yearly
+            return kind == .monthly || kind == .lifetime
         }
     }
     
@@ -1031,7 +1077,7 @@ struct PaywallView: View {
     
     private func planSortPriority(for package: Package) -> Int {
         switch planKind(for: package) {
-        case .yearly:
+        case .lifetime:
             return 0
         case .monthly:
             return 1
@@ -1052,9 +1098,6 @@ struct PaywallView: View {
         planKind(for: selectedPackage)
     }
 
-    private var shouldShowTrialStep: Bool {
-        selectedPlanKind == .yearly && trialDaysForSelectedPackage(selectedPackage) != nil
-    }
 
     private var monthlyPackage: Package? {
         availablePackages.first { planKind(for: $0) == .monthly }
@@ -1096,12 +1139,12 @@ struct PaywallView: View {
     private var fallbackPlans: [FallbackPlan] {
         [
             FallbackPlan(
-                kind: .yearly,
-                label: "Yearly",
-                subtitle: "",
-                priceText: "€14.99",
+                kind: .lifetime,
+                label: "Lifetime",
+                subtitle: "One-time purchase, own NoteWall+ forever",
+                priceText: "€24.99",
                 highlight: true,
-                trialDays: 3
+                trialDays: nil
             ),
             FallbackPlan(
                 kind: .monthly,
@@ -1109,7 +1152,7 @@ struct PaywallView: View {
                 subtitle: "",
                 priceText: "€6.99",
                 highlight: false,
-                trialDays: 3
+                trialDays: nil
             )
         ]
     }
@@ -1133,46 +1176,25 @@ struct PaywallView: View {
     }
     
     private func fallbackPricingCard(plan: FallbackPlan, index: Int) -> some View {
-        let isYearlyPlan = plan.kind == .yearly
-        let showExitDiscount = applyExitInterceptDiscount && isYearlyPlan
+        let isLifetimePlan = plan.kind == .lifetime
         
-        // Determine display price and original price
-        let displayPrice: String
-        let originalPrice: String?
-        if showExitDiscount {
-            // Show $9.99 (or €9.99) as discounted price
-            displayPrice = plan.priceText.contains("€") ? "€9.99" : "$9.99"
-            originalPrice = plan.priceText // Show original with strikethrough
-        } else {
-            displayPrice = plan.priceText
-            originalPrice = nil
-        }
+        // Determine display price
+        let displayPrice = plan.priceText
+        let originalPrice: String? = nil
         
         let perMonthText: String?
         if plan.kind == .monthly {
             perMonthText = "\(displayPrice)/mo"
-        } else if plan.kind == .yearly {
-            if showExitDiscount {
-                // Calculate per month for discounted yearly: $9.99 / 12 = $0.83/mo
-                perMonthText = plan.priceText.contains("€") ? "€0.83/mo" : "$0.83/mo"
-            } else {
-                // Calculate per month for yearly: €14.99 / 12 = €1.25/mo
-                perMonthText = plan.priceText.contains("€") ? "€1.25/mo" : "$1.25/mo"
-            }
+        } else if plan.kind == .lifetime {
+            // For lifetime, show "One-time" or similar
+            perMonthText = nil
         } else {
             perMonthText = nil
         }
         
         let badgeText: String?
-        if plan.kind == .yearly {
-            if showExitDiscount {
-                badgeText = "USE CODE FOR 30% OFF"
-            } else {
-                // Monthly is €6.99 × 12 = €83.88
-                // Yearly is €14.99
-                // Savings: (83.88 - 14.99) / 83.88 = 82%
-                badgeText = "82% OFF"
-            }
+        if plan.kind == .lifetime {
+            badgeText = "BEST VALUE"
         } else {
             badgeText = nil
         }
@@ -1203,25 +1225,24 @@ struct PaywallView: View {
 
         let highlight = false
         
-        // Determine if this is a yearly plan
-        let isYearlyPlan = planLabel.lowercased().contains("year")
+        // Determine if this is a lifetime plan
+        let isLifetimePlan = planLabel.lowercased().contains("lifetime")
         
-        // Show discounted price if exit-intercept discount is enabled
+        // For lifetime plan, show current price with crossed-out $29.99
         let displayPrice: String
         let showOriginalPrice: String?
+        let badgeText: String?
         
-        if applyExitInterceptDiscount && isYearlyPlan {
-            // Show $9.99 (or equivalent) as discounted price for exit-intercept
-            let discountedPriceString = getExitInterceptDiscountedPrice(for: package)
-            displayPrice = discountedPriceString
-            showOriginalPrice = package.localizedPriceString // Show original with strikethrough
+        if isLifetimePlan {
+            displayPrice = package.localizedPriceString
+            // Show $29.99 (or equivalent) as crossed-out original price
+            showOriginalPrice = getLifetimeOriginalPrice(for: package)
+            badgeText = "BEST VALUE" // Most effective badge for lifetime plans
         } else {
             displayPrice = package.localizedPriceString
             showOriginalPrice = nil
+            badgeText = discountBadgeText(for: package)
         }
-
-        // Only show "USE CODE FOR 30% OFF" badge on yearly plans
-        let exitBadgeText = (applyExitInterceptDiscount && isYearlyPlan) ? "USE CODE FOR 30% OFF" : nil
         
         return selectablePricingCard(
             planLabel: planLabel,
@@ -1230,8 +1251,8 @@ struct PaywallView: View {
             originalPrice: showOriginalPrice,
             highlight: highlight,
             index: index,
-            perMonthText: perMonthText(for: package, displayAlways: true, applyDiscount: applyExitInterceptDiscount && isYearlyPlan),
-            badgeText: exitBadgeText ?? discountBadgeText(for: package)
+            perMonthText: perMonthText(for: package, displayAlways: true, applyDiscount: false),
+            badgeText: badgeText
         )
     }
 
@@ -1246,15 +1267,18 @@ struct PaywallView: View {
         badgeText: String? = nil
     ) -> some View {
         let isSelected = selectedProductIndex == index
-        let isYearlyPlan = planLabel.lowercased().contains("year")
-        let selectionAnimation: Animation = isYearlyPlan
+        let isLifetimePlan = planLabel.lowercased().contains("lifetime")
+        let selectionAnimation: Animation = isLifetimePlan
             ? .spring(response: 0.32, dampingFraction: 0.65)
             : .easeOut(duration: 0.18)
         
         return Button(action: {
             let generator = UIImpactFeedbackGenerator(style: .light)
             generator.impactOccurred()
-            withAnimation(selectionAnimation) {
+            // Use transaction for optimized animation
+            var transaction = Transaction(animation: selectionAnimation)
+            transaction.disablesAnimations = false
+            withTransaction(transaction) {
                 selectedProductIndex = index
             }
         }) {
@@ -1278,14 +1302,14 @@ struct PaywallView: View {
                         }
                     }
                     
-                VStack(alignment: .leading, spacing: isYearlyPlan ? 6 : 2) {
+                VStack(alignment: .leading, spacing: isLifetimePlan ? 6 : 2) {
                         Text(planLabel)
                         .font(.system(.subheadline, design: .rounded))
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
                     
-                    // For yearly, show price below the title
-                    if isYearlyPlan {
+                    // For lifetime, show price below the title
+                    if isLifetimePlan {
                         HStack(spacing: 8) {
                             Text(price)
                                 .font(.system(size: 20, weight: .bold, design: .rounded))
@@ -1313,16 +1337,16 @@ struct PaywallView: View {
                         .padding(.vertical, 4)
                 }
             }
-            .padding(.vertical, isYearlyPlan ? 18 : 16)
+            .padding(.vertical, isLifetimePlan ? 18 : 16)
             .padding(.horizontal, 20)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color.appAccent.opacity(0.12))
-                    .shadow(color: (isSelected && isYearlyPlan) ? Color.appAccent.opacity(0.25) : Color.black.opacity(0.05), radius: isSelected ? 14 : 6, x: 0, y: 4)
+                    .shadow(color: (isSelected && isLifetimePlan) ? Color.appAccent.opacity(0.25) : Color.black.opacity(0.05), radius: isSelected ? 14 : 6, x: 0, y: 4)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke((isSelected && isYearlyPlan) ? Color.appAccent : Color.clear, lineWidth: 2)
+                    .stroke((isSelected && isLifetimePlan) ? Color.appAccent : Color.clear, lineWidth: 2)
             )
             .overlay(
                 Group {
@@ -1331,7 +1355,7 @@ struct PaywallView: View {
                     }
                 }
             )
-            .scaleEffect((isSelected && isYearlyPlan) ? 1.02 : 1)
+            .scaleEffect((isSelected && isLifetimePlan) ? 1.02 : 1)
             .animation(selectionAnimation, value: isSelected)
         }
         .buttonStyle(.plain)
@@ -1456,12 +1480,11 @@ struct PaywallView: View {
     private func ctaTitle(for plan: PlanKind, trialDays: Int?) -> String {
         switch plan {
         case .yearly:
-            let days = trialDays ?? 3
-            return "Start \(days)-day free trial"
+            return "Get yearly access"
         case .monthly:
-            return "Continue"
+            return "Get monthly access"
         case .lifetime:
-            return "Unlock lifetime access"
+            return "Get lifetime access"
         case .unknown:
             return "Continue"
         }
@@ -1475,12 +1498,12 @@ struct PaywallView: View {
         
         guard !packages.isEmpty else { return }
         
-        // Find yearly package index in availablePackages
-        if let yearlyIndex = packages.firstIndex(where: { planKind(for: $0) == .yearly }) {
-            selectedProductIndex = yearlyIndex
+        // Find lifetime package index in availablePackages (preferred)
+        if let lifetimeIndex = packages.firstIndex(where: { planKind(for: $0) == .lifetime }) {
+            selectedProductIndex = lifetimeIndex
             hasInitializedPlanSelection = true
         } else if !packages.isEmpty {
-            // If no yearly package, select first available (but mark as initialized)
+            // If no lifetime package, select first available
             selectedProductIndex = 0
             hasInitializedPlanSelection = true
         }
@@ -1491,6 +1514,8 @@ struct PaywallView: View {
         ScrollView(.vertical, showsIndicators: false) {
             content()
         }
+        .background(Color.clear) // Make ScrollView background transparent to show animated background
+        // Note: scrollContentBackground is iOS 16+, so we use .background(Color.clear) for iOS 15+ compatibility
     }
     
     private func handlePurchase() {
@@ -1767,6 +1792,29 @@ struct PaywallView: View {
         
         let formatter = currencyFormatter(for: package)
         return formatter.string(from: NSDecimalNumber(decimal: discountedPrice)) ?? package.localizedPriceString
+    }
+    
+    /// Returns $29.99 (or equivalent) for lifetime original price display (crossed out)
+    private func getLifetimeOriginalPrice(for package: Package) -> String {
+        let formatter = currencyFormatter(for: package)
+        let locale = formatter.locale ?? Locale.current
+        
+        // Determine currency and set appropriate original price
+        let currencyCode = locale.currencyCode ?? "USD"
+        let originalAmount: Decimal
+        
+        // Set $29.99 for USD, €29.99 for EUR, or equivalent
+        if currencyCode == "EUR" {
+            originalAmount = 29.99
+        } else if currencyCode == "USD" {
+            originalAmount = 29.99
+        } else {
+            // For other currencies, use a reasonable conversion
+            // You can adjust this based on your pricing strategy
+            originalAmount = 29.99
+        }
+        
+        return formatter.string(from: NSDecimalNumber(decimal: originalAmount)) ?? "$29.99"
     }
     
     /// Returns $9.99 (or equivalent) for exit-intercept discount display
@@ -2105,6 +2153,15 @@ private struct BenefitSlide: Identifiable {
     let subtitle: String
 }
 
+private struct ParticleData {
+    let opacity: Double
+    let size: CGFloat
+    let x: Double  // 0.0 to 1.0 (relative position)
+    let y: Double  // 0.0 to 1.0 (relative position)
+    let duration: Double
+    let delay: Double
+}
+
 private struct LifetimePlanSheet: View {
     let priceText: String
     let subtitle: String
@@ -2185,16 +2242,9 @@ private struct LifetimePlanSheet: View {
                         }
                         
                         // Logo with premium glow
-                Image("OnboardingLogo")
-                    .resizable()
-                    .interpolation(.high)
-                    .antialiased(true)
-                    .scaledToFit()
-                            .frame(width: 100, height: 100)
-                            .cornerRadius(26)
-                            .shadow(color: Color.appAccent.opacity(0.6), radius: 30, x: 0, y: 10)
+                AppIconAnimationView(size: 100)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 26)
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
                                     .stroke(
                                         LinearGradient(
                                             colors: [Color.white.opacity(0.5), Color.white.opacity(0.1)],
@@ -2204,6 +2254,7 @@ private struct LifetimePlanSheet: View {
                                         lineWidth: 2
                                     )
                             )
+                            .shadow(color: Color.appAccent.opacity(0.6), radius: 30, x: 0, y: 10)
                             .offset(y: floatingOffset)
                         
                         // Crown badge
