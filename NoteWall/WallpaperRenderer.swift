@@ -11,15 +11,32 @@ struct WallpaperRenderer {
     /// Minimum font size - smallest we'll go for readability
     private static let minFontSize: CGFloat = 52
     
-    /// Horizontal padding on each side
-    /// 🔧 ADJUST THIS to control space from screen edges
-    ///    - 80 = Previous (closer to edge)  
-    ///    - 100 = More space from edge (recommended)
-    ///    - 120 = Even more space
-    private static let horizontalPadding: CGFloat = 100
-    
-    /// Canvas width
+    /// Canvas dimensions (base reference)
     private static let canvasWidth: CGFloat = 1290
+    private static let screenHeight: CGFloat = 2796
+    
+    // MARK: - Proportional Positioning (Universal iPhone Support)
+    
+    /// PROPORTIONAL POSITIONING (percentage-based)
+    /// These percentages ensure consistent placement across all iPhone sizes
+    
+    /// Top padding WITHOUT widgets (clock area)
+    /// Clock typically ends at ~25-28% of screen height on all iPhones
+    /// Add 2% buffer → start notes at 30% of screen height
+    private static var topPaddingNoWidgets: CGFloat { screenHeight * 0.30 }  // ~839px at 2796px height
+    
+    /// Top padding WITH widgets (widget area)
+    /// Widgets end at ~35-37% of screen height
+    /// Add 1% buffer → start notes at 38% of screen height
+    private static var topPaddingWithWidgets: CGFloat { screenHeight * 0.38 }  // ~1062px at 2796px height
+    
+    /// Bottom safe area (flashlight/camera icons)
+    /// These icons occupy ~18-20% of bottom screen
+    /// Add 1% buffer → reserve 21% from bottom
+    private static var bottomSafeArea: CGFloat { screenHeight * 0.21 }  // ~587px at 2796px height
+    
+    /// Horizontal padding (8% on each side is safe for all devices)
+    private static var horizontalPadding: CGFloat { canvasWidth * 0.08 }  // ~103px at 1290px width
     
     /// Text max width
     private static var textMaxWidth: CGFloat { canvasWidth - (horizontalPadding * 2) }
@@ -27,35 +44,69 @@ struct WallpaperRenderer {
     /// Font weight for notes - heavy for better visibility
     private static let fontWeight: UIFont.Weight = .heavy
     
-    // MARK: - Layout Configuration (Widget-aware)
+    // MARK: - Device-Aware Adjustments
     
-    /// Top padding when user HAS widgets (just below widgets)
-    /// Balanced to clear widgets but not too far
-    private static let topPaddingWithWidgets: CGFloat = 1030
+    /// DEVICE-SPECIFIC FINE-TUNING
+    /// Detect if device has smaller screen and apply minor adjustments
+    /// This handles edge cases where proportions might still be slightly off
+    private static func getDeviceAdjustedTopPadding(basePadding: CGFloat) -> CGFloat {
+        // Get actual device screen height with safety check
+        let deviceScreenHeight: CGFloat
+        if UIScreen.main.nativeBounds.height > 0 {
+            deviceScreenHeight = UIScreen.main.nativeBounds.height
+        } else {
+            // Fallback: use base padding if screen detection fails
+            return basePadding
+        }
+        
+        // Apply minor adjustments for specific device categories
+        switch deviceScreenHeight {
+        case 0..<1500:  // iPhone SE, 8, 7, 6 (4.7" and smaller)
+            // Slightly higher percentage for smaller devices
+            return basePadding * 1.05  // +5%
+            
+        case 1500..<2400:  // iPhone 12 mini, 13 mini (5.4")
+            return basePadding * 1.02  // +2%
+            
+        case 2400..<2900:  // iPhone 12, 13, 14 (6.1")
+            return basePadding  // Base calculation (perfect)
+            
+        default:  // iPhone Pro Max, Plus models (6.7"+)
+            return basePadding * 0.98  // -2% (more screen space)
+        }
+    }
     
-    /// Top padding when user has NO widgets (closer to clock)
-    /// ADJUST THIS VALUE to control gap between clock and first note
-    /// - 700 = very close to clock (matches preset spacing)
-    /// - 780 = slight gap below clock
-    /// - 850 = comfortable gap below clock
-    /// - 900+ = larger gap
-    private static let topPaddingNoWidgets: CGFloat = 780
-    
-    /// Bottom safe area padding (above flashlight/camera icons)
-    /// Increased to ensure notes never overlap flashlight/camera
-    private static let bottomSafeArea: CGFloat = 550
-    
-    /// Screen height
-    private static let screenHeight: CGFloat = 2796
-    
-    /// Get top padding based on widget setting
+    /// Get top padding based on widget setting with device-aware adjustments
     static func topPadding(hasWidgets: Bool) -> CGFloat {
-        return hasWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
+        let basePadding = hasWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
+        return getDeviceAdjustedTopPadding(basePadding: basePadding)
     }
     
     /// Get available height based on widget setting
     static func availableHeight(hasWidgets: Bool) -> CGFloat {
         return screenHeight - topPadding(hasWidgets: hasWidgets) - bottomSafeArea
+    }
+    
+    // MARK: - Debug Helper
+    
+    /// Debug function to help test on different devices
+    private static func logPositioningInfo(hasLockScreenWidgets: Bool) {
+        let deviceHeight = UIScreen.main.nativeBounds.height
+        let deviceWidth = UIScreen.main.nativeBounds.width
+        let baseTopPadding = hasLockScreenWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
+        let adjustedTopPadding = topPadding(hasWidgets: hasLockScreenWidgets)
+        let availableHeight = screenHeight - adjustedTopPadding - bottomSafeArea
+        
+        print("━━━ NoteWall Positioning Debug ━━━")
+        print("Device Screen: \(deviceWidth)×\(deviceHeight)px")
+        print("Canvas Size: \(canvasWidth)×\(screenHeight)px")
+        print("Base Top Padding: \(baseTopPadding)px (\(Int((baseTopPadding/screenHeight)*100))%)")
+        print("Adjusted Top Padding: \(adjustedTopPadding)px (\(Int((adjustedTopPadding/screenHeight)*100))%)")
+        print("Bottom Safe: \(bottomSafeArea)px (\(Int((bottomSafeArea/screenHeight)*100))%)")
+        print("Available Height: \(availableHeight)px")
+        print("Horizontal Padding: \(horizontalPadding)px (each side)")
+        print("Has Widgets: \(hasLockScreenWidgets)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
     }
     
     static func generateWallpaper(
@@ -68,6 +119,11 @@ struct WallpaperRenderer {
         print("   Total notes: \(notes.count)")
         print("   Background image: \(backgroundImage != nil ? "YES" : "NO")")
         print("   Has widgets: \(hasLockScreenWidgets)")
+        
+        // Debug positioning info
+        #if DEBUG
+        logPositioningInfo(hasLockScreenWidgets: hasLockScreenWidgets)
+        #endif
         
         // iPhone wallpaper dimensions
         let width: CGFloat = 1290

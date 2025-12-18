@@ -6,6 +6,13 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     var window: UIWindow?
     
+    // MARK: - Orientation Lock
+    
+    /// Return only portrait orientation mask
+    func windowScene(_ windowScene: UIWindowScene, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return .portrait
+    }
+    
     func scene(
         _ scene: UIScene,
         willConnectTo session: UISceneSession,

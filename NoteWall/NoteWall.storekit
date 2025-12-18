@@ -5,7 +5,7 @@
   ],
   "products" : [
     {
-      "displayPrice" : "9.99",
+      "displayPrice" : "12.99",
       "familyShareable" : false,
       "internalID" : "6670914234",
       "localizations" : [
@@ -15,8 +15,53 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.notewall.lifetime.purchase",
+      "productID" : "lifetime",
       "referenceName" : "Lifetime Access",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "9.09",
+      "familyShareable" : false,
+      "internalID" : "6670914237",
+      "localizations" : [
+        {
+          "description" : "One-time payment for unlimited wallpapers forever - 30% Special Offer",
+          "displayName" : "NoteWall+ Lifetime Special",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "lifetime_discount",
+      "referenceName" : "Lifetime Special (30% Off)",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "5.99",
+      "familyShareable" : false,
+      "internalID" : "6670914238",
+      "localizations" : [
+        {
+          "description" : "Monthly subscription for unlimited wallpapers",
+          "displayName" : "NoteWall+ Monthly",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "monthly",
+      "referenceName" : "Monthly Subscription",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "6670914239",
+      "localizations" : [
+        {
+          "description" : "Yearly subscription for unlimited wallpapers",
+          "displayName" : "NoteWall+ Yearly",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "yearly",
+      "referenceName" : "Yearly Subscription",
       "type" : "NonConsumable"
     }
   ],

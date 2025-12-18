@@ -4,6 +4,13 @@ import SwiftUI
 /// AppDelegate for handling Quick Actions and other UIApplication-level events
 class AppDelegate: NSObject, UIApplicationDelegate {
     
+    // MARK: - Orientation Lock
+    
+    /// Lock app to portrait orientation only
+    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+        return .portrait
+    }
+    
     // MARK: - Application Lifecycle
     
     func application(

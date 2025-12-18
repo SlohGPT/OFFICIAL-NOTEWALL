@@ -103,6 +103,7 @@ struct CroppedVideoPlayerView: UIViewControllerRepresentable {
         containerVC.view.addSubview(playerVC.view)
         containerVC.playerViewController = playerVC
         containerVC.topCrop = topCrop
+        containerVC.player = player
         // Enable clipping to ensure overflow is discarded
         containerVC.view.clipsToBounds = true
         
@@ -119,10 +120,23 @@ struct CroppedVideoPlayerView: UIViewControllerRepresentable {
     class ContainerViewController: UIViewController {
         var playerViewController: AVPlayerViewController?
         var topCrop: CGFloat = 0
+        var player: AVPlayer?
+        private var hasStartedPlayback = false
         
         override func viewDidLoad() {
             super.viewDidLoad()
             view.backgroundColor = .clear
+        }
+        
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            // Auto-play video when view appears
+            if !hasStartedPlayback, let player = player {
+                player.seek(to: .zero)
+                player.play()
+                hasStartedPlayback = true
+                debugLog("▶️ CroppedVideoPlayerView: Auto-started playback")
+            }
         }
         
         override func viewDidLayoutSubviews() {
@@ -156,6 +170,7 @@ struct CroppedVideoPlayerView: UIViewControllerRepresentable {
 }
 
 private enum OnboardingPage: Int, CaseIterable, Hashable {
+    case preOnboardingHook
     case welcome
     case videoIntroduction
     case installShortcut
@@ -195,7 +210,7 @@ struct OnboardingView: View {
     @State private var lockScreenBackgroundStatusMessage: String?
     @State private var lockScreenBackgroundStatusColor: Color = .gray
 
-    @State private var currentPage: OnboardingPage = .welcome
+    @State private var currentPage: OnboardingPage = .preOnboardingHook
     @State private var isLaunchingShortcut = false
     @State private var shortcutLaunchFallback: DispatchWorkItem?
     @State private var wallpaperVerificationTask: Task<Void, Never>?
@@ -273,6 +288,27 @@ struct OnboardingView: View {
     @State private var helpAlertMessage = ""
     @State private var isSendingImprovement = false
     @FocusState private var isImprovementFieldFocused: Bool
+    
+    // Pre-onboarding hook animation states
+    @State private var firstNoteOpacity: Double = 0
+    @State private var firstNoteScale: CGFloat = 0.8
+    @State private var firstNoteOffset: CGFloat = 0
+    @State private var firstNoteXOffset: CGFloat = -300 // Start off-screen left (left to right)
+    @State private var firstNoteRotation: Double = -15 // Start rotated
+    @State private var notesOpacity: [Double] = [0, 0, 0]
+    @State private var notesOffset: [CGFloat] = [0, 0, 0]
+    // Alternate directions: [right-to-left, left-to-right, right-to-left]
+    @State private var notesXOffset: [CGFloat] = [300, -300, 300] // Alternate: right, left, right
+    @State private var notesScale: [CGFloat] = [0.8, 0.8, 0.8] // Start smaller
+    @State private var notesRotation: [Double] = [15, -15, 15] // Alternate rotation directions
+    @State private var mockupOpacity: Double = 0
+    @State private var mockupScale: CGFloat = 0.95
+    @State private var mockupRotation: Double = 0
+    @State private var taglineOpacity: Double = 0
+    @State private var continueButtonOpacity: Double = 0
+    @State private var overallScale: CGFloat = 1.0
+    @State private var overallOffset: CGFloat = 100 // Start lower on screen
+    @State private var hasStartedPreOnboardingAnimation = false
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35"
     private let whatsappNumber = "421907758852" // Replace with your actual WhatsApp number
@@ -419,7 +455,13 @@ struct OnboardingView: View {
                                 // Recreate looper if needed
                                 let newLooper = AVPlayerLooper(player: player, templateItem: item)
                                 self.notificationsVideoLooper = newLooper
+                                debugLog("🔄 Recreated video looper in onChange")
                             }
+                        } else if let item = player.currentItem {
+                            // Create looper if it doesn't exist
+                            let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                            self.notificationsVideoLooper = newLooper
+                            debugLog("🔄 Created video looper in onChange")
                         }
                         
                         player.seek(to: .zero)
@@ -643,8 +685,8 @@ struct OnboardingView: View {
             }
             
             VStack(spacing: 0) {
-                // Progress indicator - hidden on overview step and during transition
-                if !hideProgressIndicator && !showTransitionScreen && currentPage != .overview {
+                // Progress indicator - hidden on overview step, preOnboardingHook step, and during transition
+                if !hideProgressIndicator && !showTransitionScreen && currentPage != .overview && currentPage != .preOnboardingHook {
                     onboardingProgressIndicatorCompact
                         .padding(.top, 16)
                         .padding(.bottom, 12)
@@ -669,6 +711,8 @@ struct OnboardingView: View {
                     
                     Group {
                         switch currentPage {
+                        case .preOnboardingHook:
+                            preOnboardingHookStep()
                         case .welcome:
                             welcomeStep()
                         case .videoIntroduction:
@@ -697,8 +741,8 @@ struct OnboardingView: View {
                         }
                 )
 
-                // Hide button during transition
-                if !showTransitionScreen {
+                // Hide button during transition and on preOnboardingHook step
+                if !showTransitionScreen && currentPage != .preOnboardingHook {
                     primaryButtonSection
                 }
             }
@@ -717,10 +761,10 @@ struct OnboardingView: View {
                     .ignoresSafeArea()
             }
             
-            // Help button - visible from step 2 onwards (not on welcome page)
+            // Help button - visible from step 2 onwards (not on welcome page or preOnboardingHook)
             // Different positioning for overview step (smaller, in grey corner)
             // Hidden on chooseWallpapers step as it's now integrated into the content
-            if currentPage != .welcome && currentPage != .chooseWallpapers {
+            if currentPage != .welcome && currentPage != .preOnboardingHook && currentPage != .chooseWallpapers {
                 VStack {
                     HStack {
                         Spacer()
@@ -771,7 +815,7 @@ struct OnboardingView: View {
 
     private var onboardingProgressIndicatorCompact: some View {
         HStack(alignment: .center, spacing: 12) {
-            ForEach(OnboardingPage.allCases.filter { $0 != .overview }, id: \.self) { page in
+            ForEach(OnboardingPage.allCases.filter { $0 != .overview && $0 != .preOnboardingHook }, id: \.self) { page in
                 Button(action: {
                     // Only allow navigation to previous steps (not future ones)
                     if page.rawValue < currentPage.rawValue {
@@ -793,11 +837,21 @@ struct OnboardingView: View {
         .padding(.horizontal, 4)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Onboarding progress")
-        .accessibilityValue("\(currentPage.accessibilityLabel) of \(OnboardingPage.allCases.filter { $0 != .overview }.count)")
+        .accessibilityValue("\(currentPage.accessibilityLabel) of \(OnboardingPage.allCases.filter { $0 != .overview && $0 != .preOnboardingHook }.count)")
     }
 
     private var primaryButtonSection: some View {
         VStack(spacing: 12) {
+            // Message for overview step - celebrating the payoff moment
+            if currentPage == .overview {
+                Text("This is your personalized lock screen. See your notes every time you pick up your phone.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+            }
+            
             // Hide primary button for installShortcut step as it has custom buttons
             if currentPage != .installShortcut {
             Button(action: handlePrimaryButton) {
@@ -834,6 +888,384 @@ struct OnboardingView: View {
         )
     }
 
+    private func preOnboardingHookStep() -> some View {
+        GeometryReader { geometry in
+            ZStack {
+                // Pure black or very dark gradient background
+                LinearGradient(
+                    colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    Spacer()
+                    
+                    // Phone mockup container with actual mockup image
+                    preOnboardingMockupView(geometry: geometry)
+                    
+                    Spacer()
+                    
+                    // App title below mockup
+                    Text("NoteWall")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .opacity(taglineOpacity)
+                        .padding(.top, 30)
+                    
+                    // Tagline below app title - action-oriented phrase that suggests the benefit
+                    Text("Never miss what matters")
+                        .font(.system(size: 20, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                        .opacity(taglineOpacity)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                        .padding(.top, 12)
+                    
+                    // Continue button with fade-in - matching Step 1 button position
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.4)) {
+                            currentPage = .welcome
+                        }
+                    }) {
+                        HStack(spacing: 12) {
+                            Text("Get Started")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                        }
+                        .frame(height: 56)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                    .opacity(continueButtonOpacity)
+                    .padding(.horizontal, 24)
+                    .padding(.top, 18) // Match Step 1 button top padding
+                    .padding(.bottom, 22) // Match Step 1 button bottom padding
+                }
+            }
+        }
+        .onAppear {
+            if !hasStartedPreOnboardingAnimation {
+                hasStartedPreOnboardingAnimation = true
+                startPreOnboardingAnimation()
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func preOnboardingMockupView(geometry: GeometryProxy) -> some View {
+        // Calculate mockup dimensions - made bigger since button is now positioned higher
+        let availableHeight = geometry.size.height * 0.75 // Increased from 0.7 to 0.75
+        let availableWidth = geometry.size.width
+        let mockupAspectRatio: CGFloat = 1 / 2.16
+        let maxMockupHeight = availableHeight
+        let mockupWidth = min(maxMockupHeight * mockupAspectRatio, availableWidth * 0.9) // Increased from 0.85 to 0.9
+        let mockupHeight = mockupWidth / mockupAspectRatio
+        
+        // Screen insets within the mockup frame (must match transparent screen window in mockup PNG)
+        let screenInsetTop: CGFloat = mockupHeight * 0.012
+        let screenInsetBottom: CGFloat = mockupHeight * 0.012
+        let screenInsetHorizontal: CGFloat = mockupWidth * 0.042
+        
+        // Calculate screen dimensions - fits within the transparent window
+        let screenWidth = mockupWidth - (screenInsetHorizontal * 2)
+        let screenHeight = mockupHeight - screenInsetTop - screenInsetBottom
+        
+        // Corner radius that matches the mockup's screen corners
+        let screenCornerRadius = mockupWidth * 0.115
+        
+        ZStack {
+            // iPhone mockup overlay (transparent screen window) - positioned behind notes
+            Image("step0_mockup")
+                .resizable()
+                .scaledToFit()
+                .frame(width: mockupWidth, height: mockupHeight)
+                .opacity(mockupOpacity)
+                .scaleEffect(mockupScale)
+                .rotation3DEffect(
+                    .degrees(mockupRotation),
+                    axis: (x: 0, y: 1, z: 0),
+                    perspective: 0.5
+                )
+                .shadow(color: Color.black.opacity(0.5), radius: 30, x: 0, y: 15)
+                .zIndex(1) // Mockup behind notes
+            
+            // Lock screen content layer (above the mockup) - shows through transparent screen area
+            // Positioned exactly like step 7 - content is centered, sized to screen area, and masked
+            // Note: Time and date are already in the mockup image, so we only show notes here
+            // Uses same font system as WallpaperRenderer: San Francisco, Heavy weight, adaptive size
+            preOnboardingNotesView(
+                screenWidth: screenWidth,
+                screenHeight: screenHeight
+            )
+            .frame(width: screenWidth, height: screenHeight)
+            .clipped()
+            .mask(
+                RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
+            )
+            // Offset content to align with mockup's transparent screen area
+            // Screen area is at (screenInsetHorizontal, screenInsetTop) from mockup's top-left
+            // Since mockup is centered, offset content by: (inset - mockupSize/2 + screenSize/2)
+            .offset(
+                x: screenInsetHorizontal - mockupWidth/2 + screenWidth/2,
+                y: screenInsetTop - mockupHeight/2 + screenHeight/2
+            )
+            .zIndex(2) // Notes above mockup
+        }
+        .frame(width: mockupWidth, height: mockupHeight)
+    }
+    
+    @ViewBuilder
+    private func preOnboardingNotesView(screenWidth: CGFloat, screenHeight: CGFloat) -> some View {
+        // Notes positioned on lock screen - using same styling as actual wallpaper
+        // Calculate adaptive font size similar to WallpaperRenderer
+        let sampleNotes = [
+            "Remember to call mom",
+            "Read 10 pages tonight",
+            "Stop doom scrolling",
+            "Text Sarah back"
+        ]
+        // Calculate available space for notes (similar to WallpaperRenderer)
+        // Use a portion of screen height for notes area
+        let availableHeightForNotes = screenHeight * 0.5
+        let availableWidthForNotes = screenWidth - 64 // Account for horizontal padding (32 on each side)
+        let calculatedFontSize = calculateAdaptiveFontSize(
+            for: sampleNotes,
+            availableHeight: availableHeightForNotes,
+            availableWidth: availableWidthForNotes
+        )
+        
+        VStack(spacing: 0) {
+            // Add top spacing to push notes down from the time display
+            Spacer()
+                .frame(height: 60) // Gap between time and first note when they appear on mockup
+            
+            VStack(alignment: .leading, spacing: 0) {
+                // First note
+                Text("Remember to call mom")
+                    .font(.system(size: calculatedFontSize, weight: .heavy))
+                    .foregroundColor(Color.white)
+                    .opacity(firstNoteOpacity)
+                    .scaleEffect(firstNoteScale)
+                    .rotationEffect(.degrees(firstNoteRotation))
+                    .offset(x: firstNoteXOffset, y: firstNoteOffset)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: Color.black.opacity(0.7), radius: calculatedFontSize * 0.08, x: 0, y: 2)
+                    .padding(.bottom, calculatedFontSize * 0.45) // Separator spacing like WallpaperRenderer
+                
+                // Additional notes
+                Text("Read 10 pages tonight")
+                    .font(.system(size: calculatedFontSize, weight: .heavy))
+                    .foregroundColor(Color.white)
+                    .opacity(notesOpacity[0])
+                    .scaleEffect(notesScale[0])
+                    .rotationEffect(.degrees(notesRotation[0]))
+                    .offset(x: notesXOffset[0], y: notesOffset[0])
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: Color.black.opacity(0.7), radius: calculatedFontSize * 0.08, x: 0, y: 2)
+                    .padding(.bottom, calculatedFontSize * 0.45)
+                
+                Text("Stop doom scrolling")
+                    .font(.system(size: calculatedFontSize, weight: .heavy))
+                    .foregroundColor(Color.white)
+                    .opacity(notesOpacity[1])
+                    .scaleEffect(notesScale[1])
+                    .rotationEffect(.degrees(notesRotation[1]))
+                    .offset(x: notesXOffset[1], y: notesOffset[1])
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: Color.black.opacity(0.7), radius: calculatedFontSize * 0.08, x: 0, y: 2)
+                    .padding(.bottom, calculatedFontSize * 0.45)
+                
+                Text("Text Sarah back")
+                    .font(.system(size: calculatedFontSize, weight: .heavy))
+                    .foregroundColor(Color.white)
+                    .opacity(notesOpacity[2])
+                    .scaleEffect(notesScale[2])
+                    .rotationEffect(.degrees(notesRotation[2]))
+                    .offset(x: notesXOffset[2], y: notesOffset[2])
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: Color.black.opacity(0.7), radius: calculatedFontSize * 0.08, x: 0, y: 2)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 32)
+            .padding(.bottom, 120)
+            .scaleEffect(overallScale)
+            .offset(y: overallOffset)
+            
+            Spacer()
+        }
+    }
+    
+    /// Calculates adaptive font size for notes (similar to WallpaperRenderer)
+    /// Returns font size that fits all notes without truncation
+    private func calculateAdaptiveFontSize(
+        for notes: [String],
+        availableHeight: CGFloat,
+        availableWidth: CGFloat
+    ) -> CGFloat {
+        let minFontSize: CGFloat = 20 // Half of 40
+        let maxFontSize: CGFloat = 50 // Half of 100
+        let fontWeight = UIFont.Weight.heavy
+        
+        guard !notes.isEmpty else { return maxFontSize }
+        
+        // Check if all notes fit at max font size
+        if doNotesFit(notes, atFontSize: maxFontSize, availableHeight: availableHeight, availableWidth: availableWidth, fontWeight: fontWeight) {
+            return maxFontSize
+        }
+        
+        // Binary search to find optimal size
+        var low = minFontSize
+        var high = maxFontSize
+        var bestFit = minFontSize
+        
+        while low <= high {
+            let mid = (low + high) / 2
+            if doNotesFit(notes, atFontSize: mid, availableHeight: availableHeight, availableWidth: availableWidth, fontWeight: fontWeight) {
+                bestFit = mid
+                low = mid + 1
+            } else {
+                high = mid - 1
+            }
+        }
+        
+        return bestFit
+    }
+    
+    /// Checks if all notes fit at given font size
+    private func doNotesFit(
+        _ notes: [String],
+        atFontSize fontSize: CGFloat,
+        availableHeight: CGFloat,
+        availableWidth: CGFloat,
+        fontWeight: UIFont.Weight
+    ) -> Bool {
+        let lineSpacing = fontSize * 0.15 // Same as WallpaperRenderer
+        let separatorHeight = fontSize * 0.45 // Same as WallpaperRenderer
+        
+        let font = UIFont.systemFont(ofSize: fontSize, weight: fontWeight)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineSpacing = lineSpacing
+        
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+        
+        var totalHeight: CGFloat = 0
+        
+        for (index, note) in notes.enumerated() {
+            let attributedString = NSAttributedString(string: note, attributes: attributes)
+            let textSize = attributedString.boundingRect(
+                with: CGSize(width: availableWidth, height: .greatestFiniteMagnitude),
+                options: [.usesLineFragmentOrigin, .usesFontLeading],
+                context: nil
+            )
+            
+            let noteHeight = textSize.height + (index > 0 ? separatorHeight : 0)
+            totalHeight += noteHeight
+            
+            if totalHeight > availableHeight {
+                return false
+            }
+        }
+        
+        return true
+    }
+    
+    private func startPreOnboardingAnimation() {
+        // Phase 1: First note slides in from left with bounce effect (0-0.8s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0)) {
+                firstNoteOpacity = 1.0
+                firstNoteXOffset = 0
+                firstNoteScale = 1.0
+                firstNoteRotation = 0
+            }
+        }
+        
+        // Phase 2: Remaining notes slide in one by one from left to right (0.8-2.5s)
+        // Each note appears with a spring animation, creating a cascading effect
+        for i in 0..<3 {
+            let delay = 0.8 + Double(i) * 0.4 // Staggered: 0.8s, 1.2s, 1.6s
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0)) {
+                    notesOpacity[i] = 1.0
+                    notesXOffset[i] = 0
+                    notesScale[i] = 1.0
+                    notesRotation[i] = 0
+                }
+            }
+        }
+        
+        // Phase 2.5: Slight upward float after all notes appear (2.5-3s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation(.easeInOut(duration: 0.5)) {
+                overallOffset = 50 // Float up slightly from starting position
+            }
+        }
+        
+        // Phase 3: Mockup appears and notes settle into position (3-5s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            // Mockup fades in
+            withAnimation(.easeOut(duration: 0.5)) {
+                mockupOpacity = 1.0
+            }
+            
+            // Notes settle into final position on mockup
+            // overallOffset controls vertical position: positive = down, negative = up
+            // Adjust this value to move notes up/down on the mockup lock screen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                withAnimation(.easeInOut(duration: 0.6)) {
+                    firstNoteOffset = 0
+                    firstNoteScale = 1.0
+                    firstNoteRotation = 0
+                    firstNoteXOffset = 0
+                    for i in 0..<3 {
+                        notesOffset[i] = 0
+                        notesScale[i] = 1.0
+                        notesRotation[i] = 0
+                        notesXOffset[i] = 0
+                    }
+                    overallOffset = 120 // Move notes down on mockup (increase to move down more, decrease to move up)
+                    overallScale = 1.0
+                }
+            }
+            
+            // 3D tilt animation (8-10° rotation on Y-axis)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeInOut(duration: 0.7)) {
+                    mockupRotation = 9
+                    mockupScale = 1.0
+                }
+            }
+        }
+        
+        // Phase 4: Tagline and button appear after animation completes (after 3.5s)
+        // Wait for mockup animation to complete, then show tagline and button
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.5) {
+            // Tagline fades in
+            withAnimation(.easeOut(duration: 0.6)) {
+                taglineOpacity = 1.0
+            }
+            
+            // Button fades in slightly after tagline
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(.easeOut(duration: 0.6)) {
+                    continueButtonOpacity = 1.0
+                }
+            }
+        }
+    }
+    
     private func welcomeStep() -> some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 28) {
@@ -1115,7 +1547,7 @@ struct OnboardingView: View {
                                                     .foregroundColor(.white)
                                             }
                                             
-                                            Text("I'll show you exactly how to fix it. The solution is simple: we'll create a new wallpaper using your NoteWall image (which I've already saved to your Photos). This takes about 2 minutes, and I'll guide you through every step.")
+                                            Text("I'll show you exactly how to fix it. The solution is simple: we'll create a new wallpaper using a NoteWall image (which will be saved to your Photos). This takes about 2 minutes, and I'll guide you through every step.")
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white.opacity(0.9))
                                                 .fixedSize(horizontal: false, vertical: true)
@@ -1123,7 +1555,7 @@ struct OnboardingView: View {
                                             Divider()
                                                 .background(Color.white.opacity(0.1))
                                             
-                                            Text("For most people, this setup works perfectly the first time. If you already have a photo-based wallpaper, you'll breeze through the next step in about 30 seconds.")
+                                            Text("For most people, this setup works perfectly the first time. If you already have a photo-based wallpaper, you'll breeze through the next step in about 90 seconds.")
                                                 .font(.system(size: 16))
                                                 .foregroundColor(.white.opacity(0.9))
                                                 .fixedSize(horizontal: false, vertical: true)
@@ -1573,7 +2005,7 @@ struct OnboardingView: View {
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                                 
-                                Text("This happens when you're using Apple's built-in wallpapers")
+                                Text("This happens when you're using Apple's built-in wallpapers. No worries, we will fix this.")
                                     .font(.system(size: 16))
                                     .foregroundColor(.white.opacity(0.6))
                                     .multilineTextAlignment(.center)
@@ -1583,7 +2015,7 @@ struct OnboardingView: View {
                             
                             // Video outside of card
                             VStack(spacing: 16) {
-                                Text("Watch this short guide (90 seconds) to fix the issue:")
+                                Text("Watch this short guide to fix the issue:")
                                     .font(.system(size: 16, weight: .semibold))
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
@@ -1848,7 +2280,6 @@ struct OnboardingView: View {
                         troubleshootingTextGuide
                     }
                 }
-                .padding(.horizontal, 24)
                 .padding(.bottom, 40)
             }
         }
@@ -1964,7 +2395,7 @@ struct OnboardingView: View {
                                 .cornerRadius(12)
                                 .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
                             
-                            Text("This bright red image has been saved to your Photos. It says \"SET THIS AS YOUR WALLPAPER\" - that's exactly what you need to do!")
+                            Text("This bright red image will be saved to your Photos once you click the continue button below. It says \"SET THIS AS YOUR WALLPAPER\" - that's exactly what you need to do!")
                                 .font(.system(size: 16))
                                 .foregroundColor(.white.opacity(0.9))
                                 .fixedSize(horizontal: false, vertical: true)
@@ -1972,7 +2403,7 @@ struct OnboardingView: View {
                             Divider()
                                 .background(Color.white.opacity(0.1))
                             
-                            Text("Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your actual NoteWall wallpaper with your notes.")
+                            Text("Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your own custom image wallpaper with your notes on it.")
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(.appAccent)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -2004,12 +2435,13 @@ struct OnboardingView: View {
                                 .foregroundColor(.appAccent)
                 
                 VStack(alignment: .leading, spacing: 12) {
-                    troubleshootingStep(number: 1, title: "Open Photos", description: "Tap the \"Open Photos\" button below. This will open your Photos app to the Recents album where your NoteWall wallpaper should be.")
-                    troubleshootingStep(number: 2, title: "Find Your NoteWall Image", description: "Look in the Recents album - your NoteWall image should be there. It's the one with a black or gray background with your notes written on it.\n\nIf you don't see it in Recents, check your \"All Photos\" and scroll to the most recent images.")
-                    troubleshootingStep(number: 3, title: "Long-Press the Image", description: "Long-press (press and hold) on your NoteWall wallpaper image.")
-                    troubleshootingStep(number: 4, title: "Use as Wallpaper", description: "Tap \"Use as Wallpaper\" from the menu that appears.")
+                    troubleshootingStep(number: 1, title: "Open Photos", description: "Tap the \"Open Photos\" button below. This will open your Photos app to the Recents album where this red birght image should be.")
+                    troubleshootingStep(number: 2, title: "Find the RED Image", description: "Look in the Recents album - the red image should be there. If you don't see it in Recents, check your \"All Photos\" and scroll to the most recent images.")
+                    troubleshootingStep(number: 3, title: "Long-Press the Image", description: "Long-press (press and hold) on it.")
+                    troubleshootingStep(number: 4, title: "Tap SHARE", description: "Tap SHARE from the menu that appears.")
+                    troubleshootingStep(number: 4, title: "Use as Wallpaper", description: "Scroll down a bit and then tap the \"Use as Wallpaper\" from the menu that appears.")
                     troubleshootingStep(number: 5, title: "Set as Lock Screen", description: "You'll see a preview. Tap add in top right corner and then Set as wallppaer pair.")
-                    troubleshootingStep(number: 6, title: "Return to NoteWall App", description: "Swipe up to go back to this app, or tap the NoteWall icon.")
+                    troubleshootingStep(number: 6, title: "Return to NoteWall App", description: "Swipe up to go back to NoteWall app.")
                             }
                         }
                     }
@@ -2636,27 +3068,58 @@ struct OnboardingView: View {
                         .padding(.top, 20)
                         .padding(.bottom, 12) // Remove bottom padding - video content will determine spacing
                         .onAppear {
-                            // Ensure video plays automatically and loops when view appears
-                            func startPlayback() {
+                            // Bulletproof video playback when view appears
+                            func startPlayback(attempt: Int = 1) {
+                                guard attempt <= 10 else {
+                                    debugLog("❌ VideoPlayer max retry attempts reached")
+                                    return
+                                }
+                                
+                                // Check if player item is ready
+                                if let item = player.currentItem {
+                                    if item.status != .readyToPlay {
+                                        debugLog("⚠️ VideoPlayer item not ready (status: \(item.status.rawValue), attempt \(attempt)), retrying in 0.2s")
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                            startPlayback(attempt: attempt + 1)
+                                        }
+                                        return
+                                    }
+                                }
+                                
                                 // Ensure looper is active for continuous looping
-                                if let looper = notificationsVideoLooper, looper.status == .failed {
-                                    // Recreate looper if it failed
-                                    if let item = player.currentItem {
+                                if let looper = notificationsVideoLooper {
+                                    if looper.status == .failed, let item = player.currentItem {
+                                        // Recreate looper if it failed
                                         let newLooper = AVPlayerLooper(player: player, templateItem: item)
                                         notificationsVideoLooper = newLooper
+                                        debugLog("🔄 Recreated video looper in video view onAppear")
                                     }
+                                } else if let item = player.currentItem {
+                                    // Create looper if it doesn't exist
+                                    let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                                    notificationsVideoLooper = newLooper
+                                    debugLog("🔄 Created video looper in video view onAppear")
+                                }
+                                
+                                // Configure audio session
+                                do {
+                                    try AVAudioSession.sharedInstance().setActive(false)
+                                    try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
+                                    try AVAudioSession.sharedInstance().setActive(true)
+                                } catch {
+                                    debugLog("⚠️ Failed to configure audio session in onAppear: \(error)")
                                 }
                                 
                                 // Start playback
                                 player.seek(to: .zero)
                                 player.play()
+                                debugLog("▶️ VideoPlayer onAppear: Started playback (attempt \(attempt), rate: \(player.rate))")
                                 
                                 // Verify it's playing, retry if needed
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                     if player.rate == 0 {
-                                        player.seek(to: .zero)
-                                        player.play()
-                                        debugLog("✅ VideoPlayer - retry playback")
+                                        debugLog("⚠️ VideoPlayer not playing, retrying...")
+                                        startPlayback(attempt: attempt + 1)
                                     } else {
                                         debugLog("✅ VideoPlayer playing and looping")
                                     }
@@ -2670,7 +3133,15 @@ struct OnboardingView: View {
                             // Also try after a delay in case player isn't ready yet
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                                 if player.rate == 0 {
-                                    startPlayback()
+                                    startPlayback(attempt: 5)
+                                }
+                            }
+                            
+                            // Final retry after 1.5s
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                                if player.rate == 0 {
+                                    debugLog("⚠️ VideoPlayer still not playing after 1.5s, final retry")
+                                    startPlayback(attempt: 8)
                                 }
                             }
                         }
@@ -2752,6 +3223,7 @@ struct OnboardingView: View {
             // CRITICAL: Configure audio session for notifications video playback
             // The PiP video player might have set it to a different mode
             do {
+                try AVAudioSession.sharedInstance().setActive(false)
                 try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
                 try AVAudioSession.sharedInstance().setActive(true)
                 debugLog("✅ Audio session configured for notifications video")
@@ -2772,6 +3244,11 @@ struct OnboardingView: View {
                             self.notificationsVideoLooper = newLooper
                             debugLog("🔄 Recreated video looper")
                         }
+                    } else if let item = player.currentItem {
+                        // Create looper if it doesn't exist
+                        let newLooper = AVPlayerLooper(player: player, templateItem: item)
+                        self.notificationsVideoLooper = newLooper
+                        debugLog("🔄 Created video looper")
                     }
                     
                     // Start playback
@@ -3841,6 +4318,8 @@ struct OnboardingView: View {
 
     private var primaryButtonTitle: String {
         switch currentPage {
+        case .preOnboardingHook:
+            return "" // No button on this step
         case .welcome:
             return "Next"
         case .videoIntroduction:
@@ -3860,6 +4339,8 @@ struct OnboardingView: View {
 
     private var primaryButtonIconName: String? {
         switch currentPage {
+        case .preOnboardingHook:
+            return nil // No button on this step
         case .welcome:
             return "arrow.right.circle.fill"
         case .videoIntroduction:
@@ -3879,6 +4360,8 @@ struct OnboardingView: View {
 
     private var primaryButtonEnabled: Bool {
         switch currentPage {
+        case .preOnboardingHook:
+            return false // No button on this step
         case .welcome:
             return true
         case .videoIntroduction:
@@ -3921,6 +4404,9 @@ struct OnboardingView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
         switch currentPage {
+        case .preOnboardingHook:
+            // Auto-advances, no manual button action
+            break
         case .welcome:
             advanceStep()
         case .videoIntroduction:
@@ -5692,6 +6178,8 @@ struct OnboardingView: View {
     /// Returns human-readable name for current onboarding page
     private var currentPageName: String {
         switch currentPage {
+        case .preOnboardingHook:
+            return "Pre-Onboarding Hook"
         case .welcome:
             return "Welcome"
         case .videoIntroduction:
@@ -5945,65 +6433,60 @@ private extension OnboardingView {
         case compact
     }
 
+    @ViewBuilder
     func progressIndicatorItem(for page: OnboardingPage, displayMode: ProgressIndicatorDisplayMode) -> some View {
-        let position = page.rawValue + 1
-        let isCurrent = currentPage == page
-        let isComplete = currentPage.rawValue > page.rawValue
-        let isClickable = page.rawValue < currentPage.rawValue // Can navigate back to previous steps
+        // Get step number (1-6), excluding preOnboardingHook and overview
+        if let position = page.stepNumber {
+            // Compare using step numbers for proper ordering
+            let currentStepNumber = currentPage.stepNumber ?? 0
+            let pageStepNumber = page.stepNumber ?? 0
+            let isCurrent = currentPage == page
+            let isComplete = currentStepNumber > pageStepNumber
+            let isClickable = pageStepNumber < currentStepNumber // Can navigate back to previous steps
 
-        let circleFill: Color = {
-            if isCurrent || isComplete {
-                return Color.appAccent  // Cyan for current and completed
-            } else {
-                return Color(.systemGray5)  // Light gray for future steps
+            let circleFill: Color = {
+                if isCurrent || isComplete {
+                    return Color.appAccent  // Cyan for current and completed
+                } else {
+                    return Color(.systemGray5)  // Light gray for future steps
+                }
+            }()
+
+            let circleTextColor: Color = isCurrent || isComplete ? .white : Color(.secondaryLabel)
+
+            // Calculate values based on display mode (computed before ViewBuilder context)
+            let (circleSize, circleShadowOpacity, circleStrokeOpacity, circleStrokeWidth, circleFontSize, circleFontDesign): (CGFloat, Double, Double, CGFloat, CGFloat, Font.Design) = {
+                switch displayMode {
+                case .large:
+                    return (38, isCurrent ? 0.18 : 0.0, isCurrent ? 0.25 : 0.15, isCurrent ? 1.5 : 1, 16, .rounded)
+                case .compact:
+                    return (40, 0.0, isCurrent ? 0.28 : 0.18, 1, 18, .rounded)
+                }
+            }()
+
+            ZStack {
+                Circle()
+                    .fill(circleFill)
+                .frame(width: circleSize, height: circleSize)
+                .shadow(color: Color.black.opacity(circleShadowOpacity), radius: isCurrent ? 10 : 0, x: 0, y: isCurrent ? 6 : 0)
+                    .overlay(
+                        Circle()
+                        .strokeBorder(Color.white.opacity(circleStrokeOpacity), lineWidth: circleStrokeWidth)
+                    )
+
+                // Always show numbers (no checkmarks)
+                Text("\(position)")
+                    .font(.system(size: circleFontSize, weight: .semibold, design: circleFontDesign))
+                    .foregroundColor(circleTextColor)
             }
-        }()
-
-        let circleTextColor: Color = isCurrent || isComplete ? .white : Color(.secondaryLabel)
-
-        let circleSize: CGFloat
-        let circleShadowOpacity: Double
-        let circleStrokeOpacity: Double
-        let circleStrokeWidth: CGFloat
-        let circleFontSize: CGFloat
-        let circleFontDesign: Font.Design
-
-        switch displayMode {
-        case .large:
-            circleSize = 38
-            circleShadowOpacity = isCurrent ? 0.18 : 0.0
-            circleStrokeOpacity = isCurrent ? 0.25 : 0.15
-            circleStrokeWidth = isCurrent ? 1.5 : 1
-            circleFontSize = 16
-            circleFontDesign = .rounded
-        case .compact:
-            circleSize = 40
-            circleShadowOpacity = 0.0
-            circleStrokeOpacity = isCurrent ? 0.28 : 0.18
-            circleStrokeWidth = 1
-            circleFontSize = 18
-            circleFontDesign = .rounded
+            .opacity(isClickable ? 1.0 : 0.6) // Slightly dim future steps to show they're not clickable
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Step \(position)")
+            .accessibilityValue(isComplete ? "Complete, tap to go back" : (isCurrent ? "Current step" : "Not started"))
+        } else {
+            // Return empty view for preOnboardingHook and overview (they don't have step numbers)
+            EmptyView()
         }
-
-        return ZStack {
-            Circle()
-                .fill(circleFill)
-            .frame(width: circleSize, height: circleSize)
-            .shadow(color: Color.black.opacity(circleShadowOpacity), radius: isCurrent ? 10 : 0, x: 0, y: isCurrent ? 6 : 0)
-                .overlay(
-                    Circle()
-                    .strokeBorder(Color.white.opacity(circleStrokeOpacity), lineWidth: circleStrokeWidth)
-                )
-
-            // Always show numbers (no checkmarks)
-            Text("\(position)")
-                .font(.system(size: circleFontSize, weight: .semibold, design: circleFontDesign))
-                .foregroundColor(circleTextColor)
-        }
-        .opacity(isClickable ? 1.0 : 0.6) // Slightly dim future steps to show they're not clickable
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Step \(position)")
-        .accessibilityValue(isComplete ? "Complete, tap to go back" : (isCurrent ? "Current step" : "Not started"))
     }
 
     private var overviewHeroCard: some View {
@@ -6179,6 +6662,8 @@ private struct OnboardingPrimaryButtonStyle: ButtonStyle {
 private extension OnboardingPage {
     var navigationTitle: String {
         switch self {
+        case .preOnboardingHook:
+            return ""
         case .welcome:
             return "Welcome"
         case .addNotes:
@@ -6198,6 +6683,8 @@ private extension OnboardingPage {
 
     var progressTitle: String {
         switch self {
+        case .preOnboardingHook:
+            return "Pre-Onboarding Hook"
         case .welcome:
             return "Welcome"
         case .addNotes:
@@ -6217,20 +6704,42 @@ private extension OnboardingPage {
 
     var accessibilityLabel: String {
         switch self {
+        case .preOnboardingHook:
+            return "Pre-Onboarding"
         case .welcome:
             return "Step 1"
-        case .addNotes:
-            return "Step 2"
-        case .chooseWallpapers:
-            return "Step 3"
         case .videoIntroduction:
-            return "Step 4"
+            return "Step 2"
         case .installShortcut:
+            return "Step 3"
+        case .addNotes:
+            return "Step 4"
+        case .chooseWallpapers:
             return "Step 5"
         case .allowPermissions:
             return "Step 6"
         case .overview:
-            return "Step 7"
+            return "All Set"
+        }
+    }
+    
+    // Returns the step number (1-6) for display in the step counter, excluding preOnboardingHook and overview
+    var stepNumber: Int? {
+        switch self {
+        case .preOnboardingHook, .overview:
+            return nil // These don't have step numbers
+        case .welcome:
+            return 1
+        case .videoIntroduction:
+            return 2
+        case .installShortcut:
+            return 3
+        case .addNotes:
+            return 4
+        case .chooseWallpapers:
+            return 5
+        case .allowPermissions:
+            return 6
         }
     }
 }

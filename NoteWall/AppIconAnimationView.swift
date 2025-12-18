@@ -45,14 +45,23 @@ struct AppIconAnimationView: View {
         let appIcon = appIconImage
  
         ZStack {
+            // Background to hide any white edges
+            RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                .fill(Color.clear)
+                .frame(width: size, height: size)
+            
             if let appIcon {
                 Image(uiImage: appIcon)
                     .resizable()
-                    .scaledToFit()
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .scaledToFill()
+                    .frame(width: size, height: size)
+                    .mask(
+                        RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
+                            .frame(width: size, height: size)
+                    )
             } else {
                 // Fallback gradient if no icon is resolved.
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: size * 0.22, style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [Color.blue, Color.purple],
@@ -64,6 +73,7 @@ struct AppIconAnimationView: View {
             }
         }
         .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
         // Two-axis tilt to mimic a gentle hover.
         .rotation3DEffect(.degrees(angleX), axis: (x: 1, y: 0, z: 0), perspective: 0.7)
         .rotation3DEffect(.degrees(angleY), axis: (x: 0, y: 1, z: 0), perspective: 0.7)

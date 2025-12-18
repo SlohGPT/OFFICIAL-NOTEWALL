@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import RevenueCat
 import AudioToolbox
+import StoreKit
 #if canImport(RevenueCatUI)
 import RevenueCatUI
 #endif
@@ -36,6 +37,8 @@ struct PaywallView: View {
     @State private var showRedemptionInstructions = false
     @State private var copiedPromoCode = false
     @State private var shouldDismissAfterPromoCode = false
+    @State private var showOfferCodeRedemption = false
+    @State private var isRedeemingCode = false
     @State private var showNotificationPrePrompt = false
     @State private var pendingPackage: Package?
     @State private var particleData: [ParticleData] = []
@@ -296,6 +299,17 @@ struct PaywallView: View {
             }
             initializePlanSelection()
         }
+        .modifier(OfferCodeRedemptionModifier(
+            isPresented: $showOfferCodeRedemption,
+            isRedeeming: $isRedeemingCode,
+            paywallManager: paywallManager,
+            onDismiss: {
+                // Dismiss paywall if user now has premium access
+                if paywallManager.isPremium {
+                    dismiss()
+                }
+            }
+        ))
         .sheet(isPresented: $showLifetimeSheet) {
             LifetimePlanSheet(
                 priceText: lifetimePriceText,
@@ -495,16 +509,6 @@ struct PaywallView: View {
                     .opacity(animateIn ? 1 : 0)
                     .offset(y: animateIn ? 0 : 20)
                     .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.35), value: animateIn)
-                
-                // Redemption instructions for exit-intercept discount
-                if applyExitInterceptDiscount {
-                    redemptionInstructionsButton
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
-                        .opacity(animateIn ? 1 : 0)
-                        .scaleEffect(animateIn ? 1 : 0.95)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.4), value: animateIn)
-                }
                 
                 // Purchase button
                 Button(action: {
@@ -763,58 +767,10 @@ struct PaywallView: View {
                     .shadow(color: Color.appAccent.opacity(0.5), radius: 12, x: 0, y: 4)
             )
             
-            VStack(spacing: 8) {
-                Text("30% OFF Yearly Plan - Your Exclusive Code:")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
-                
-                // Promo code display
-                Button(action: {
-                    UIPasteboard.general.string = "NOTEWALL30"
-                    let generator = UINotificationFeedbackGenerator()
-                    generator.notificationOccurred(.success)
-                    
-                    // Show checkmark animation
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        copiedPromoCode = true
-                    }
-                    
-                    // Reset after 2 seconds
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                        withAnimation(.easeOut(duration: 0.2)) {
-                            copiedPromoCode = false
-                        }
-                    }
-                }) {
-                    HStack(spacing: 8) {
-                        Text("NOTEWALL30")
-                            .font(.system(size: 18, weight: .black, design: .monospaced))
-                            .foregroundColor(.appAccent)
-                        
-                        Image(systemName: copiedPromoCode ? "checkmark.circle.fill" : "doc.on.doc.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(copiedPromoCode ? .green : .appAccent.opacity(0.7))
-                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: copiedPromoCode)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10)
-                            .fill(Color.appAccent.opacity(0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10)
-                                    .stroke(copiedPromoCode ? Color.green.opacity(0.5) : Color.appAccent.opacity(0.5), lineWidth: 1.5)
-                            )
-                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: copiedPromoCode)
-                    )
-                }
-                
-                Text(copiedPromoCode ? "✓ Copied to clipboard!" : "Tap to copy code")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(copiedPromoCode ? .green : .white.opacity(0.5))
-                    .animation(.easeInOut(duration: 0.2), value: copiedPromoCode)
-            }
-            .padding(.horizontal, 16)
+            Text("30% OFF Lifetime Offer")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.8))
+                .padding(.horizontal, 16)
         }
     }
     
@@ -1009,6 +965,11 @@ struct PaywallView: View {
         }
         .buttonStyle(.plain)
         .alert("How to Redeem Your 30% Discount", isPresented: $showRedemptionInstructions) {
+            if #available(iOS 16.3, *) {
+                Button("Redeem in App", action: {
+                    showOfferCodeRedemption = true
+                })
+            }
             Button("Copy Code", action: {
                 UIPasteboard.general.string = "NOTEWALL30"
                 copiedPromoCode = true
@@ -1020,14 +981,25 @@ struct PaywallView: View {
             })
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("""
-            1. Copy the code: NOTEWALL30
-            2. Subscribe to the YEARLY plan below
-            3. Open App Store → Profile → Redeem
-            4. Paste the code to get 30% off!
-            
-            The discount applies to the yearly subscription only.
-            """)
+            if #available(iOS 16.3, *) {
+                Text("""
+                Redeem your code "NoteWall 30" to get 30% off the Lifetime plan.
+                
+                You can redeem it directly in the app (recommended) or through the App Store.
+                
+                The discount applies to the lifetime plan only.
+                """)
+            } else {
+                Text("""
+                Redeem your code "NoteWall 30" to get 30% off the Lifetime plan.
+                
+                1. Copy the code: NoteWall 30
+                2. Open App Store → Profile → Redeem
+                3. Paste the code to get 30% off!
+                
+                The discount applies to the lifetime plan only.
+                """)
+            }
         }
     }
     
@@ -1061,9 +1033,42 @@ struct PaywallView: View {
     
     private var primaryPackages: [Package] {
         // Show Lifetime and Monthly in main paywall (Lifetime replaces Yearly)
-        availablePackages.filter { 
-            let kind = planKind(for: $0)
-            return kind == .monthly || kind == .lifetime
+        // When exit intercept discount is active, prefer the discounted lifetime product
+        if applyExitInterceptDiscount {
+            return availablePackages.filter { package in
+                let kind = planKind(for: package)
+                let identifier = package.storeProduct.productIdentifier.lowercased()
+                // Include monthly, or lifetime products (prefer discounted when available)
+                if kind == .monthly {
+                    return true
+                } else if kind == .lifetime {
+                    // If we have a discounted lifetime, only show that one
+                    let hasDiscounted = availablePackages.contains { pkg in
+                        let id = pkg.storeProduct.productIdentifier.lowercased()
+                        return (id == "lifetime_discount" || id.contains("lifetime_discount")) && planKind(for: pkg) == .lifetime
+                    }
+                    if hasDiscounted {
+                        // Only include if this is the discounted one
+                        return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
+                    }
+                    // Otherwise include regular lifetime
+                    return !identifier.contains("discount")
+                }
+                return false
+            }
+        } else {
+            // Normal flow: exclude discounted lifetime product
+            return availablePackages.filter { package in
+                let kind = planKind(for: package)
+                let identifier = package.storeProduct.productIdentifier.lowercased()
+                if kind == .monthly {
+                    return true
+                } else if kind == .lifetime {
+                    // Exclude discounted lifetime in normal flow
+                    return !identifier.contains("discount")
+                }
+                return false
+            }
         }
     }
     
@@ -1104,7 +1109,19 @@ struct PaywallView: View {
     }
     
     private var lifetimePackage: Package? {
-        availablePackages.first { planKind(for: $0) == .lifetime }
+        // If exit intercept discount is active, prefer the discounted lifetime product
+        if applyExitInterceptDiscount {
+            // Look for the discounted lifetime product first
+            if let discountedLifetime = availablePackages.first(where: { package in
+                let identifier = package.storeProduct.productIdentifier.lowercased()
+                return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
+            }) {
+                return discountedLifetime
+            }
+        }
+        // Otherwise, use the regular lifetime package
+        return availablePackages.first { planKind(for: $0) == .lifetime && 
+            !$0.storeProduct.productIdentifier.lowercased().contains("discount") }
     }
     
     private var lifetimeFallbackPlan: FallbackPlan? {
@@ -1129,7 +1146,22 @@ struct PaywallView: View {
     
     @discardableResult
     private func selectLifetimePackage() -> Bool {
-        guard let lifetimeIndex = availablePackages.firstIndex(where: { planKind(for: $0) == .lifetime }) else {
+        // If exit intercept discount is active, prefer the discounted lifetime product
+        if applyExitInterceptDiscount {
+            if let discountedLifetimeIndex = availablePackages.firstIndex(where: { package in
+                let identifier = package.storeProduct.productIdentifier.lowercased()
+                return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
+            }) {
+                selectedProductIndex = discountedLifetimeIndex
+                return true
+            }
+        }
+        
+        // Otherwise, use the regular lifetime package
+        guard let lifetimeIndex = availablePackages.firstIndex(where: { 
+            planKind(for: $0) == .lifetime && 
+            !$0.storeProduct.productIdentifier.lowercased().contains("discount")
+        }) else {
             return false
         }
         selectedProductIndex = lifetimeIndex
@@ -1234,10 +1266,35 @@ struct PaywallView: View {
         let badgeText: String?
         
         if isLifetimePlan {
-            displayPrice = package.localizedPriceString
-            // Show $29.99 (or equivalent) as crossed-out original price
-            showOriginalPrice = getLifetimeOriginalPrice(for: package)
-            badgeText = "BEST VALUE" // Most effective badge for lifetime plans
+            // Check if this is the discounted lifetime product
+            let isDiscountedLifetime = package.storeProduct.productIdentifier.lowercased().contains("lifetime_discount") || 
+                                       package.storeProduct.productIdentifier.lowercased() == "lifetime_discount"
+            
+            // For exit-intercept discount, use the discounted lifetime product's actual price
+            if applyExitInterceptDiscount && isDiscountedLifetime {
+                // Use the discounted product's price (it's already discounted in App Store Connect)
+                displayPrice = package.localizedPriceString
+                // Find the regular lifetime package to show as original price
+                if let regularLifetime = availablePackages.first(where: { pkg in
+                    let id = pkg.storeProduct.productIdentifier.lowercased()
+                    return planKind(for: pkg) == .lifetime && !id.contains("discount")
+                }) {
+                    showOriginalPrice = regularLifetime.localizedPriceString
+                } else {
+                    showOriginalPrice = getLifetimeOriginalPrice(for: package)
+                }
+                badgeText = "30% OFF" // Show discount badge
+            } else if applyExitInterceptDiscount && !isDiscountedLifetime {
+                // Fallback: calculate discount if discounted product not found
+                displayPrice = getDiscountedPriceString(for: package)
+                showOriginalPrice = package.localizedPriceString
+                badgeText = "30% OFF"
+            } else {
+                displayPrice = package.localizedPriceString
+                // Show $29.99 (or equivalent) as crossed-out original price
+                showOriginalPrice = getLifetimeOriginalPrice(for: package)
+                badgeText = "BEST VALUE" // Most effective badge for lifetime plans
+            }
         } else {
             displayPrice = package.localizedPriceString
             showOriginalPrice = nil
@@ -1363,7 +1420,7 @@ struct PaywallView: View {
     
     private func packageSubtitle(for package: Package) -> String {
         if let discount = package.storeProduct.introductoryDiscount {
-            let period = trialDescription(for: discount.subscriptionPeriod)
+            let period = trialDescription(from: discount.subscriptionPeriod)
             return period.isEmpty ? "Includes trial" : "\(period) free trial"
         }
 
@@ -1374,20 +1431,36 @@ struct PaywallView: View {
         return ""
     }
 
-    private func trialDescription(for period: SubscriptionPeriod?) -> String {
-        guard let period else { return "" }
-        switch period.unit {
-        case .day:
-            return period.value == 1 ? "1-day" : "\(period.value)-day"
-        case .week:
-            return period.value == 1 ? "1-week" : "\(period.value)-week"
-        case .month:
-            return period.value == 1 ? "1-month" : "\(period.value)-month"
-        case .year:
-            return period.value == 1 ? "1-year" : "\(period.value)-year"
-        @unknown default:
-            return ""
+    private func trialDescription(from period: Any?) -> String {
+        guard let period = period else { return "" }
+        
+        // Try to extract value and unit - works with both StoreKit 1 and StoreKit 2 types
+        let mirror = Mirror(reflecting: period)
+        var value: Int?
+        var unitString: String = ""
+        
+        for child in mirror.children {
+            if child.label == "value", let intValue = child.value as? Int {
+                value = intValue
+            } else if child.label == "unit" {
+                unitString = String(describing: child.value)
+            }
         }
+        
+        guard let value = value else { return "" }
+        
+        // Determine period description based on unit
+        if unitString.contains("day") || unitString.contains(".day") {
+            return value == 1 ? "1-day" : "\(value)-day"
+        } else if unitString.contains("week") || unitString.contains(".week") {
+            return value == 1 ? "1-week" : "\(value)-week"
+        } else if unitString.contains("month") || unitString.contains(".month") {
+            return value == 1 ? "1-month" : "\(value)-month"
+        } else if unitString.contains("year") || unitString.contains(".year") {
+            return value == 1 ? "1-year" : "\(value)-year"
+        }
+        
+        return ""
     }
 
     private func planKind(for package: Package?) -> PlanKind {
@@ -1427,24 +1500,39 @@ struct PaywallView: View {
 
     private func trialDaysForSelectedPackage(_ package: Package?) -> Int? {
         if let period = package?.storeProduct.introductoryDiscount?.subscriptionPeriod {
-            return convertPeriodToDays(period)
+            return convertPeriodToDays(from: period)
         }
         return currentFallbackPlan?.trialDays
     }
 
-    private func convertPeriodToDays(_ period: SubscriptionPeriod) -> Int {
-        switch period.unit {
-        case .day:
-            return period.value
-        case .week:
-            return period.value * 7
-        case .month:
-            return period.value * 30
-        case .year:
-            return period.value * 365
-        @unknown default:
-            return period.value
+    private func convertPeriodToDays(from period: Any) -> Int {
+        // Extract value and unit using reflection to handle type ambiguity
+        let mirror = Mirror(reflecting: period)
+        var value: Int?
+        var unitString: String = ""
+        
+        for child in mirror.children {
+            if child.label == "value", let intValue = child.value as? Int {
+                value = intValue
+            } else if child.label == "unit" {
+                unitString = String(describing: child.value)
+            }
         }
+        
+        guard let value = value else { return 0 }
+        
+        // Convert to days based on unit type
+        if unitString.contains("day") || unitString.contains(".day") {
+            return value
+        } else if unitString.contains("week") || unitString.contains(".week") {
+            return value * 7
+        } else if unitString.contains("month") || unitString.contains(".month") {
+            return value * 30
+        } else if unitString.contains("year") || unitString.contains(".year") {
+            return value * 365
+        }
+        
+        return value
     }
 
     private func localizedPriceDescription(for package: Package?) -> String? {
@@ -1498,8 +1586,21 @@ struct PaywallView: View {
         
         guard !packages.isEmpty else { return }
         
+        // If exit intercept discount is active, prefer the discounted lifetime product
+        if applyExitInterceptDiscount {
+            if let discountedLifetimeIndex = packages.firstIndex(where: { package in
+                let identifier = package.storeProduct.productIdentifier.lowercased()
+                return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
+            }) {
+                selectedProductIndex = discountedLifetimeIndex
+                hasInitializedPlanSelection = true
+                return
+            }
+        }
+        
         // Find lifetime package index in availablePackages (preferred)
-        if let lifetimeIndex = packages.firstIndex(where: { planKind(for: $0) == .lifetime }) {
+        if let lifetimeIndex = packages.firstIndex(where: { planKind(for: $0) == .lifetime && 
+            !$0.storeProduct.productIdentifier.lowercased().contains("discount") }) {
             selectedProductIndex = lifetimeIndex
             hasInitializedPlanSelection = true
         } else if !packages.isEmpty {
@@ -1559,15 +1660,27 @@ struct PaywallView: View {
                     isPurchasing = false
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.success)
+                    // Only dismiss on successful purchase
                     dismiss()
                 }
             } catch {
                 await MainActor.run {
                     isPurchasing = false
+                    
+                    // Check if this is a cancellation - don't show error or dismiss
+                    if let purchasesError = error as? ErrorCode,
+                       purchasesError == .purchaseCancelledError {
+                        // User cancelled - silently handle, keep paywall open
+                        // No error message, no dismiss, just reset purchasing state
+                        return
+                    }
+                    
+                    // For other errors, show error message but DON'T dismiss paywall
                     errorMessage = paywallManager.lastErrorMessage ?? error.localizedDescription
                     showError = true
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.error)
+                    // Paywall stays open - user can try again
                 }
             }
         }
@@ -3205,6 +3318,77 @@ private struct PromoCodeInputView: View {
                 checkmarkScale = 1.0
                 checkmarkOpacity = 1.0
             }
+        }
+    }
+}
+
+// MARK: - Offer Code Redemption Modifier
+/// ViewModifier to handle offer code redemption using StoreKit's native API
+/// RevenueCat automatically detects transactions from StoreKit redemptions, so this is safe and more reliable
+@available(iOS 15.0, *)
+struct OfferCodeRedemptionModifier: ViewModifier {
+    @Binding var isPresented: Bool
+    @Binding var isRedeeming: Bool
+    let paywallManager: PaywallManager
+    let onDismiss: () -> Void
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 16.3, *) {
+            content
+                .offerCodeRedemption(isPresented: $isPresented) { result in
+                    // Reset redeeming state
+                    isRedeeming = false
+                    
+                    switch result {
+                    case .success:
+                        // RevenueCat will automatically detect the transaction via its delegate
+                        // Refresh customer info after a short delay to allow transaction to process
+                        Task {
+                            // Wait for transaction to be processed
+                            try? await Task.sleep(nanoseconds: 1_500_000_000) // 1.5 seconds
+                            
+                            // Refresh customer info to sync with RevenueCat
+                            await paywallManager.refreshCustomerInfo()
+                            
+                            // Check if user now has premium and dismiss if so
+                            if paywallManager.isPremium {
+                                await MainActor.run {
+                                    onDismiss()
+                                }
+                            }
+                        }
+                    case .failure:
+                        // User cancelled or error occurred - no action needed
+                        // State is already reset
+                        break
+                    }
+                }
+        } else {
+            // Fallback for iOS < 16.3: Use RevenueCat's method
+            content
+                .onChange(of: isPresented) { newValue in
+                    if newValue && !isRedeeming {
+                        isRedeeming = true
+                        Purchases.shared.presentCodeRedemptionSheet()
+                        
+                        // Reset after a delay
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            isPresented = false
+                            isRedeeming = false
+                            
+                            // Check for updates after redemption
+                            Task {
+                                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                await paywallManager.refreshCustomerInfo()
+                                if paywallManager.isPremium {
+                                    await MainActor.run {
+                                        onDismiss()
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
         }
     }
 }

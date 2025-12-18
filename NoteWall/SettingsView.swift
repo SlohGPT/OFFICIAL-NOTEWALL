@@ -30,6 +30,9 @@ struct SettingsView: View {
     var selectedTab: Binding<Int>?
 
     private let shortcutURL = "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35"
+    private let whatsappNumber = "421907758852"
+    private let supportEmail = "iosnotewall@gmail.com"
+    
     init(selectedTab: Binding<Int>? = nil) {
         self.selectedTab = selectedTab
     }
@@ -740,13 +743,61 @@ struct SettingsView: View {
                         .offset(x: supportViewAnimateIn ? 0 : -20)
                         .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.2), value: supportViewAnimateIn)
                         
+                        // WhatsApp button
+                        Button(action: {
+                            // Light impact haptic for opening WhatsApp
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            openWhatsApp()
+                        }) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(red: 0.15, green: 0.78, blue: 0.40).opacity(0.15))
+                                        .frame(width: 48, height: 48)
+                                    
+                                    Image(systemName: "message.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(Color(red: 0.15, green: 0.78, blue: 0.40))
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Chat on WhatsApp")
+                                        .font(.system(size: 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    Text("Get instant help")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(Color(red: 0.15, green: 0.78, blue: 0.40))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 14)
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.06))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color(red: 0.15, green: 0.78, blue: 0.40).opacity(0.25), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .opacity(supportViewAnimateIn ? 1 : 0)
+                        .offset(x: supportViewAnimateIn ? 0 : -20)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25), value: supportViewAnimateIn)
+                        
                         // Twitter button
                         Button(action: {
                             // Light impact haptic for opening Twitter
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
                             
-                            if let url = URL(string: "https://x.com/billikkarol3") {
+                            if let url = URL(string: "https://x.com/karchiJR") {
                                 UIApplication.shared.open(url)
                             }
                         }) {
@@ -765,7 +816,7 @@ struct SettingsView: View {
                                     Text("Twitter / X")
                                         .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(.white)
-                                    Text("@billikkarol3")
+                                    Text("@karchiJR")
                                         .font(.system(size: 13))
                                         .foregroundColor(.appAccent)
                                 }
@@ -789,7 +840,7 @@ struct SettingsView: View {
                         }
                         .opacity(supportViewAnimateIn ? 1 : 0)
                         .offset(x: supportViewAnimateIn ? 0 : -20)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.25), value: supportViewAnimateIn)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8).delay(0.3), value: supportViewAnimateIn)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
@@ -1135,6 +1186,52 @@ private extension SettingsView {
             .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
             SKStoreReviewController.requestReview(in: windowScene)
         }
+    }
+    
+    /// Opens WhatsApp with pre-filled message for support
+    private func openWhatsApp() {
+        let message = """
+        Hi! I need help with NoteWall.
+        
+        \(getDeviceInfo())
+        """
+        
+        let encodedMessage = message.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let whatsappURL = "https://wa.me/\(whatsappNumber)?text=\(encodedMessage)"
+        
+        guard let url = URL(string: whatsappURL) else { return }
+        
+        if UIApplication.shared.canOpenURL(url) {
+            UIApplication.shared.open(url) { success in
+                if !success {
+                    // WhatsApp didn't open, show fallback
+                    DispatchQueue.main.async {
+                        if let emailURL = URL(string: "mailto:\(supportEmail)") {
+                            UIApplication.shared.open(emailURL)
+                        }
+                    }
+                }
+            }
+        } else {
+            // WhatsApp not installed, open email instead
+            if let emailURL = URL(string: "mailto:\(supportEmail)") {
+                UIApplication.shared.open(emailURL)
+            }
+        }
+    }
+    
+    /// Gets device information for support messages
+    private func getDeviceInfo() -> String {
+        let device = UIDevice.current
+        let systemVersion = device.systemVersion
+        let deviceModel = device.model
+        let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
+        
+        return """
+        Device: \(deviceModel)
+        iOS: \(systemVersion)
+        App Version: \(appVersion)
+        """
     }
     
     @available(iOS 13.0, *)

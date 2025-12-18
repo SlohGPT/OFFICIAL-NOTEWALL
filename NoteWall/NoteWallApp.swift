@@ -118,6 +118,19 @@ struct NoteWallApp: App {
                 }
             }
             .preferredColorScheme(.dark)
+            .onAppear {
+                // Lock orientation to portrait on app launch
+                // Note: Orientation locking is primarily handled by Info.plist and AppDelegate
+                // This onAppear is a backup attempt, but the main control is in AppDelegate.supportedInterfaceOrientationsFor
+                if #available(iOS 16.0, *) {
+                    // iOS 16+ - orientation is controlled by Info.plist, AppDelegate, and SceneDelegate
+                    // The requestGeometryUpdate API may not be available or may have different signature
+                    // Rely on AppDelegate and SceneDelegate methods instead
+                } else {
+                    // iOS 15 and below - orientation is controlled by Info.plist and AppDelegate
+                    UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+                }
+            }
             .onChange(of: hasCompletedSetup) { newValue in
                 // Update onboarding state when setup completion changes
                 showOnboarding = !newValue
