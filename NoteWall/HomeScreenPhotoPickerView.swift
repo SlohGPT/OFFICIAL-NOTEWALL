@@ -806,6 +806,12 @@ private struct DocumentPickerView: UIViewControllerRepresentable {
         let controller = UIDocumentPickerViewController(forOpeningContentTypes: [.image], asCopy: true)
         controller.delegate = context.coordinator
         controller.allowsMultipleSelection = false
+        
+        // Try to set initial directory to "On My iPhone" if possible
+        if let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            controller.directoryURL = documentsURL
+        }
+        
         return controller
     }
 

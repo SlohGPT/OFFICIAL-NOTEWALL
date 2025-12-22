@@ -54,11 +54,8 @@ final class PromoCodePersistenceManager {
     
     /// Backs up all codes to a more persistent location
     /// This helps survive some data resets
-    func backupCodes(lifetimeCodes: [String], monthlyCodes: [String], 
-                    usedLifetime: [String], usedMonthly: [String]) {
+    func backupCodes(usedLifetime: [String], usedMonthly: [String]) {
         let backup: [String: Any] = [
-            "lifetime": lifetimeCodes,
-            "monthly": monthlyCodes,
             "usedLifetime": usedLifetime,
             "usedMonthly": usedMonthly,
             "timestamp": Date().timeIntervalSince1970,
@@ -70,13 +67,12 @@ final class PromoCodePersistenceManager {
         UserDefaults.standard.synchronize()
         
         #if DEBUG
-        print("💾 PromoCodePersistenceManager: Backed up codes (L: \(lifetimeCodes.count), M: \(monthlyCodes.count))")
+        print("💾 PromoCodePersistenceManager: Backed up used codes")
         #endif
     }
     
     /// Restores codes from backup if available
-    func restoreCodesIfAvailable() -> (lifetime: [String], monthly: [String], 
-                                       usedLifetime: [String], usedMonthly: [String])? {
+    func restoreCodesIfAvailable() -> (usedLifetime: [String], usedMonthly: [String])? {
         guard let backup = UserDefaults.standard.dictionary(forKey: codesBackupKey) else {
             return nil
         }
@@ -90,8 +86,6 @@ final class PromoCodePersistenceManager {
             return nil
         }
         
-        let lifetime = backup["lifetime"] as? [String] ?? []
-        let monthly = backup["monthly"] as? [String] ?? []
         let usedLifetime = backup["usedLifetime"] as? [String] ?? []
         let usedMonthly = backup["usedMonthly"] as? [String] ?? []
         
@@ -99,7 +93,7 @@ final class PromoCodePersistenceManager {
         print("📦 PromoCodePersistenceManager: Restored codes from backup")
         #endif
         
-        return (lifetime, monthly, usedLifetime, usedMonthly)
+        return (usedLifetime, usedMonthly)
     }
     
     // MARK: - Redemption History

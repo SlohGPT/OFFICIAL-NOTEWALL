@@ -234,6 +234,8 @@ struct ContentView: View {
     private func saveNotes() {
         do {
             savedNotesData = try JSONEncoder().encode(notes)
+            // Update Superwall attributes when notes change
+            SuperwallUserAttributesManager.shared.updateNotesAttributes()
         } catch {
             #if DEBUG
             print("Failed to encode notes: \(error)")

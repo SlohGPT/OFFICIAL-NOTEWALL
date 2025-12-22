@@ -1,10 +1,12 @@
 import SwiftUI
+import SuperwallKit
 
 struct MainTabView: View {
     @State private var selectedTab = 0
     @State private var showWallpaperUpdateLoading = false
     @State private var showDeleteNotesLoading = false
     @State private var showTroubleshooting = false
+    @StateObject private var paywallManager = PaywallManager.shared
     
     // Quick Actions state
     @State private var showExitFeedback = false
@@ -80,6 +82,11 @@ struct MainTabView: View {
                     allowDismiss: true,
                     applyExitInterceptDiscount: true
                 )
+            }
+        }
+        .sheet(isPresented: $paywallManager.shouldShowSuperwallPaywall) {
+            if !paywallManager.superwallPlacement.isEmpty {
+                SuperwallPaywallView(placement: paywallManager.superwallPlacement)
             }
         }
         // Quick Action handler

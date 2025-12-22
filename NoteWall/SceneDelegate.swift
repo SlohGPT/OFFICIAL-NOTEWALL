@@ -1,5 +1,6 @@
 import UIKit
 import SwiftUI
+import SuperwallKit
 
 /// SceneDelegate for handling Quick Actions in multi-scene apps
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
@@ -20,10 +21,44 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         print("🎬 SceneDelegate: Scene will connect")
         
+        // Handle deep links on cold launch
+        if let url = connectionOptions.urlContexts.first?.url {
+            let handled = Superwall.handleDeepLink(url)
+            if handled {
+                print("🔗 SceneDelegate: Deep link handled by Superwall")
+            }
+        } else if let userActivity = connectionOptions.userActivities.first(where: { $0.activityType == NSUserActivityTypeBrowsingWeb }),
+                  let url = userActivity.webpageURL {
+            let handled = Superwall.handleDeepLink(url)
+            if handled {
+                print("🔗 SceneDelegate: Universal link handled by Superwall")
+            }
+        }
+        
         // Handle Quick Action if present
         if let shortcutItem = connectionOptions.shortcutItem {
             print("🎬 SceneDelegate: Scene connecting with Quick Action - \(shortcutItem.localizedTitle)")
             QuickActionsManager.shared.handleQuickAction(shortcutItem)
+        }
+    }
+    
+    // Handle deep links when app is already running
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        guard let url = URLContexts.first?.url else { return }
+        let handled = Superwall.handleDeepLink(url)
+        if handled {
+            print("🔗 SceneDelegate: Deep link handled by Superwall (app running)")
+        }
+    }
+    
+    // Handle universal links
+    func scene(_ scene: UIScene, continue userActivity: NSUserActivity) {
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = userActivity.webpageURL {
+            let handled = Superwall.handleDeepLink(url)
+            if handled {
+                print("🔗 SceneDelegate: Universal link handled by Superwall")
+            }
         }
     }
     

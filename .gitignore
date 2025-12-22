@@ -96,3 +96,4 @@ iOSInjectionProject/
 # Note: Config.swift is kept locally but gitignored for security
 DEVELOPER_CREDENTIALS.txt
 
+SECRET_PROMO_CODES.txt

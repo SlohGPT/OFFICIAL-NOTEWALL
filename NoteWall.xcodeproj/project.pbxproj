@@ -10,7 +10,6 @@
 		111111111111111111111111 /* DeleteNotesLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222222 /* DeleteNotesLoadingView.swift */; };
 		123456789012345678901234 /* PromoCodeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234567890123456789012345 /* PromoCodeManager.swift */; };
 		333333333333333333333333 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444444444444444444444444 /* Config.swift */; };
-		345678901234567890123456 /* PromoCodeAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 456789012345678901234567 /* PromoCodeAuthManager.swift */; };
 		346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434025501223443399045143 /* AutoFixWorkflowView.swift */; };
 		420E5C412EF55E43003293FD /* TelemetryClient in Frameworks */ = {isa = PBXBuildFile; productRef = 420E5C402EF55E43003293FD /* TelemetryClient */; };
 		420E5C432EF55E43003293FD /* TelemetryDeck in Frameworks */ = {isa = PBXBuildFile; productRef = 420E5C422EF55E43003293FD /* TelemetryDeck */; };
@@ -21,11 +20,8 @@
 		4283B2382ED25B5E00093E2D /* PIPVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4283B2312ED25B5E00093E2D /* PIPVideoPlayer.swift */; };
 		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
 		486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
-		555555555555555555555555 /* PromoCodeTypeSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666666666666666666666666 /* PromoCodeTypeSelectionView.swift */; };
-		567890123456789012345678 /* PromoCodeLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678901234567890123456789 /* PromoCodeLoginView.swift */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 		777777777777777777777777 /* PromoSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888888888888888888888888 /* PromoSecurityManager.swift */; };
-		789012345678901234567890 /* PromoCodeAdminView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 890123456789012345678901 /* PromoCodeAdminView.swift */; };
 		837611352366433428582121 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950124043593401227364632 /* AppDelegate.swift */; };
 		874E701C5A960D9C43D2B335 /* TroubleshootingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */; };
 		887053656051426091269260 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 606640631211416417165230 /* SceneDelegate.swift */; };
@@ -46,7 +42,12 @@
 		C1000001000000000000001 /* PaywallManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000001000000000000001 /* PaywallManager.swift */; };
 		C1000002000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000002000000000000001 /* NotificationManager.swift */; };
 		C1000003000000000000001 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2000003000000000000001 /* PaywallView.swift */; };
+		D00000000000000000000001 /* DeviceAdaptive.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000002 /* DeviceAdaptive.swift */; };
+		D10000000000000000000001 /* OnboardingEnhanced.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000002 /* OnboardingEnhanced.swift */; };
 		D1000001000000000000001 /* CrashReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2000001000000000000001 /* CrashReporter.swift */; };
+		D20000000000000000000001 /* SuperwallPaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D20000000000000000000002 /* SuperwallPaywallView.swift */; };
+		E00000000000000000000001 /* SuperwallUserAttributesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* SuperwallUserAttributesManager.swift */; };
+		E00000000000000000000005 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000004 /* SuperwallKit */; };
 		E1000001000000000000002 /* pip-guide-new.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E2000001000000000000002 /* pip-guide-new.mp4 */; };
 		F1000001000000000000001 /* notifications-of-permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = F2000001000000000000001 /* notifications-of-permissions.mp4 */; };
 		G1000001000000000000001 /* welcome-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = G2000001000000000000001 /* welcome-video.mp4 */; };
@@ -68,14 +69,10 @@
 		42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NoteWall.storekit; sourceTree = "<group>"; };
 		434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoFixWorkflowView.swift; sourceTree = "<group>"; };
 		444444444444444444444444 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		456789012345678901234567 /* PromoCodeAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCodeAuthManager.swift; sourceTree = "<group>"; };
 		571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitFeedbackView.swift; sourceTree = "<group>"; };
 		606640631211416417165230 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		666666666666666666666666 /* PromoCodeTypeSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCodeTypeSelectionView.swift; sourceTree = "<group>"; };
-		678901234567890123456789 /* PromoCodeLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCodeLoginView.swift; sourceTree = "<group>"; };
 		688891131442405819145593 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		888888888888888888888888 /* PromoSecurityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoSecurityManager.swift; sourceTree = "<group>"; };
-		890123456789012345678901 /* PromoCodeAdminView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoCodeAdminView.swift; sourceTree = "<group>"; };
 		950124043593401227364632 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		A2000001000000000000001 /* NoteWallApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteWallApp.swift; sourceTree = "<group>"; };
 		A2000002000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -94,8 +91,12 @@
 		C2000001000000000000001 /* PaywallManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallManager.swift; sourceTree = "<group>"; };
 		C2000002000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		C2000003000000000000001 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		D00000000000000000000002 /* DeviceAdaptive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceAdaptive.swift; sourceTree = "<group>"; };
+		D10000000000000000000002 /* OnboardingEnhanced.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingEnhanced.swift; sourceTree = "<group>"; };
+		D20000000000000000000002 /* SuperwallPaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperwallPaywallView.swift; sourceTree = "<group>"; };
 		D2000001000000000000001 /* CrashReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReporter.swift; sourceTree = "<group>"; };
 		D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TroubleshootingView.swift; sourceTree = "<group>"; };
+		E00000000000000000000002 /* SuperwallUserAttributesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperwallUserAttributesManager.swift; sourceTree = "<group>"; };
 		E2000001000000000000002 /* pip-guide-new.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pip-guide-new.mp4"; sourceTree = "<group>"; };
 		F2000001000000000000001 /* notifications-of-permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "notifications-of-permissions.mp4"; sourceTree = "<group>"; };
 		G2000001000000000000001 /* welcome-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "welcome-video.mp4"; sourceTree = "<group>"; };
@@ -109,6 +110,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E00000000000000000000005 /* SuperwallKit in Frameworks */,
 				425035A42ED5ADB20064014E /* RevenueCat in Frameworks */,
 				420E5C412EF55E43003293FD /* TelemetryClient in Frameworks */,
 				420E5C432EF55E43003293FD /* TelemetryDeck in Frameworks */,
@@ -142,6 +144,9 @@
 		A5000002000000000000001 /* NoteWall */ = {
 			isa = PBXGroup;
 			children = (
+				D00000000000000000000002 /* DeviceAdaptive.swift */,
+				D10000000000000000000002 /* OnboardingEnhanced.swift */,
+				D20000000000000000000002 /* SuperwallPaywallView.swift */,
 				424B745B2EBF88C1009F134B /* NoteWall.entitlements */,
 				A2000001000000000000001 /* NoteWallApp.swift */,
 				A2000002000000000000001 /* ContentView.swift */,
@@ -173,13 +178,10 @@
 				688891131442405819145593 /* FeedbackService.swift */,
 				606640631211416417165230 /* SceneDelegate.swift */,
 				234567890123456789012345 /* PromoCodeManager.swift */,
-				456789012345678901234567 /* PromoCodeAuthManager.swift */,
-				678901234567890123456789 /* PromoCodeLoginView.swift */,
-				890123456789012345678901 /* PromoCodeAdminView.swift */,
 				222222222222222222222222 /* DeleteNotesLoadingView.swift */,
 				444444444444444444444444 /* Config.swift */,
-				666666666666666666666666 /* PromoCodeTypeSelectionView.swift */,
 				888888888888888888888888 /* PromoSecurityManager.swift */,
+				E00000000000000000000002 /* SuperwallUserAttributesManager.swift */,
 				101010101010101010101010 /* PromoCodePersistenceManager.swift */,
 				I2000001000000000000001 /* AppIconAnimationView.swift */,
 			);
@@ -211,6 +213,7 @@
 			);
 			name = NoteWall;
 			packageProductDependencies = (
+				E00000000000000000000004 /* SuperwallKit */,
 				425035A32ED5ADB20064014E /* RevenueCat */,
 				420E5C402EF55E43003293FD /* TelemetryClient */,
 				420E5C422EF55E43003293FD /* TelemetryDeck */,
@@ -244,6 +247,7 @@
 			);
 			mainGroup = A5000001000000000000001;
 			packageReferences = (
+				E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
 				425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				420E5C3F2EF55E43003293FD /* XCRemoteSwiftPackageReference "SwiftSDK" */,
 			);
@@ -281,6 +285,9 @@
 				A1000001000000000000001 /* NoteWallApp.swift in Sources */,
 				A1000002000000000000001 /* ContentView.swift in Sources */,
 				A1000003000000000000001 /* Models.swift in Sources */,
+				D00000000000000000000001 /* DeviceAdaptive.swift in Sources */,
+				D10000000000000000000001 /* OnboardingEnhanced.swift in Sources */,
+				D20000000000000000000001 /* SuperwallPaywallView.swift in Sources */,
 				A1000004000000000000001 /* OnboardingView.swift in Sources */,
 				A1000005000000000000001 /* SettingsView.swift in Sources */,
 				A1000006000000000000001 /* MainTabView.swift in Sources */,
@@ -305,13 +312,10 @@
 				954208369699442397571273 /* FeedbackService.swift in Sources */,
 				887053656051426091269260 /* SceneDelegate.swift in Sources */,
 				123456789012345678901234 /* PromoCodeManager.swift in Sources */,
-				345678901234567890123456 /* PromoCodeAuthManager.swift in Sources */,
-				567890123456789012345678 /* PromoCodeLoginView.swift in Sources */,
-				789012345678901234567890 /* PromoCodeAdminView.swift in Sources */,
 				111111111111111111111111 /* DeleteNotesLoadingView.swift in Sources */,
 				333333333333333333333333 /* Config.swift in Sources */,
-				555555555555555555555555 /* PromoCodeTypeSelectionView.swift in Sources */,
 				777777777777777777777777 /* PromoSecurityManager.swift in Sources */,
+				E00000000000000000000001 /* SuperwallUserAttributesManager.swift in Sources */,
 				999999999999999999999999 /* PromoCodePersistenceManager.swift in Sources */,
 				I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */,
 			);
@@ -549,6 +553,14 @@
 				minimumVersion = 5.49.0;
 			};
 		};
+		E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/superwall/Superwall-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -566,6 +578,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
 			productName = RevenueCat;
+		};
+		E00000000000000000000004 /* SuperwallKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */;
+			productName = SuperwallKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

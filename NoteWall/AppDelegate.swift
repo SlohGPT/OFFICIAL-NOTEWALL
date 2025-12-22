@@ -1,5 +1,6 @@
 import UIKit
 import SwiftUI
+import SuperwallKit
 
 /// AppDelegate for handling Quick Actions and other UIApplication-level events
 class AppDelegate: NSObject, UIApplicationDelegate {
@@ -69,6 +70,40 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             name: "Default Configuration",
             sessionRole: connectingSceneSession.role
         )
+    }
+    
+    // MARK: - Deep Link Handling
+    
+    // Handle URL schemes (for apps without SceneDelegate)
+    func application(
+        _ app: UIApplication,
+        open url: URL,
+        options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+    ) -> Bool {
+        // Handle Superwall deep links
+        let handled = Superwall.handleDeepLink(url)
+        if handled {
+            print("🔗 AppDelegate: Deep link handled by Superwall")
+            return true
+        }
+        return false
+    }
+    
+    // Handle universal links
+    func application(
+        _ application: UIApplication,
+        continue userActivity: NSUserActivity,
+        restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
+    ) -> Bool {
+        if userActivity.activityType == NSUserActivityTypeBrowsingWeb,
+           let url = userActivity.webpageURL {
+            let handled = Superwall.handleDeepLink(url)
+            if handled {
+                print("🔗 AppDelegate: Universal link handled by Superwall")
+                return true
+            }
+        }
+        return false
     }
 }
 

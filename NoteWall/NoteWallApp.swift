@@ -1,6 +1,7 @@
 import SwiftUI
 import RevenueCat
 import TelemetryDeck
+import SuperwallKit
 
 @main
 struct NoteWallApp: App {
@@ -20,6 +21,7 @@ struct NoteWallApp: App {
         setupCrashReporting()
         HomeScreenImageManager.prepareStorageStructure()
         configureRevenueCat()
+        configureSuperwall()
         
         // Initialize TelemetryDeck for analytics
         let telemetryConfig = TelemetryDeck.Config(appID: "F406962D-0C75-41A0-82DB-01AC06B8E21A")
@@ -42,10 +44,20 @@ struct NoteWallApp: App {
         let configuration = Configuration
             .builder(withAPIKey: "appl_VuulGamLrpZVzgEymEJnflZNEzs")
             .with(entitlementVerificationMode: .informational)
+            .with(storeKitVersion: .storeKit1)
             .build()
 
         Purchases.configure(with: configuration)
         PaywallManager.shared.connectRevenueCat()
+    }
+    
+    private func configureSuperwall() {
+        let apiKey = "pk_IeL87ZJ24CWF5_aPvRJE_"
+        Superwall.configure(apiKey: apiKey)
+        
+        // Initialize user attributes tracking
+        // Superwall automatically uses anonymous IDs since there's no user management system
+        SuperwallUserAttributesManager.shared.updateAllAttributes()
     }
     
     private func setupCrashReporting() {
@@ -104,6 +116,13 @@ struct NoteWallApp: App {
                             }
                         }
                         .onOpenURL { url in
+                            // Handle Superwall deep links first
+                            let handledBySuperwall = Superwall.handleDeepLink(url)
+                            if handledBySuperwall {
+                                print("🔗 NoteWallApp: URL handled by Superwall")
+                                return
+                            }
+                            
                             // Handle URL scheme when app is opened via notewall://
                             // This allows the shortcut to redirect back to the app
                             print("🔗 NoteWallApp: Opened via URL: \(url)")
@@ -139,6 +158,8 @@ struct NoteWallApp: App {
             .onChange(of: hasCompletedSetup) { newValue in
                 // Update onboarding state when setup completion changes
                 showOnboarding = !newValue
+                // Update Superwall attributes when setup status changes
+                SuperwallUserAttributesManager.shared.updateOnboardingAttributes()
             }
             .onChange(of: PaywallManager.shared.isPremium) { _ in
                 // Update Quick Actions when premium status changes

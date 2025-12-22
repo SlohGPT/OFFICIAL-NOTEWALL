@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import RevenueCat
+import SuperwallKit
 
 /// Manages paywall state, RevenueCat configuration, and premium status
 final class PaywallManager: NSObject, ObservableObject {
@@ -19,9 +20,11 @@ final class PaywallManager: NSObject, ObservableObject {
     // MARK: - Published Properties
     @Published var shouldShowPaywall: Bool = false
     @Published var paywallTriggerReason: PaywallTriggerReason = .limitReached
+    @Published var shouldShowSuperwallPaywall: Bool = false
+    @Published var superwallPlacement: String = ""
     @Published var offerings: Offerings?
     @Published var availablePackages: [Package] = []
-    @Published var customerInfo: CustomerInfo?
+    @Published var customerInfo: RevenueCat.CustomerInfo?
     @Published var isLoadingOfferings: Bool = false
     @Published var isProcessingPurchase: Bool = false
     @Published var lastErrorMessage: String?
@@ -147,6 +150,9 @@ final class PaywallManager: NSObject, ObservableObject {
                     NotificationManager.shared.scheduleTrialReminder()
                 }
                 
+                // Update Superwall attributes after purchase
+                SuperwallUserAttributesManager.shared.updateSubscriptionAttributes()
+                
                 isProcessingPurchase = false
                 shouldShowPaywall = false
             }
@@ -179,7 +185,7 @@ final class PaywallManager: NSObject, ObservableObject {
         }
     }
 
-    private func handle(customerInfo: CustomerInfo) {
+    private func handle(customerInfo: RevenueCat.CustomerInfo) {
         self.customerInfo = customerInfo
         hasPremiumAccess = customerInfo.entitlements[entitlementID]?.isActive == true
         if let entitlement = customerInfo.entitlements[entitlementID] {
@@ -190,6 +196,9 @@ final class PaywallManager: NSObject, ObservableObject {
         } else {
             hasPremiumAccess = false
         }
+        
+        // Update Superwall attributes when subscription status changes
+        SuperwallUserAttributesManager.shared.updateSubscriptionAttributes()
     }
 
     private func restoreLegacyAccessIfNeeded() {
@@ -247,6 +256,10 @@ final class PaywallManager: NSObject, ObservableObject {
         guard !isPremium else { return }
         
         wallpaperExportCount += 1
+        
+        // Update Superwall attributes when usage changes
+        SuperwallUserAttributesManager.shared.updateUsageAttributes()
+        
         if hasReachedFreeLimit {
             showPaywallAfterDelay()
         }
@@ -278,6 +291,26 @@ final class PaywallManager: NSObject, ObservableObject {
     func showPaywall(reason: PaywallTriggerReason = .manual) {
         paywallTriggerReason = reason
         shouldShowPaywall = true
+    }
+    
+    // MARK: - Superwall Paywall Presentation
+    
+    /// Present a Superwall paywall for the given placement
+    /// - Parameter placement: The placement identifier configured in Superwall dashboard
+    func presentSuperwallPaywall(placement: String) {
+        superwallPlacement = placement
+        shouldShowSuperwallPaywall = true
+    }
+    
+    /// Register a feature with Superwall (feature gating)
+    /// This will automatically show a paywall if needed, otherwise execute the feature
+    /// - Parameters:
+    ///   - placement: The placement identifier
+    ///   - feature: The feature to execute if user has access
+    func registerSuperwallFeature(placement: String, feature: @escaping () -> Void) {
+        Superwall.shared.register(placement: placement, params: nil) {
+            feature()
+        }
     }
     
     // MARK: - Local Overrides
@@ -356,7 +389,7 @@ final class PaywallManager: NSObject, ObservableObject {
 
 // MARK: - PurchasesDelegate
 extension PaywallManager: PurchasesDelegate {
-    func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
+    func purchases(_ purchases: Purchases, receivedUpdated customerInfo: RevenueCat.CustomerInfo) {
         DispatchQueue.main.async {
             self.handle(customerInfo: customerInfo)
         }
