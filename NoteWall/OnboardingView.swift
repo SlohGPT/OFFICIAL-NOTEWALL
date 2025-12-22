@@ -4717,15 +4717,15 @@ struct OnboardingView: View {
             // This matches the actual image dimensions to prevent cropping
             let mockupAspectRatio: CGFloat = 946.0 / 2150.0
             
-            // 📏 HEIGHT MULTIPLIER: Controls mockup size (1.5 = 150% of screen height)
-            //    - Increase (e.g., 1.7) = LARGER mockup (more zoom effect)
+            // 📏 HEIGHT MULTIPLIER: Controls mockup size (1.3 = 130% of screen height)
+            //    - Increase (e.g., 1.5) = LARGER mockup (more zoom effect)
             //    - Decrease (e.g., 0.9) = SMALLER mockup (more space around it)
-            let maxMockupHeight = availableHeight * 0.85
+            let maxMockupHeight = availableHeight * 1.3
             
             // 📐 WIDTH MULTIPLIER: Controls horizontal fill (1.0 = 100% of screen width)
             //    - Increase (e.g., 1.1) = Mockup can extend beyond screen edges
             //    - Decrease (e.g., 0.8) = More padding on sides
-            let mockupWidth = min(maxMockupHeight * mockupAspectRatio, availableWidth * 0.9)
+            let mockupWidth = min(maxMockupHeight * mockupAspectRatio, availableWidth * 1.0)
             let mockupHeight = mockupWidth / mockupAspectRatio
             
             // Screen insets within the mockup frame (percentage-based)
@@ -4744,8 +4744,8 @@ struct OnboardingView: View {
             
             // ⚙️ WALLPAPER DISPLAY - 1:1 TRUE REPRESENTATION ⚙️
             // The wallpaper is shown exactly as it appears on real lock screen
-            // 🔧 ADJUST ZOOM: Change .scaleEffect(0.78) below
-            //    - 0.78 = Current (78% size - zoomed out to fit content better)
+            // 🔧 ADJUST ZOOM: Change .scaleEffect(0.77) below
+            //    - 0.77 = Current (77% size - zoomed in slightly to eliminate black edges)
             //    - 1.0 = No zoom (100% - may crop edges)
             //    - 0.75 = More zoom out (75% - shows more but smaller, may show black edges)
             //    - 0.9 = Less zoom (90% - closer to edges)
@@ -4756,10 +4756,9 @@ struct OnboardingView: View {
                     if let wallpaper = loadedWallpaperImage {
                         Image(uiImage: wallpaper)
                             .resizable()
-                            .aspectRatio(contentMode: .fill) // ✅ Maintains aspect ratio, shows full image
-                            .scaleEffect(0.85) // Zoom out to prevent content touching edges
-                            .frame(width: screenWidth, height: screenHeight)
-                            .clipped()
+                            .aspectRatio(contentMode: .fit) // ✅ Maintains aspect ratio, shows full image
+                            .frame(maxWidth: screenWidth, maxHeight: screenHeight)
+                            .scaleEffect(0.77) // 🔍 Zoomed in slightly to eliminate black edges and make it smoother
                     } else {
                         // Fallback gradient if wallpaper not loaded
                         RoundedRectangle(cornerRadius: screenCornerRadius, style: .continuous)
