@@ -176,6 +176,7 @@ private enum OnboardingPage: Int, CaseIterable, Hashable {
     case quizForgetMost
     case quizPhoneChecks
     case quizDistraction
+    case personalizationLoading
     case resultsPreview
     
     // Phase 2: Social Proof & Value Demo
@@ -616,6 +617,9 @@ struct OnboardingView: View {
                     SuperwallUserAttributesManager.shared.updateOnboardingAttributes()
 
                     debugLog("✅ Onboarding completed - User dismissed paywall, now in main app")
+                    
+                    // Request app review after paywall is dismissed (either paid or canceled)
+                    requestAppReviewIfNeeded()
                 }
         }
         .preferredColorScheme(.dark)
@@ -757,7 +761,7 @@ struct OnboardingView: View {
             // These pages have their own dark backgrounds
             let needsDarkBackground = [
                 OnboardingPage.painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-                .resultsPreview, .socialProof, .setupIntro, .videoIntroduction,
+                .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .videoIntroduction,
                 .shortcutSuccess, .setupComplete
             ].contains(currentPage)
             
@@ -808,7 +812,7 @@ struct OnboardingView: View {
                             }
                         case .quizForgetMost:
                             MultiSelectQuizQuestionView(
-                                question: "What do you forget most?",
+                                question: "But before we start, what do you forget the most?",
                                 subtitle: "Select all that apply",
                                 options: QuizData.forgetMostOptions
                             ) { answers in
@@ -817,7 +821,7 @@ struct OnboardingView: View {
                             }
                         case .quizPhoneChecks:
                             QuizQuestionView(
-                                question: "How often do you check your phone?",
+                                question: "And how often do you check your phone?",
                                 subtitle: "Be honest, no judgment!",
                                 options: QuizData.phoneChecksOptions
                             ) { answer in
@@ -826,11 +830,15 @@ struct OnboardingView: View {
                             }
                         case .quizDistraction:
                             MultiSelectQuizQuestionView(
-                                question: "What's your biggest distraction?",
+                                question: "Last one: what's your biggest distraction?",
                                 subtitle: "Select all that apply",
                                 options: QuizData.distractionOptions
                             ) { answers in
                                 OnboardingQuizState.shared.biggestDistractionList = answers
+                                advanceStep()
+                            }
+                        case .personalizationLoading:
+                            PersonalizationLoadingView {
                                 advanceStep()
                             }
                         case .resultsPreview:
@@ -3524,7 +3532,7 @@ struct OnboardingView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
                     // Title - adaptive font size
-                    Text("Allow 3 Permissions")
+                    Text("Allow ALL Permissions")
                         .font(.system(size: titleFontSize, weight: .bold, design: .rounded))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, topPadding)
@@ -3700,7 +3708,7 @@ struct OnboardingView: View {
                                 .foregroundColor(hasConfirmedPermissions ? Color.appAccent : Color.white.opacity(0.4))
                             
                             // Single line on all devices
-                            Text("I've granted all 3 Permissions")
+                            Text("I've granted all Permissions")
                                 .font(.system(size: isCompact ? 15 : 16, weight: .medium))
                                 .foregroundColor(.white)
                                 .lineLimit(1)
@@ -4289,16 +4297,6 @@ struct OnboardingView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
-                    
-                    // Request app review at this perfect moment of delight
-                    #if !targetEnvironment(simulator)
-                    if !hasRequestedAppReview {
-                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-                            SKStoreReviewController.requestReview(in: scene)
-                            hasRequestedAppReview = true
-                        }
-                    }
-                    #endif
                     
                     // Complete onboarding immediately (show paywall)
                     completeOnboarding()
@@ -4933,7 +4931,7 @@ struct OnboardingView: View {
     private var primaryButtonTitle: String {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
             return "" // These pages have their own buttons
         case .welcome:
             return "Next"
@@ -4955,7 +4953,7 @@ struct OnboardingView: View {
     private var primaryButtonIconName: String? {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
             return nil // These pages have their own buttons
         case .welcome:
             return "arrow.right.circle.fill"
@@ -4977,7 +4975,7 @@ struct OnboardingView: View {
     private var primaryButtonEnabled: Bool {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
             return false // These pages have their own buttons
         case .welcome:
             return true
@@ -5022,7 +5020,7 @@ struct OnboardingView: View {
         
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
             // These pages have their own buttons and handle navigation internally
             break
         case .welcome:
@@ -6816,6 +6814,8 @@ struct OnboardingView: View {
             return "Quick Quiz"
         case .quizDistraction:
             return "Quick Quiz"
+        case .personalizationLoading:
+            return "Customizing Experience"
         case .resultsPreview:
             return "Personalized Plan"
         case .socialProof:
@@ -7318,6 +7318,8 @@ private extension OnboardingPage {
             return ""
         case .quizForgetMost, .quizPhoneChecks, .quizDistraction:
             return ""
+        case .personalizationLoading:
+            return ""
         case .resultsPreview:
             return ""
         case .socialProof:
@@ -7353,6 +7355,8 @@ private extension OnboardingPage {
             return "Understanding You"
         case .quizForgetMost, .quizPhoneChecks, .quizDistraction:
             return "Personalization"
+        case .personalizationLoading:
+            return "Customizing"
         case .resultsPreview:
             return "Your Profile"
         case .socialProof:
@@ -7392,6 +7396,8 @@ private extension OnboardingPage {
             return "Quiz question 2"
         case .quizDistraction:
             return "Quiz question 3"
+        case .personalizationLoading:
+            return "Customizing your experience"
         case .resultsPreview:
             return "Your personalized results"
         case .socialProof:
@@ -7424,7 +7430,7 @@ private extension OnboardingPage {
     var stepNumber: Int? {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return nil // These don't show step numbers
         case .welcome:
             return 1
@@ -7444,7 +7450,7 @@ private extension OnboardingPage {
     // Phase for progress indicator
     var phase: String {
         switch self {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .resultsPreview:
+        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview:
             return "Getting to Know You"
         case .socialProof, .setupIntro:
             return "Almost Ready"
@@ -7459,7 +7465,7 @@ private extension OnboardingPage {
     var showsProgressIndicator: Bool {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return false
         case .welcome, .videoIntroduction, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions:
             return true

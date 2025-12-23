@@ -134,10 +134,11 @@ final class PromoCodeManager {
             return .invalid("Too many validation attempts. Please try again later.")
         }
         
-        // Normalize code (remove spaces, convert to uppercase)
+        // Normalize code (remove spaces, convert to uppercase, remove hyphens)
         let normalizedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
             .uppercased()
             .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "-", with: "")
         
         // Check if code is empty
         guard !normalizedCode.isEmpty else {
@@ -147,9 +148,9 @@ final class PromoCodeManager {
         
         // Determine code type from prefix
         let codeType: PromoCodeType?
-        if normalizedCode.hasPrefix("LT-") {
+        if normalizedCode.hasPrefix("LT-") || normalizedCode.hasPrefix("LT") {
             codeType = .lifetime
-        } else if normalizedCode.hasPrefix("MO-") {
+        } else if normalizedCode.hasPrefix("MO-") || normalizedCode.hasPrefix("MO") {
             codeType = .monthly
         } else {
             // Legacy codes without prefix (backward compatibility)

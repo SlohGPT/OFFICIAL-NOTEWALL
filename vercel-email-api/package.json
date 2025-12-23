@@ -2,13 +2,21 @@
   "name": "notewall-email-api",
   "version": "1.0.0",
   "description": "Serverless function to send NoteWall feedback emails automatically",
+  "type": "module",
   "main": "api/send-feedback.js",
   "scripts": {
     "dev": "vercel dev",
-    "deploy": "vercel"
+    "deploy": "vercel",
+    "test-downloads": "node scripts/test-download-count.js",
+    "set-initial-count": "node scripts/set-initial-count.js"
   },
   "dependencies": {
-    "nodemailer": "^6.9.8"
+    "nodemailer": "^6.9.8",
+    "jsonwebtoken": "^9.0.2",
+    "@vercel/kv": "^1.0.1"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1"
   },
   "engines": {
     "node": "22.x"

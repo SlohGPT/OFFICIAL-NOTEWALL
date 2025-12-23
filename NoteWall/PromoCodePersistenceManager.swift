@@ -174,9 +174,9 @@ final class PromoCodePersistenceManager {
             var monthlyUsed: [String] = []
             
             for code in oldUsedCodes {
-                if code.hasPrefix("LT-") {
+                if code.hasPrefix("LT-") || code.hasPrefix("LT") {
                     lifetimeUsed.append(code)
-                } else if code.hasPrefix("MO-") {
+                } else if code.hasPrefix("MO-") || code.hasPrefix("MO") {
                     monthlyUsed.append(code)
                 } else {
                     // Legacy codes without prefix - assume lifetime

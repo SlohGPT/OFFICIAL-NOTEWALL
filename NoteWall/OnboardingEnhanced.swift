@@ -178,183 +178,766 @@ struct OnboardingProgressBar: View {
 
 struct PainPointView: View {
     let onContinue: () -> Void
-    @State private var textOpacity1: Double = 0
+    @State private var headerOpacity: Double = 0
     @State private var numberScale: CGFloat = 0.3
     @State private var numberOpacity: Double = 0
     @State private var numberValue: Int = 0
-    @State private var textOpacity2: Double = 0
-    @State private var textOpacity3: Double = 0
+    @State private var contextOpacity: Double = 0
+    @State private var questionOpacity: Double = 0
+    @State private var solutionOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
     
     @ObservedObject private var quizState = OnboardingQuizState.shared
     
     // Adaptive layout values
     private var isCompact: Bool { ScreenDimensions.isCompactDevice }
-    private var numberFontSize: CGFloat { isCompact ? 64 : 96 }
-    private var titleFontSize: CGFloat { isCompact ? 20 : 24 }
-    private var subtitleFontSize: CGFloat { isCompact ? 15 : 18 }
-    private var sectionSpacing: CGFloat { isCompact ? 28 : 48 }
-    private var buttonBottomPadding: CGFloat { isCompact ? 24 : 40 }
+    
+    var body: some View {
+        ZStack {
+            // Dark gradient background with subtle depth
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.04, green: 0.04, blue: 0.08), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                
+                // Subtle radial glow behind number
+                RadialGradient(
+                    colors: [Color.appAccent.opacity(0.08), Color.clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 300
+                )
+                .offset(y: isCompact ? -60 : -80)
+            }
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: isCompact ? 24 : 36) {
+                        Spacer(minLength: isCompact ? 30 : 50)
+                        
+                        // MARK: - Header badge
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.system(size: isCompact ? 12 : 14))
+                                .foregroundColor(.appAccent)
+                            
+                            Text("Research Insight")
+                                .font(.system(size: isCompact ? 12 : 13, weight: .medium))
+                                .foregroundColor(.appAccent)
+                        }
+                        .padding(.horizontal, isCompact ? 12 : 16)
+                        .padding(.vertical, isCompact ? 6 : 8)
+                        .background(
+                            Capsule()
+                                .fill(Color.appAccent.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.appAccent.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .opacity(headerOpacity)
+                        
+                        // MARK: - Main stat section
+                        VStack(spacing: isCompact ? 16 : 24) {
+                            Text("Did you know that the average person")
+                                .font(.system(size: isCompact ? 16 : 19, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .opacity(headerOpacity)
+                            
+                            Text("unlocks their phone up to")
+                                .font(.system(size: isCompact ? 16 : 19, weight: .medium))
+                                .foregroundColor(.white.opacity(0.7))
+                                .multilineTextAlignment(.center)
+                                .opacity(headerOpacity)
+                            
+                            // Big animated number without pulse ring
+                            VStack(spacing: isCompact ? 4 : 6) {
+                                Text("\(numberValue)")
+                                    .font(.system(size: isCompact ? 72 : 96, weight: .black, design: .rounded))
+                                    .foregroundStyle(
+                                        LinearGradient(
+                                            colors: [.appAccent, .appAccent.opacity(0.7)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .shadow(color: .appAccent.opacity(0.4), radius: 20, x: 0, y: 10)
+                                
+                                Text("times per day ?")
+                                    .font(.system(size: isCompact ? 14 : 17, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.6))
+                                    .modifier(LetterSpacingModifier(spacing: 0.5))
+                            }
+                            .scaleEffect(numberScale)
+                            .opacity(numberOpacity)
+                        }
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        // MARK: - Context cards
+                        VStack(spacing: isCompact ? 10 : 14) {
+                            // Stat breakdown card
+                            HStack(spacing: isCompact ? 14 : 18) {
+                                StatMiniCard(
+                                    value: "4hrs",
+                                    label: "screen time",
+                                    icon: "clock.fill",
+                                    isCompact: isCompact
+                                )
+                                
+                                StatMiniCard(
+                                    value: "96%",
+                                    label: "forgotten",
+                                    icon: "brain.head.profile",
+                                    isCompact: isCompact
+                                )
+                                
+                                StatMiniCard(
+                                    value: "2.5s",
+                                    label: "avg glance",
+                                    icon: "eye.fill",
+                                    isCompact: isCompact
+                                )
+                            }
+                            .opacity(contextOpacity)
+                        }
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        // MARK: - The question
+                        VStack(spacing: isCompact ? 12 : 16) {
+                            Text("But here's the real question...")
+                                .font(.system(size: isCompact ? 13 : 15, weight: .medium))
+                                .foregroundColor(.white.opacity(0.5))
+                            
+                            Text("How many times did you\nactually remember why?")
+                                .font(.system(size: isCompact ? 20 : 24, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                        }
+                        .opacity(questionOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        // MARK: - Solution teaser
+                        VStack(spacing: isCompact ? 10 : 14) {
+                            HStack(spacing: isCompact ? 10 : 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appAccent.opacity(0.15))
+                                        .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
+                                    
+                                    Image(systemName: "iphone.gen3")
+                                        .font(.system(size: isCompact ? 16 : 20))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("What if your lock screen reminded you?")
+                                        .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                    
+                                    Text("Every unlock becomes intentional")
+                                        .font(.system(size: isCompact ? 12 : 14))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                                    .foregroundColor(.appAccent.opacity(0.6))
+                            }
+                            .padding(isCompact ? 14 : 18)
+                            .background(
+                                RoundedRectangle(cornerRadius: isCompact ? 14 : 18, style: .continuous)
+                                    .fill(Color.white.opacity(0.04))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: isCompact ? 14 : 18, style: .continuous)
+                                            .strokeBorder(Color.appAccent.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                        }
+                        .opacity(solutionOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        Spacer(minLength: isCompact ? 80 : 100)
+                    }
+                }
+                
+                // Continue button
+                VStack(spacing: 0) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        onContinue()
+                    }) {
+                        HStack(spacing: isCompact ? 8 : 10) {
+                            Text("Tell Me More")
+                                .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                            
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                        }
+                        .frame(height: isCompact ? 50 : 56)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                .padding(.vertical, isCompact ? 16 : 20)
+                .background(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0), Color.black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 40)
+                    .offset(y: -40)
+                    , alignment: .top
+                )
+                .opacity(buttonOpacity)
+            }
+        }
+        .onAppear {
+            // Header badge
+            withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
+                headerOpacity = 1
+            }
+            
+            // Animate number count-up with easing
+            let countDuration: Double = 1.0
+            let steps = 50
+            let stepDuration = countDuration / Double(steps)
+            
+            for i in 0...steps {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + stepDuration * Double(i)) {
+                    let progress = Double(i) / Double(steps)
+                    // Ease out cubic for satisfying slow-down
+                    let easeOut = 1 - pow(1 - progress, 3)
+                    numberValue = Int(498.0 * easeOut)
+                }
+            }
+            
+            // Number reveal with spring
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.5)) {
+                numberOpacity = 1
+                numberScale = 1.0
+            }
+            
+            // Context cards
+            withAnimation(.easeOut(duration: 0.5).delay(1.6)) {
+                contextOpacity = 1
+            }
+            
+            // Question
+            withAnimation(.easeOut(duration: 0.5).delay(2.0)) {
+                questionOpacity = 1
+            }
+            
+            // Solution teaser
+            withAnimation(.easeOut(duration: 0.5).delay(2.4)) {
+                solutionOpacity = 1
+            }
+            
+            // Button
+            withAnimation(.easeOut(duration: 0.4).delay(2.7)) {
+                buttonOpacity = 1
+            }
+            
+            // Success haptic when number finishes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                let generator = UIImpactFeedbackGenerator(style: .heavy)
+                generator.impactOccurred()
+            }
+            
+            OnboardingAnalytics.trackStepShown("pain_point")
+        }
+    }
+}
+
+// MARK: - Stat Mini Card
+
+private struct StatMiniCard: View {
+    let value: String
+    let label: String
+    let icon: String
+    let isCompact: Bool
+    
+    var body: some View {
+        VStack(spacing: isCompact ? 6 : 8) {
+            Image(systemName: icon)
+                .font(.system(size: isCompact ? 14 : 16))
+                .foregroundColor(.white.opacity(0.4))
+            
+            Text(value)
+                .font(.system(size: isCompact ? 18 : 22, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+            
+            Text(label)
+                .font(.system(size: isCompact ? 10 : 11))
+                .foregroundColor(.white.opacity(0.4))
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, isCompact ? 12 : 16)
+        .background(
+            RoundedRectangle(cornerRadius: isCompact ? 12 : 14, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
+    }
+}
+
+// MARK: - Quiz Transition View (Connection between Pain Point and Quiz)
+
+struct QuizTransitionView: View {
+    let onContinue: () -> Void
+    
+    @State private var headerOpacity: Double = 0
+    @State private var questionOpacity: Double = 0
+    @State private var subtitleOpacity: Double = 0
+    @State private var iconScale: CGFloat = 0.3
+    @State private var iconOpacity: Double = 0
+    @State private var buttonOpacity: Double = 0
+    
+    // Adaptive layout
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    var body: some View {
+        ZStack {
+            // Dark gradient background with subtle depth
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.04, green: 0.04, blue: 0.08), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [Color.appAccent.opacity(0.06), Color.clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 350
+                )
+            }
+            .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: isCompact ? 28 : 40) {
+                        Spacer(minLength: isCompact ? 50 : 80)
+                        
+                        // Header badge
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: isCompact ? 12 : 14))
+                                .foregroundColor(.appAccent)
+                            
+                            Text("Quick Check")
+                                .font(.system(size: isCompact ? 12 : 13, weight: .medium))
+                                .foregroundColor(.appAccent)
+                        }
+                        .padding(.horizontal, isCompact ? 12 : 16)
+                        .padding(.vertical, isCompact ? 6 : 8)
+                        .background(
+                            Capsule()
+                                .fill(Color.appAccent.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .strokeBorder(Color.appAccent.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                        .opacity(headerOpacity)
+                        
+                        // Brain icon with animation
+                        ZStack {
+                            // Outer glow rings
+                            ForEach(0..<3, id: \.self) { i in
+                                Circle()
+                                    .stroke(Color.appAccent.opacity(0.15 - Double(i) * 0.04), lineWidth: 1.5)
+                                    .frame(
+                                        width: (isCompact ? 80 : 100) + CGFloat(i) * (isCompact ? 24 : 30),
+                                        height: (isCompact ? 80 : 100) + CGFloat(i) * (isCompact ? 24 : 30)
+                                    )
+                            }
+                            
+                            Circle()
+                                .fill(Color.appAccent.opacity(0.12))
+                                .frame(width: isCompact ? 80 : 100, height: isCompact ? 80 : 100)
+                            
+                            Image(systemName: "brain.head.profile")
+                                .font(.system(size: isCompact ? 36 : 44, weight: .medium))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.appAccent, .appAccent.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                        .scaleEffect(iconScale)
+                        .opacity(iconOpacity)
+                        
+                        // Main question section
+                        VStack(spacing: isCompact ? 14 : 20) {
+                            Text("But, before we start...")
+                                .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                                .foregroundColor(.white.opacity(0.5))
+                                .opacity(subtitleOpacity)
+                            
+                            Text("What do you forget\nthe most?")
+                                .font(.system(size: isCompact ? 26 : 32, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                                .opacity(questionOpacity)
+                            
+                            Text("A few quick questions will help us\npersonalize your experience")
+                                .font(.system(size: isCompact ? 14 : 16))
+                                .foregroundColor(.white.opacity(0.5))
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(2)
+                                .opacity(subtitleOpacity)
+                        }
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        // Time estimate
+                        HStack(spacing: 8) {
+                            Image(systemName: "clock")
+                                .font(.system(size: isCompact ? 12 : 14))
+                                .foregroundColor(.white.opacity(0.4))
+                            
+                            Text("Takes less than 30 seconds")
+                                .font(.system(size: isCompact ? 12 : 14, weight: .medium))
+                                .foregroundColor(.white.opacity(0.4))
+                        }
+                        .opacity(subtitleOpacity)
+                        
+                        Spacer(minLength: isCompact ? 80 : 100)
+                    }
+                }
+                
+                // Continue button
+                VStack(spacing: 0) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        onContinue()
+                    }) {
+                        HStack(spacing: isCompact ? 8 : 10) {
+                            Text("Let's Find Out")
+                                .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                            
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                        }
+                        .frame(height: isCompact ? 50 : 56)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                .padding(.vertical, isCompact ? 16 : 20)
+                .background(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0), Color.black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 40)
+                    .offset(y: -40)
+                    , alignment: .top
+                )
+                .opacity(buttonOpacity)
+            }
+        }
+        .onAppear {
+            // Header badge
+            withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
+                headerOpacity = 1
+            }
+            
+            // Icon with spring
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.65).delay(0.3)) {
+                iconOpacity = 1
+                iconScale = 1.0
+            }
+            
+            // Subtitle
+            withAnimation(.easeOut(duration: 0.5).delay(0.5)) {
+                subtitleOpacity = 1
+            }
+            
+            // Main question
+            withAnimation(.easeOut(duration: 0.5).delay(0.7)) {
+                questionOpacity = 1
+            }
+            
+            // Button
+            withAnimation(.easeOut(duration: 0.4).delay(1.0)) {
+                buttonOpacity = 1
+            }
+            
+            OnboardingAnalytics.trackStepShown("quiz_transition")
+        }
+    }
+}
+
+// MARK: - Personalization Loading View (After Quiz, Before Results)
+
+struct PersonalizationLoadingView: View {
+    let onComplete: () -> Void
+    
+    @State private var progress: CGFloat = 0
+    @State private var displayedPercentage: Int = 0
+    @State private var headerOpacity: Double = 0
+    @State private var loadingOpacity: Double = 0
+    @State private var messageIndex: Int = 0
+    @State private var messageOpacity: Double = 1
+    @State private var particleOpacity: Double = 0
+    @State private var glowPulse: Bool = false
+    
+    // Adaptive layout
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    private let messages = [
+        "Analyzing your habits...",
+        "Customizing your experience...",
+        "Preparing your focus plan...",
+        "Almost ready..."
+    ]
+    
+    private let totalDuration: Double = 3.5 // Total loading time in seconds
     
     var body: some View {
         ZStack {
             // Dark gradient background
             LinearGradient(
-                colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                colors: [Color(red: 0.04, green: 0.04, blue: 0.08), Color.black],
                 startPoint: .top,
                 endPoint: .bottom
             )
             .ignoresSafeArea()
             
-            VStack(spacing: 0) {
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        Spacer(minLength: isCompact ? 40 : 60)
-                    
-                    VStack(spacing: sectionSpacing) {
-                        // Opening text
-                        VStack(spacing: isCompact ? 10 : 16) {
-                            Text("Did you know?")
-                                .font(.system(size: subtitleFontSize, weight: .medium))
-                                .foregroundColor(.white.opacity(0.6))
-                                .opacity(textOpacity1)
-                            
-                            Text("People open their phones")
-                                .font(.system(size: titleFontSize, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
-                                .opacity(textOpacity1)
-                        }
-                        
-                        // Animated big number
-                        VStack(spacing: isCompact ? 8 : 12) {
-                            Text("\(numberValue)")
-                            .font(.system(size: numberFontSize, weight: .heavy, design: .rounded))
-                            .foregroundColor(.appAccent)
-                            .scaleEffect(numberScale)
-                            .opacity(numberOpacity)
-                        
-                        // "times per day" with underlined "per day"
-                        HStack(spacing: 4) {
-                            Text("times")
-                                .font(.system(size: isCompact ? 18 : 22, weight: .medium))
-                                .foregroundColor(.white.opacity(0.8))
-                            
-                            Text("per day")
-                                .font(.system(size: isCompact ? 18 : 22, weight: .bold))
-                                .foregroundColor(.white)
-                                .underline(true, color: .appAccent)
-                        }
-                        .opacity(numberOpacity)
-                    }
-                    
-                    // Question
-                    VStack(spacing: isCompact ? 10 : 16) {
-                        Text("How many times do you remember")
-                            .font(.system(size: isCompact ? 17 : 20, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                            .opacity(textOpacity2)
-                        
-                        Text("why you wanted to unlock it?")
-                            .font(.system(size: isCompact ? 17 : 20, weight: .medium))
-                            .foregroundColor(.white.opacity(0.8))
-                            .multilineTextAlignment(.center)
-                            .opacity(textOpacity2)
-                    }
-                    .padding(.horizontal, isCompact ? 20 : 32)
-                    
-                    // Solution
-                    HStack(spacing: isCompact ? 8 : 10) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: isCompact ? 17 : 20))
-                            .foregroundColor(.appAccent)
-                        
-                        Text("NoteWall remembers this for you")
-                            .font(.system(size: isCompact ? 16 : 19, weight: .semibold))
-                            .foregroundColor(.appAccent)
-                    }
-                    .padding(.vertical, isCompact ? 12 : 16)
-                    .padding(.horizontal, isCompact ? 18 : 24)
-                    .background(
-                        RoundedRectangle(cornerRadius: isCompact ? 12 : 16, style: .continuous)
-                            .fill(Color.appAccent.opacity(0.1))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: isCompact ? 12 : 16, style: .continuous)
-                                    .strokeBorder(Color.appAccent.opacity(0.3), lineWidth: 1.5)
-                            )
-                    )
-                    .opacity(textOpacity3)
-                }
-                
-                    Spacer(minLength: isCompact ? 30 : 50)
+            // Animated particles background
+            GeometryReader { geometry in
+                ForEach(0..<12, id: \.self) { i in
+                    Circle()
+                        .fill(Color.appAccent.opacity(0.15))
+                        .frame(width: CGFloat.random(in: 4...12), height: CGFloat.random(in: 4...12))
+                        .position(
+                            x: CGFloat.random(in: 0...geometry.size.width),
+                            y: CGFloat.random(in: 0...geometry.size.height)
+                        )
+                        .blur(radius: 2)
+                        .opacity(particleOpacity * Double.random(in: 0.3...1.0))
                 }
             }
+            .opacity(particleOpacity)
             
-            // Continue button
-            VStack(spacing: isCompact ? 8 : 12) {
-                Button(action: {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    onContinue()
-                }) {
-                    Text("Show Me How")
-                        .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
-                        .frame(height: isCompact ? 48 : 56)
-                        .frame(maxWidth: .infinity)
+            VStack(spacing: 0) {
+                Spacer()
+                
+                // Main content
+                VStack(spacing: isCompact ? 32 : 48) {
+                    // Animated icon with glow
+                    ZStack {
+                        // Pulsing glow
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [Color.appAccent.opacity(0.3), Color.clear],
+                                    center: .center,
+                                    startRadius: 0,
+                                    endRadius: isCompact ? 80 : 100
+                                )
+                            )
+                            .frame(width: isCompact ? 160 : 200, height: isCompact ? 160 : 200)
+                            .scaleEffect(glowPulse ? 1.1 : 0.9)
+                            .animation(
+                                .easeInOut(duration: 1.2).repeatForever(autoreverses: true),
+                                value: glowPulse
+                            )
+                        
+                        // Rotating ring
+                        Circle()
+                            .trim(from: 0, to: 0.7)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.appAccent, Color.appAccent.opacity(0.2)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ),
+                                style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                            )
+                            .frame(width: isCompact ? 90 : 110, height: isCompact ? 90 : 110)
+                            .rotationEffect(.degrees(Double(progress) * 360.0 * 2.0))
+                        
+                        // Center icon
+                        ZStack {
+                            Circle()
+                                .fill(Color.appAccent.opacity(0.15))
+                                .frame(width: isCompact ? 72 : 88, height: isCompact ? 72 : 88)
+                            
+                            Image(systemName: "sparkles")
+                                .font(.system(size: isCompact ? 32 : 40, weight: .medium))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.appAccent, .appAccent.opacity(0.7)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                    }
+                    .opacity(loadingOpacity)
+                    
+                    // Header text
+                    VStack(spacing: isCompact ? 8 : 12) {
+                        Text("Curating Your Experience")
+                            .font(.system(size: isCompact ? 22 : 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Just for you")
+                            .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                            .foregroundColor(.appAccent)
+                    }
+                    .opacity(headerOpacity)
+                    
+                    // Animated message
+                    Text(messages[messageIndex])
+                        .font(.system(size: isCompact ? 15 : 17))
+                        .foregroundColor(.white.opacity(0.6))
+                        .opacity(messageOpacity)
+                        .animation(.easeInOut(duration: 0.3), value: messageOpacity)
+                    
+                    // Progress bar
+                    VStack(spacing: isCompact ? 10 : 14) {
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                // Background track
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(Color.white.opacity(0.08))
+                                    .frame(height: isCompact ? 8 : 10)
+                                
+                                // Progress fill
+                                RoundedRectangle(cornerRadius: 6)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.appAccent, Color.appAccent.opacity(0.7)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(width: geometry.size.width * progress, height: isCompact ? 8 : 10)
+                                    .shadow(color: Color.appAccent.opacity(0.5), radius: 8, x: 0, y: 0)
+                            }
+                        }
+                        .frame(height: isCompact ? 8 : 10)
+                        
+                        // Percentage
+                        if #available(iOS 17.0, *) {
+                            Text("\(displayedPercentage)%")
+                                .font(.system(size: isCompact ? 12 : 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                                .contentTransition(.numericText(value: Double(displayedPercentage)))
+                        } else {
+                            Text("\(displayedPercentage)%")
+                                .font(.system(size: isCompact ? 12 : 14, weight: .medium, design: .rounded))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                    .frame(maxWidth: isCompact ? 240 : 280)
+                    .opacity(loadingOpacity)
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                
+                Spacer()
+                Spacer()
             }
-            .padding(.horizontal, isCompact ? 16 : 24)
-            .padding(.top, isCompact ? 12 : 18)
-            .padding(.bottom, isCompact ? 16 : 22)
-            .background(Color.clear)
-            .opacity(buttonOpacity)
+        }
+        .onAppear {
+            startAnimations()
         }
     }
-        .onAppear {
-            // Opening text
-            withAnimation(.easeOut(duration: 0.5).delay(0.2)) {
-                textOpacity1 = 1
-            }
-            
-            // Animate number count-up from 1 to 400 with boom effect
-            let countDuration: Double = 0.8
-            let steps = 40
-            let stepDuration = countDuration / Double(steps)
-            
-            for i in 0...steps {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8 + stepDuration * Double(i)) {
-                    let progress = Double(i) / Double(steps)
-                    let easeOut = 1 - pow(1 - progress, 2)
-                    numberValue = Int(400.0 * easeOut)
+    
+    private func startAnimations() {
+        // Initial fade in
+        withAnimation(.easeOut(duration: 0.4)) {
+            headerOpacity = 1
+            loadingOpacity = 1
+            particleOpacity = 1
+        }
+        
+        // Start glow pulse
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            glowPulse = true
+        }
+        
+        // Progress animation
+        withAnimation(.easeInOut(duration: totalDuration)) {
+            progress = 1.0
+        }
+        
+        // Animate percentage number
+        let steps = 100
+        let stepDuration = totalDuration / Double(steps)
+        
+        for i in 0...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + stepDuration * Double(i)) {
+                // Use ease-out curve for more realistic loading feel
+                let progress = Double(i) / Double(steps)
+                // Ease out cubic: 1 - (1 - x)^3
+                let easedProgress = 1 - pow(1 - progress, 3)
+                
+                // Add some randomness to make it feel like real processing
+                let randomVariation = Double.random(in: -0.02...0.02)
+                let finalValue = min(100, max(0, Int((easedProgress + randomVariation) * 100)))
+                
+                // Ensure we always reach 100 at the end
+                if i == steps {
+                    withAnimation {
+                        displayedPercentage = 100
+                    }
+                } else {
+                    withAnimation {
+                        displayedPercentage = finalValue
+                    }
                 }
             }
-            
-            // Boom animation - scale up dramatically
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6).delay(0.8)) {
-                numberOpacity = 1
-            }
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.5).delay(0.8)) {
-                numberScale = 1.0
-            }
-            
-            // Question text
-            withAnimation(.easeOut(duration: 0.6).delay(1.8)) {
-                textOpacity2 = 1
-            }
-            
-            // Solution
-            withAnimation(.easeOut(duration: 0.5).delay(2.4)) {
-                textOpacity3 = 1
-            }
-            
-            // Button
-            withAnimation(.easeOut(duration: 0.4).delay(2.9)) {
-                buttonOpacity = 1
-            }
-            
-            OnboardingAnalytics.trackStepShown("pain_point")
         }
+        
+        // Cycle through messages
+        let messageInterval = totalDuration / Double(messages.count)
+        for i in 1..<messages.count {
+            DispatchQueue.main.asyncAfter(deadline: .now() + messageInterval * Double(i)) {
+                // Fade out current message
+                withAnimation(.easeOut(duration: 0.15)) {
+                    messageOpacity = 0
+                }
+                
+                // Change message and fade in
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    messageIndex = i
+                    withAnimation(.easeIn(duration: 0.15)) {
+                        messageOpacity = 1
+                    }
+                }
+            }
+        }
+        
+        // Complete after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + totalDuration + 0.3) {
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+            onComplete()
+        }
+        
+        OnboardingAnalytics.trackStepShown("personalization_loading")
     }
 }
 
@@ -643,364 +1226,800 @@ struct ResultsPreviewView: View {
     let onContinue: () -> Void
     @ObservedObject private var quizState = OnboardingQuizState.shared
     
-    @State private var iconScale: CGFloat = 0.5
-    @State private var iconOpacity: Double = 0
-    @State private var textOpacity: Double = 0
-    @State private var cardOpacity: Double = 0
+    @State private var headerOpacity: Double = 0
+    @State private var profileOpacity: Double = 0
+    @State private var insightOpacity: Double = 0
+    @State private var planOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
-    @State private var confettiTrigger: Int = 0
+    @State private var checkmarkScale: CGFloat = 0.5
+    @State private var progressValue: CGFloat = 0
     
     // Adaptive layout
     private var isCompact: Bool { ScreenDimensions.isCompactDevice }
-    private var iconSize: CGFloat { isCompact ? 80 : 100 }
-    private var ringBaseSize: CGFloat { isCompact ? 90 : 120 }
-    private var ringSpacing: CGFloat { isCompact ? 30 : 40 }
+    
+    // Personalized insights based on quiz answers
+    private var focusAreas: [String] {
+        let areas = quizState.forgetMostList
+        return areas.isEmpty ? ["Your priorities"] : Array(areas.prefix(2))
+    }
+    
+    private var distractionText: String {
+        let distractions = quizState.biggestDistractionList
+        if distractions.isEmpty { return "distractions" }
+        return distractions.first ?? "distractions"
+    }
+    
+    private var reminderFrequency: String {
+        switch quizState.phoneChecks {
+        case "50-100": return "Every 15 min"
+        case "100-200": return "Every 8 min"
+        case "200+": return "Every 5 min"
+        default: return "Every 10 min"
+        }
+    }
+    
+    private var phoneCheckCount: String {
+        switch quizState.phoneChecks {
+        case "50-100": return "50-100"
+        case "100-200": return "100-200"
+        case "200+": return "200+"
+        default: return "100+"
+        }
+    }
     
     var body: some View {
         ZStack {
-            // Dark gradient background
-            LinearGradient(
-                colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            // Dark gradient background with subtle glow
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                
+                // Subtle accent glow at top
+                RadialGradient(
+                    colors: [Color.appAccent.opacity(0.08), Color.clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+            }
             .ignoresSafeArea()
-            
-            ConfettiView(trigger: $confettiTrigger)
             
             VStack(spacing: 0) {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(spacing: 0) {
-                    Spacer(minLength: isCompact ? 30 : 50)
-                
-                    Spacer(minLength: isCompact ? 24 : 40)
-                
-                // Identity text with enhanced design
-                    VStack(spacing: isCompact ? 14 : 20) {
-                    // Badge/medal icon
-                    ZStack {
-                        Circle()
-                            .fill(Color.appAccent.opacity(0.15))
-                                .frame(width: isCompact ? 50 : 60, height: isCompact ? 50 : 60)
+                    VStack(spacing: isCompact ? 20 : 28) {
+                        Spacer(minLength: isCompact ? 20 : 32)
                         
-                        Image(systemName: "medal.fill")
-                                .font(.system(size: isCompact ? 24 : 30))
-                            .foregroundColor(.appAccent)
-                    }
-                    
-                    Text("You're one of the")
-                            .font(.system(size: isCompact ? 18 : 22, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
-                        .multilineTextAlignment(.center)
-                    
-                    Text("focused ones")
-                            .font(.system(size: isCompact ? 26 : 32, weight: .bold, design: .rounded))
-                        .foregroundColor(.appAccent)
-                        .multilineTextAlignment(.center)
-                    
-                    Text("Only 3% of people take action\nto fix their focus. You just did.")
-                            .font(.system(size: isCompact ? 14 : 16))
-                        .foregroundColor(.white.opacity(0.6))
-                        .multilineTextAlignment(.center)
-                        .padding(.top, 4)
-                }
-                .opacity(textOpacity)
-                    .padding(.horizontal, AdaptiveLayout.horizontalPadding)
-                
-                    Spacer(minLength: isCompact ? 20 : 32)
-                
-                // Preview card
-                    VStack(spacing: isCompact ? 12 : 16) {
-                        HStack(spacing: isCompact ? 10 : 12) {
-                        Image(systemName: "iphone")
-                                .font(.system(size: isCompact ? 20 : 24))
-                            .foregroundColor(.appAccent)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Your personalized focus system")
-                                    .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
-                                .foregroundColor(.white)
-                            
-                            Text("Based on your answers, we'll create the perfect setup")
+                        // MARK: - Header with completion indicator
+                        VStack(spacing: isCompact ? 6 : 10) {
+                            // Connecting badge
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: isCompact ? 12 : 14))
-                                .foregroundColor(.white.opacity(0.6))
-                        }
-                    }
-                    
-                    Divider()
-                        .background(Color.white.opacity(0.1))
-                    
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Focus on:")
-                                    .font(.system(size: isCompact ? 10 : 12))
-                                .foregroundColor(.white.opacity(0.5))
-                                .textCase(.uppercase)
+                                    .foregroundColor(.appAccent)
+                                
+                                Text("Analysis Complete")
+                                    .font(.system(size: isCompact ? 12 : 14, weight: .medium))
+                                    .foregroundColor(.appAccent)
+                            }
+                            .padding(.horizontal, isCompact ? 12 : 16)
+                            .padding(.vertical, isCompact ? 6 : 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.appAccent.opacity(0.12))
+                            )
+                            .scaleEffect(checkmarkScale)
                             
-                            Text(quizState.forgetMost.isEmpty ? "Your goals" : quizState.forgetMost)
-                                    .font(.system(size: isCompact ? 13 : 15, weight: .medium))
-                                .foregroundColor(.appAccent)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.8)
+                            Text("Your Focus Profile")
+                                .font(.system(size: isCompact ? 22 : 28, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, isCompact ? 8 : 12)
                         }
+                        .opacity(headerOpacity)
                         
-                        Spacer()
-                        
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("Daily reminders:")
-                                    .font(.system(size: isCompact ? 10 : 12))
-                                .foregroundColor(.white.opacity(0.5))
-                                .textCase(.uppercase)
+                        // MARK: - Personalized Profile Card
+                        VStack(spacing: 0) {
+                            // Profile header
+                            HStack(spacing: isCompact ? 10 : 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.appAccent.opacity(0.15))
+                                        .frame(width: isCompact ? 40 : 48, height: isCompact ? 40 : 48)
+                                    
+                                    Image(systemName: "brain.head.profile")
+                                        .font(.system(size: isCompact ? 18 : 22))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Based on your answers")
+                                        .font(.system(size: isCompact ? 11 : 12))
+                                        .foregroundColor(.white.opacity(0.5))
+                                    
+                                    Text("Here's what we learned")
+                                        .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                                        .foregroundColor(.white)
+                                }
+                                
+                                Spacer()
+                            }
+                            .padding(isCompact ? 14 : 18)
+                            .background(Color.white.opacity(0.03))
                             
-                            Text("\(quizState.personalizedPhoneChecks)+")
-                                    .font(.system(size: isCompact ? 13 : 15, weight: .medium))
-                                .foregroundColor(.appAccent)
+                            // Profile insights
+                            VStack(spacing: isCompact ? 14 : 18) {
+                                // Focus areas
+                                ProfileInsightRow(
+                                    icon: "target",
+                                    label: "YOU WANT TO REMEMBER",
+                                    values: focusAreas,
+                                    isCompact: isCompact
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.08))
+                                
+                                // Distraction
+                                ProfileInsightRow(
+                                    icon: "xmark.circle",
+                                    label: "YOUR BIGGEST CHALLENGE",
+                                    values: [distractionText],
+                                    isCompact: isCompact
+                                )
+                                
+                                Divider()
+                                    .background(Color.white.opacity(0.08))
+                                
+                                // Phone usage
+                                HStack {
+                                    Image(systemName: "iphone")
+                                        .font(.system(size: isCompact ? 14 : 16))
+                                        .foregroundColor(.white.opacity(0.4))
+                                        .frame(width: isCompact ? 20 : 24)
+                                    
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("DAILY PHONE CHECKS")
+                                            .font(.system(size: isCompact ? 9 : 10, weight: .medium))
+                                            .foregroundColor(.white.opacity(0.4))
+                                            .tracking(0.5)
+                                        
+                                        Text("\(phoneCheckCount) times")
+                                            .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    // Visual indicator
+                                    HStack(spacing: 3) {
+                                        ForEach(0..<5, id: \.self) { i in
+                                            RoundedRectangle(cornerRadius: 2)
+                                                .fill(i < intensityLevel ? Color.appAccent : Color.white.opacity(0.15))
+                                                .frame(width: isCompact ? 4 : 5, height: isCompact ? 16 : 20)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(isCompact ? 14 : 18)
                         }
-                    }
-                }
-                    .padding(isCompact ? 16 : 20)
-                .background(
-                        RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
-                        .overlay(
-                                RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                                )
                         )
-                )
-                .opacity(cardOpacity)
-                    .padding(.horizontal, AdaptiveLayout.horizontalPadding)
-                
-                    Spacer(minLength: isCompact ? 20 : 30)
-                }
-                .padding(.bottom, isCompact ? 80 : 100)
-            }
-            
-            // Continue button
-            VStack(spacing: isCompact ? 8 : 12) {
-                Button(action: {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    onContinue()
-                }) {
-                    HStack(spacing: isCompact ? 10 : 12) {
-                        Text("Show Me How It Works")
-                            .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                        .opacity(profileOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
                         
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: isCompact ? 18 : 20, weight: .semibold))
+                        // MARK: - What This Means insight
+                        VStack(alignment: .leading, spacing: isCompact ? 10 : 14) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "lightbulb.fill")
+                                    .font(.system(size: isCompact ? 14 : 16))
+                                    .foregroundColor(.yellow.opacity(0.8))
+                                
+                                Text("What this means")
+                                    .font(.system(size: isCompact ? 13 : 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            Text("You check your phone \(reminderFrequency.lowercased()) on average. That's \(phoneCheckCount) opportunities daily to see what matters most — instead of getting lost in \(distractionText.lowercased()).")
+                                .font(.system(size: isCompact ? 13 : 15))
+                                .foregroundColor(.white.opacity(0.7))
+                                .lineSpacing(4)
+                        }
+                        .padding(isCompact ? 14 : 18)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(
+                            RoundedRectangle(cornerRadius: isCompact ? 12 : 16, style: .continuous)
+                                .fill(Color.yellow.opacity(0.05))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: isCompact ? 12 : 16, style: .continuous)
+                                        .strokeBorder(Color.yellow.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                        .opacity(insightOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        // MARK: - Your Plan preview
+                        VStack(spacing: isCompact ? 12 : 16) {
+                            HStack {
+                                Text("Your personalized plan")
+                                    .font(.system(size: isCompact ? 13 : 15, weight: .semibold))
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Text("3 steps")
+                                    .font(.system(size: isCompact ? 11 : 13))
+                                    .foregroundColor(.appAccent)
+                            }
+                            
+                            // Progress steps preview
+                            HStack(spacing: isCompact ? 8 : 12) {
+                                PlanStepPreview(number: "1", title: "Lock screen setup", isCompleted: false, isCompact: isCompact)
+                                PlanStepPreview(number: "2", title: "First note", isCompleted: false, isCompact: isCompact)
+                                PlanStepPreview(number: "3", title: "Shortcut install", isCompleted: false, isCompact: isCompact)
+                            }
+                        }
+                        .padding(isCompact ? 14 : 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: isCompact ? 12 : 16, style: .continuous)
+                                .fill(Color.white.opacity(0.03))
+                        )
+                        .opacity(planOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        Spacer(minLength: isCompact ? 80 : 100)
                     }
-                    .frame(height: isCompact ? 48 : 56)
-                    .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                
+                // Continue button
+                VStack(spacing: 0) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        onContinue()
+                    }) {
+                        HStack(spacing: isCompact ? 8 : 10) {
+                            Text("Let's Set It Up")
+                                .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                            
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                        }
+                        .frame(height: isCompact ? 50 : 56)
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                .padding(.vertical, isCompact ? 16 : 20)
+                .background(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0), Color.black],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 40)
+                    .offset(y: -40)
+                    , alignment: .top
+                )
+                .opacity(buttonOpacity)
             }
-            .padding(.horizontal, isCompact ? 16 : 24)
-            .padding(.top, isCompact ? 12 : 18)
-            .padding(.bottom, isCompact ? 16 : 22)
-            .background(Color.clear)
-            .opacity(buttonOpacity)
         }
-    }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.2)) {
-                iconScale = 1.0
-                iconOpacity = 1.0
+            // Staggered animations for smooth flow
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
+                checkmarkScale = 1.0
+                headerOpacity = 1.0
             }
+            
+            withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
+                profileOpacity = 1.0
+            }
+            
             withAnimation(.easeOut(duration: 0.5).delay(0.5)) {
-                textOpacity = 1
-            }
-            withAnimation(.easeOut(duration: 0.5).delay(0.8)) {
-                cardOpacity = 1
+                insightOpacity = 1.0
             }
             
-            // Trigger confetti when card appears
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                confettiTrigger += 1
+            withAnimation(.easeOut(duration: 0.5).delay(0.7)) {
+                planOpacity = 1.0
             }
             
-            withAnimation(.easeOut(duration: 0.4).delay(1.1)) {
-                buttonOpacity = 1
+            withAnimation(.easeOut(duration: 0.4).delay(0.9)) {
+                buttonOpacity = 1.0
             }
+            
+            // Success haptic
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
             
             OnboardingAnalytics.trackStepShown("results_preview")
         }
     }
+    
+    // Intensity level based on phone checks
+    private var intensityLevel: Int {
+        switch quizState.phoneChecks {
+        case "50-100": return 2
+        case "100-200": return 4
+        case "200+": return 5
+        default: return 3
+        }
+    }
 }
 
-// MARK: - Social Proof View
+// MARK: - Profile Insight Row
+
+private struct ProfileInsightRow: View {
+    let icon: String
+    let label: String
+    let values: [String]
+    let isCompact: Bool
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .font(.system(size: isCompact ? 14 : 16))
+                .foregroundColor(.white.opacity(0.4))
+                .frame(width: isCompact ? 20 : 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: isCompact ? 9 : 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                    .modifier(LetterSpacingModifier(spacing: 0.5))
+                
+                HStack(spacing: isCompact ? 6 : 8) {
+                    ForEach(values, id: \.self) { value in
+                        Text(value)
+                            .font(.system(size: isCompact ? 12 : 14, weight: .medium))
+                            .foregroundColor(.appAccent)
+                            .padding(.horizontal, isCompact ? 8 : 10)
+                            .padding(.vertical, isCompact ? 4 : 6)
+                            .background(
+                                Capsule()
+                                    .fill(Color.appAccent.opacity(0.12))
+                            )
+                    }
+                }
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Plan Step Preview
+
+private struct PlanStepPreview: View {
+    let number: String
+    let title: String
+    let isCompleted: Bool
+    let isCompact: Bool
+    
+    var body: some View {
+        VStack(spacing: isCompact ? 6 : 8) {
+            ZStack {
+                Circle()
+                    .fill(isCompleted ? Color.appAccent : Color.white.opacity(0.08))
+                    .frame(width: isCompact ? 28 : 34, height: isCompact ? 28 : 34)
+                
+                if isCompleted {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: isCompact ? 12 : 14, weight: .bold))
+                        .foregroundColor(.black)
+                } else {
+                    Text(number)
+                        .font(.system(size: isCompact ? 12 : 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+            }
+            
+            Text(title)
+                .font(.system(size: isCompact ? 10 : 11))
+                .foregroundColor(.white.opacity(0.5))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+// MARK: - Social Proof View (Redesigned)
 
 struct SocialProofView: View {
     let onContinue: () -> Void
     
+    // MARK: - Animation States
+    @State private var headerOpacity: Double = 0
     @State private var statsOpacity: Double = 0
+    @State private var ratingOpacity: Double = 0
     @State private var testimonialOpacity: Double = 0
+    @State private var setupPreviewOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
     @State private var countUp: Int = 0
+    @State private var numberScale: CGFloat = 0.8
+    @State private var pulseScale: CGFloat = 1.0
     
-    let targetCount = 57
+    // MARK: - User Count Service
+    @StateObject private var userCountService = UserCountService.shared
+    
+    // Get target count from service
+    private var targetCount: Int {
+        userCountService.currentCount
+    }
     
     // Adaptive layout
     private var isCompact: Bool { ScreenDimensions.isCompactDevice }
     
     var body: some View {
         ZStack {
-            // Dark gradient background
-            LinearGradient(
-                colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            // Dark gradient background with subtle glow
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                
+                // Subtle accent glow at top
+                RadialGradient(
+                    colors: [Color.appAccent.opacity(0.08), Color.clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 400
+                )
+            }
             .ignoresSafeArea()
             
             VStack(spacing: 0) {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(spacing: 0) {
-                        Spacer(minLength: isCompact ? 30 : 50)
-                
-                // Stats section
-                    VStack(spacing: isCompact ? 16 : 24) {
-                    // User count with animation
-                        VStack(spacing: isCompact ? 8 : 12) {
-                        Text("\(countUp)")
-                                .font(.system(size: isCompact ? 44 : 56, weight: .heavy, design: .rounded))
-                            .foregroundColor(.appAccent)
-                            .monospacedDigit()
+                        Spacer(minLength: isCompact ? 20 : 32)
                         
-                        Text("focused people already use NoteWall")
-                                .font(.system(size: isCompact ? 14 : 16, weight: .medium))
-                            .foregroundColor(.white.opacity(0.7))
-                            .multilineTextAlignment(.center)
-                        
-                        // Authenticity message
-                        Text("We're new & growing — no fake numbers here")
-                                .font(.system(size: isCompact ? 12 : 14, weight: .medium))
-                            .foregroundColor(.white.opacity(0.5))
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 4)
-                    }
-                    
-                    // Rating
-                    HStack(spacing: 4) {
-                        ForEach(0..<5, id: \.self) { _ in
-                            Image(systemName: "star.fill")
-                                    .font(.system(size: isCompact ? 16 : 20))
-                                .foregroundColor(.yellow)
-                        }
-                        
-                        Text("4.8")
-                                .font(.system(size: isCompact ? 15 : 18, weight: .bold))
-                            .foregroundColor(.white)
-                            .padding(.leading, 8)
-                    }
-                }
-                .opacity(statsOpacity)
-                
-                    Spacer(minLength: isCompact ? 28 : 48)
-                
-                // Testimonial
-                    VStack(spacing: isCompact ? 14 : 20) {
-                    Text("\"")
-                            .font(.system(size: isCompact ? 44 : 60, weight: .bold))
-                        .foregroundColor(.appAccent.opacity(0.5))
-                            .frame(height: isCompact ? 30 : 40)
-                    
-                    Group {
-                        if #available(iOS 16, *) {
-                            Text("I think it's cool the way it is right now, it's different. Haven't seen one like this.")
-                                    .font(.system(size: isCompact ? 17 : 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                                .italic()
-                        } else {
-                            Text("I think it's cool the way it is right now, it's different. Haven't seen one like this.")
-                                    .font(.system(size: isCompact ? 17 : 20, weight: .medium))
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
-                        }
-                    }
-                    
-                        HStack(spacing: isCompact ? 10 : 12) {
-                        Circle()
-                            .fill(Color.appAccent.opacity(0.2))
-                                .frame(width: isCompact ? 34 : 40, height: isCompact ? 34 : 40)
-                            .overlay(
-                                Text("D")
-                                        .font(.system(size: isCompact ? 15 : 18, weight: .semibold))
+                        // MARK: - Header Section (Connection from previous step)
+                        VStack(spacing: isCompact ? 6 : 10) {
+                            // Connecting badge
+                            HStack(spacing: 6) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: isCompact ? 12 : 14))
                                     .foregroundColor(.appAccent)
+                                
+                                Text("Welcome to the club")
+                                    .font(.system(size: isCompact ? 12 : 14, weight: .medium))
+                                    .foregroundColor(.appAccent)
+                            }
+                            .padding(.horizontal, isCompact ? 12 : 16)
+                            .padding(.vertical, isCompact ? 6 : 8)
+                            .background(
+                                Capsule()
+                                    .fill(Color.appAccent.opacity(0.12))
                             )
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("damagad")
-                                    .font(.system(size: isCompact ? 12 : 14, weight: .semibold))
-                                .foregroundColor(.white)
                             
-                            Text("Verified User")
-                                    .font(.system(size: isCompact ? 10 : 12))
-                                .foregroundColor(.white.opacity(0.5))
+                            Text("Join the Focused Ones")
+                                .font(.system(size: isCompact ? 22 : 28, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, isCompact ? 8 : 12)
                         }
-                    }
-                }
-                    .padding(isCompact ? 18 : 24)
-                .background(
-                        RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
-                        .overlay(
-                                RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
-                                .strokeBorder(Color.white.opacity(0.1), lineWidth: 1)
+                        .opacity(headerOpacity)
+                        
+                        Spacer(minLength: isCompact ? 20 : 32)
+                        
+                        // MARK: - Stats Section (User Count)
+                        VStack(spacing: isCompact ? 16 : 22) {
+                            // Centered number display with subtle glow
+                            Text("\(countUp)")
+                                .font(.system(size: isCompact ? 56 : 72, weight: .black, design: .rounded))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [.appAccent, .appAccent.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .monospacedDigit()
+                                .scaleEffect(numberScale)
+                                .shadow(color: .appAccent.opacity(0.3), radius: 20, x: 0, y: 10)
+                            
+                            // Horizontal accent line
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.clear, .appAccent.opacity(0.5), .clear],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: isCompact ? 120 : 160, height: 2)
+                            
+                            VStack(spacing: isCompact ? 6 : 8) {
+                                Text("people already using NoteWall")
+                                    .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.8))
+                                    .multilineTextAlignment(.center)
+                                
+                                // Authenticity message with subtle icon
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .font(.system(size: isCompact ? 10 : 12))
+                                        .foregroundColor(.green.opacity(0.7))
+                                    
+                                    Text("We're just new and growing, no fake numbers here")
+                                        .font(.system(size: isCompact ? 11 : 13, weight: .medium))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                            }
+                        }
+                        .opacity(statsOpacity)
+                        
+                        Spacer(minLength: isCompact ? 16 : 24)
+                        
+                        // MARK: - Rating Section
+                        HStack(spacing: isCompact ? 3 : 4) {
+                            ForEach(0..<5, id: \.self) { index in
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: isCompact ? 18 : 22))
+                                    .foregroundColor(.yellow)
+                                    .shadow(color: .yellow.opacity(0.3), radius: 2, x: 0, y: 1)
+                            }
+                            
+                            Text("4.8")
+                                .font(.system(size: isCompact ? 16 : 19, weight: .bold))
+                                .foregroundColor(.white)
+                                .padding(.leading, isCompact ? 8 : 10)
+                        }
+                        .opacity(ratingOpacity)
+                        
+                        Spacer(minLength: isCompact ? 20 : 32)
+                        
+                        // MARK: - Testimonial Card
+                        VStack(spacing: 0) {
+                            // Quote icon
+                            Image(systemName: "quote.opening")
+                                .font(.system(size: isCompact ? 24 : 32, weight: .bold))
+                                .foregroundColor(.appAccent.opacity(0.6))
+                                .padding(.bottom, isCompact ? 10 : 14)
+                            
+                            // Quote text
+                            Group {
+                                if #available(iOS 16, *) {
+                                    Text("I think it's cool the way it is right now, it's different. Haven't seen one like this.")
+                                        .font(.system(size: isCompact ? 16 : 18, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.center)
+                                        .italic()
+                                        .lineSpacing(4)
+                                } else {
+                                    Text("I think it's cool the way it is right now, it's different. Haven't seen one like this.")
+                                        .font(.system(size: isCompact ? 16 : 18, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .multilineTextAlignment(.center)
+                                        .lineSpacing(4)
+                                }
+                            }
+                            .padding(.bottom, isCompact ? 14 : 18)
+                            
+                            // User info with verification badge
+                            HStack(spacing: isCompact ? 10 : 12) {
+                                // Avatar
+                                ZStack {
+                                    Circle()
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.appAccent.opacity(0.3), Color.appAccent.opacity(0.15)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .frame(width: isCompact ? 36 : 42, height: isCompact ? 36 : 42)
+                                    
+                                    Text("D")
+                                        .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                                        .foregroundColor(.appAccent)
+                                }
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Text("damagad")
+                                            .font(.system(size: isCompact ? 13 : 15, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .font(.system(size: isCompact ? 10 : 12))
+                                            .foregroundColor(.blue)
+                                    }
+                                    
+                                    Text("Verified User")
+                                        .font(.system(size: isCompact ? 11 : 12))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                                
+                                Spacer()
+                            }
+                        }
+                        .padding(isCompact ? 18 : 24)
+                        .background(
+                            RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
+                                .fill(Color.white.opacity(0.04))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
+                                        .strokeBorder(
+                                            LinearGradient(
+                                                colors: [Color.white.opacity(0.15), Color.white.opacity(0.05)],
+                                                startPoint: .top,
+                                                endPoint: .bottom
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
                         )
-                )
-                .opacity(testimonialOpacity)
-                    .padding(.horizontal, AdaptiveLayout.horizontalPadding)
-                
-                    Spacer(minLength: isCompact ? 20 : 30)
+                        .opacity(testimonialOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        Spacer(minLength: isCompact ? 16 : 24)
+                        
+                        // MARK: - Setup Preview Card (What's Next)
+                        VStack(spacing: isCompact ? 10 : 14) {
+                            HStack(spacing: isCompact ? 8 : 10) {
+                                Image(systemName: "arrow.right.circle.fill")
+                                    .font(.system(size: isCompact ? 14 : 16))
+                                    .foregroundColor(.appAccent)
+                                
+                                Text("Next: Quick 4-minute setup")
+                                    .font(.system(size: isCompact ? 13 : 15, weight: .semibold))
+                                    .foregroundColor(.white.opacity(0.9))
+                                
+                                Spacer()
+                            }
+                            
+                            // Mini steps preview
+                            HStack(spacing: isCompact ? 6 : 8) {
+                                ForEach(["link", "note.text", "photo"], id: \.self) { icon in
+                                    HStack(spacing: 4) {
+                                        Image(systemName: icon)
+                                            .font(.system(size: isCompact ? 10 : 12))
+                                            .foregroundColor(.appAccent.opacity(0.8))
+                                    }
+                                    .padding(.horizontal, isCompact ? 8 : 10)
+                                    .padding(.vertical, isCompact ? 5 : 6)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.white.opacity(0.05))
+                                    )
+                                }
+                                
+                                Spacer()
+                                
+                                Text("~4 min")
+                                    .font(.system(size: isCompact ? 11 : 12, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.4))
+                            }
+                        }
+                        .padding(isCompact ? 14 : 18)
+                        .background(
+                            RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
+                                .fill(Color.appAccent.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
+                                        .strokeBorder(Color.appAccent.opacity(0.15), lineWidth: 1)
+                                )
+                        )
+                        .opacity(setupPreviewOpacity)
+                        .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                        
+                        Spacer(minLength: isCompact ? 20 : 30)
+                    }
+                    .padding(.bottom, isCompact ? 90 : 110)
                 }
-                .padding(.bottom, isCompact ? 80 : 100)
-            }
-            
-            // Continue button
-            VStack(spacing: isCompact ? 8 : 12) {
-                Button(action: {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
-                    onContinue()
-                }) {
-                    Text("Let's Set It Up")
-                        .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                
+                // MARK: - Continue Button
+                VStack(spacing: isCompact ? 6 : 10) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        onContinue()
+                    }) {
+                        HStack(spacing: isCompact ? 8 : 10) {
+                            Text("Let's Set It Up")
+                                .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                            
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                        }
                         .frame(height: isCompact ? 48 : 56)
                         .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                    
+                    // Reassurance text
+                    Text("Takes about 4 minutes")
+                        .font(.system(size: isCompact ? 11 : 12))
+                        .foregroundColor(.white.opacity(0.4))
                 }
-                .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+                .padding(.horizontal, isCompact ? 16 : 24)
+                .padding(.top, isCompact ? 10 : 14)
+                .padding(.bottom, isCompact ? 16 : 22)
+                .background(
+                    LinearGradient(
+                        colors: [Color.black.opacity(0), Color.black.opacity(0.9)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: isCompact ? 100 : 120)
+                    .offset(y: isCompact ? -30 : -40)
+                    .allowsHitTesting(false)
+                )
+                .opacity(buttonOpacity)
             }
-            .padding(.horizontal, isCompact ? 16 : 24)
-            .padding(.top, isCompact ? 12 : 18)
-            .padding(.bottom, isCompact ? 16 : 22)
-            .background(Color.clear)
-            .opacity(buttonOpacity)
         }
-    }
         .onAppear {
-            // Animate count up
-            withAnimation(.easeOut(duration: 0.5).delay(0.2)) {
+            // Fetch latest user count
+            Task {
+                let _ = await userCountService.fetchUserCount()
+            }
+            
+            // MARK: - Animation Sequence
+            
+            // 1. Header appears first (connection from previous step)
+            withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
+                headerOpacity = 1
+            }
+            
+            // 2. Stats section with count animation
+            withAnimation(.easeOut(duration: 0.5).delay(0.3)) {
                 statsOpacity = 1
             }
             
-            // Count animation
-            let duration: Double = 1.5
-            let steps = 30
+            // Number scale animation
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.4)) {
+                numberScale = 1.0
+            }
+            
+            // Count-up animation
+            let duration: Double = 1.2
+            let steps = 25
             let stepDuration = duration / Double(steps)
             
             for i in 0...steps {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3 + stepDuration * Double(i)) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + stepDuration * Double(i)) {
                     let progress = Double(i) / Double(steps)
+                    // Ease-out cubic for smooth deceleration
                     let easeOut = 1 - pow(1 - progress, 3)
                     countUp = Int(Double(targetCount) * easeOut)
                 }
             }
             
-            withAnimation(.easeOut(duration: 0.5).delay(1.0)) {
+            // Continuous subtle pulse animation for the ring
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true).delay(0.5)) {
+                pulseScale = 1.08
+            }
+            
+            // 3. Rating appears
+            withAnimation(.easeOut(duration: 0.4).delay(0.9)) {
+                ratingOpacity = 1
+            }
+            
+            // 4. Testimonial slides in
+            withAnimation(.easeOut(duration: 0.5).delay(1.2)) {
                 testimonialOpacity = 1
             }
-            withAnimation(.easeOut(duration: 0.4).delay(1.5)) {
+            
+            // 5. Setup preview appears
+            withAnimation(.easeOut(duration: 0.4).delay(1.6)) {
+                setupPreviewOpacity = 1
+            }
+            
+            // 6. Button appears last
+            withAnimation(.easeOut(duration: 0.4).delay(1.9)) {
                 buttonOpacity = 1
             }
             
@@ -1385,7 +2404,6 @@ struct SetupCompleteView: View {
     @State private var textOpacity: Double = 0
     @State private var statsOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
-    @State private var confettiTrigger: Int = 0
     
     var body: some View {
         ZStack {
@@ -1400,9 +2418,6 @@ struct SetupCompleteView: View {
             )
             .ignoresSafeArea()
             
-            // Confetti
-            ConfettiView(trigger: $confettiTrigger)
-            
             VStack(spacing: 0) {
                 Spacer()
                 
@@ -1412,11 +2427,7 @@ struct SetupCompleteView: View {
                     ForEach(0..<4, id: \.self) { i in
                         Circle()
                             .stroke(
-                                LinearGradient(
-                                    colors: [Color.appAccent.opacity(0.3 - Double(i) * 0.07), Color.green.opacity(0.2 - Double(i) * 0.05)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
+                                Color.appAccent.opacity(0.3 - Double(i) * 0.07),
                                 lineWidth: 2
                             )
                             .frame(width: 140 + CGFloat(i) * 40, height: 140 + CGFloat(i) * 40)
@@ -1425,7 +2436,7 @@ struct SetupCompleteView: View {
                     Circle()
                         .fill(
                             LinearGradient(
-                                colors: [Color.appAccent, Color.green.opacity(0.8)],
+                                colors: [Color.appAccent, Color.appAccent.opacity(0.8)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
@@ -1557,11 +2568,6 @@ struct SetupCompleteView: View {
             // Haptic
             let generator = UINotificationFeedbackGenerator()
             generator.notificationOccurred(.success)
-            
-            // Confetti
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                confettiTrigger += 1
-            }
             
             withAnimation(.easeOut(duration: 0.5).delay(0.5)) {
                 textOpacity = 1
@@ -1725,7 +2731,6 @@ struct QuizData {
 struct ConfettiView: View {
     @Binding var trigger: Int
     @State private var particles: [Particle] = []
-    @State private var timer: Timer?
     
     struct Particle: Identifiable {
         let id = UUID()
@@ -1743,7 +2748,7 @@ struct ConfettiView: View {
     
     var body: some View {
         GeometryReader { geometry in
-            TimelineView(.animation) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0/60.0)) { timeline in
                 Canvas { context, size in
                     for particle in particles {
                         let rect = CGRect(x: particle.x, y: particle.y, width: 10 * particle.scale, height: 10 * particle.scale)
@@ -1772,46 +2777,76 @@ struct ConfettiView: View {
     }
     
     private func emitConfetti() {
-        let colors: [Color] = [.red, .blue, .green, .yellow, .pink, .purple, .orange, .cyan]
+        // Clear any existing particles first to prevent accumulation
+        particles.removeAll()
+        
+        let colors: [Color] = [.red, .blue, .yellow, .pink, .purple, .orange]
         let screenWidth = UIScreen.main.bounds.width
         let screenHeight = UIScreen.main.bounds.height
         
-        for _ in 0..<200 {
+        // Reduced from 200 to 100 particles for better performance
+        for _ in 0..<100 {
             let angle = Double.random(in: 0...2 * .pi)
-            let speed = Double.random(in: 15...40) // Even stronger explosion
+            let speed = Double.random(in: 18...35)
             
             let particle = Particle(
                 x: screenWidth / 2,
                 y: screenHeight / 2,
                 angle: Double.random(in: 0...360),
                 spin: Double.random(in: 0...360),
-                scale: Double.random(in: 0.6...1.4),
+                scale: Double.random(in: 0.7...1.2),
                 color: colors.randomElement() ?? .blue,
                 speedX: cos(angle) * speed,
                 speedY: sin(angle) * speed,
-                spinSpeed: Double.random(in: -15...15)
+                spinSpeed: Double.random(in: -12...12)
             )
             particles.append(particle)
         }
     }
     
     private func updateParticles(in size: CGSize) {
+        var indicesToRemove: [Int] = []
+        
         for i in particles.indices {
             particles[i].x += particles[i].speedX
             particles[i].y += particles[i].speedY
             particles[i].spin += particles[i].spinSpeed
             
             // Physics: Gravity and Air Resistance
-            particles[i].speedX *= 0.95 // Less air resistance (travel further)
-            particles[i].speedY *= 0.95 // Less air resistance
-            particles[i].speedY += 0.4  // Lower gravity (float more)
+            particles[i].speedX *= 0.96
+            particles[i].speedY *= 0.96
+            particles[i].speedY += 0.5
             
             // Fade out smoothly
-            particles[i].opacity -= Double.random(in: 0.005...0.01)
+            particles[i].opacity -= 0.008
+            
+            // Mark for removal if off-screen or invisible
+            if particles[i].opacity <= 0 || 
+               particles[i].y > size.height + 50 ||
+               particles[i].x < -50 || 
+               particles[i].x > size.width + 50 {
+                indicesToRemove.append(i)
+            }
         }
         
-        particles.removeAll { $0.opacity <= 0 }
+        // Remove in reverse order to maintain indices
+        for index in indicesToRemove.reversed() {
+            particles.remove(at: index)
+        }
     }
 }
 
+// MARK: - Letter Spacing Modifier (iOS 15+ Compatible)
+
+struct LetterSpacingModifier: ViewModifier {
+    let spacing: CGFloat
+    
+    func body(content: Content) -> some View {
+        if #available(iOS 16.0, *) {
+            content.kerning(spacing)
+        } else {
+            content
+        }
+    }
+}
 
