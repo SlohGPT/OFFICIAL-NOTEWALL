@@ -19,6 +19,13 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
     
     /// Requests notification permissions
     func requestPermission(completion: @escaping (Bool) -> Void) {
+        // Track permission prompt shown
+        AnalyticsService.shared.trackPermissionPrompt(
+            permissionType: PermissionType.notifications.rawValue,
+            action: .shown,
+            stepId: "notification_permission"
+        )
+        
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             DispatchQueue.main.async {
                 #if DEBUG
@@ -27,6 +34,14 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 }
                 print("🔔 Notification permission granted: \(granted)")
                 #endif
+                
+                // Track permission result
+                AnalyticsService.shared.trackPermissionPrompt(
+                    permissionType: PermissionType.notifications.rawValue,
+                    action: granted ? .accepted : .denied,
+                    stepId: "notification_permission"
+                )
+                
                 completion(granted)
             }
         }

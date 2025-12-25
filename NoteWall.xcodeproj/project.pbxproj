@@ -19,6 +19,10 @@
 		4283B2372ED25B5E00093E2D /* ShortcutVerificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4283B2342ED25B5E00093E2D /* ShortcutVerificationService.swift */; };
 		4283B2382ED25B5E00093E2D /* PIPVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4283B2312ED25B5E00093E2D /* PIPVideoPlayer.swift */; };
 		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
+		42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E415502EFC46BD002F695D /* WhatsNewView.swift */; };
+		42E415532EFC7E7A002F695D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 42E415522EFC7E7A002F695D /* GoogleService-Info.plist */; };
+		42E415552EFC93F5002F695D /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 42E415542EFC93F5002F695D /* FirebaseAnalytics */; };
+		42E415572EFC93F5002F695D /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 42E415562EFC93F5002F695D /* FirebaseCore */; };
 		486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 		777777777777777777777777 /* PromoSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888888888888888888888888 /* PromoSecurityManager.swift */; };
@@ -50,6 +54,12 @@
 		E00000000000000000000005 /* SuperwallKit in Frameworks */ = {isa = PBXBuildFile; productRef = E00000000000000000000004 /* SuperwallKit */; };
 		E1000001000000000000002 /* pip-guide-new.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = E2000001000000000000002 /* pip-guide-new.mp4 */; };
 		F1000001000000000000001 /* notifications-of-permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = F2000001000000000000001 /* notifications-of-permissions.mp4 */; };
+		FA100000000000000000001 /* FirebaseSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000001 /* FirebaseSetup.swift */; };
+		FA100000000000000000002 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000002 /* AnalyticsService.swift */; };
+		FA100000000000000000003 /* AnalyticsEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000003 /* AnalyticsEvent.swift */; };
+		FA100000000000000000004 /* AnalyticsProperty.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000004 /* AnalyticsProperty.swift */; };
+		FA100000000000000000005 /* AnalyticsViewModifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000005 /* AnalyticsViewModifiers.swift */; };
+		FA100000000000000000006 /* OnboardingView+Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000006 /* OnboardingView+Analytics.swift */; };
 		G1000001000000000000001 /* welcome-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = G2000001000000000000001 /* welcome-video.mp4 */; };
 		H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = H2000001000000000000001 /* how-to-fix-guide.mp4 */; };
 		I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I2000001000000000000001 /* AppIconAnimationView.swift */; };
@@ -68,6 +78,8 @@
 		4283B2332ED25B5E00093E2D /* ShortcutSetupViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutSetupViewModel.swift; sourceTree = "<group>"; };
 		4283B2342ED25B5E00093E2D /* ShortcutVerificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutVerificationService.swift; sourceTree = "<group>"; };
 		42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NoteWall.storekit; sourceTree = "<group>"; };
+		42E415502EFC46BD002F695D /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
+		42E415522EFC7E7A002F695D /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoFixWorkflowView.swift; sourceTree = "<group>"; };
 		444444444444444444444444 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitFeedbackView.swift; sourceTree = "<group>"; };
@@ -100,6 +112,12 @@
 		E00000000000000000000002 /* SuperwallUserAttributesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperwallUserAttributesManager.swift; sourceTree = "<group>"; };
 		E2000001000000000000002 /* pip-guide-new.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "pip-guide-new.mp4"; sourceTree = "<group>"; };
 		F2000001000000000000001 /* notifications-of-permissions.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "notifications-of-permissions.mp4"; sourceTree = "<group>"; };
+		FA200000000000000000001 /* FirebaseSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirebaseSetup.swift; sourceTree = "<group>"; };
+		FA200000000000000000002 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		FA200000000000000000003 /* AnalyticsEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsEvent.swift; sourceTree = "<group>"; };
+		FA200000000000000000004 /* AnalyticsProperty.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsProperty.swift; sourceTree = "<group>"; };
+		FA200000000000000000005 /* AnalyticsViewModifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsViewModifiers.swift; sourceTree = "<group>"; };
+		FA200000000000000000006 /* OnboardingView+Analytics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+Analytics.swift"; sourceTree = "<group>"; };
 		G2000001000000000000001 /* welcome-video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "welcome-video.mp4"; sourceTree = "<group>"; };
 		H2000001000000000000001 /* how-to-fix-guide.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "how-to-fix-guide.mp4"; sourceTree = "<group>"; };
 		I2000001000000000000001 /* AppIconAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconAnimationView.swift; sourceTree = "<group>"; };
@@ -116,6 +134,8 @@
 				425035A42ED5ADB20064014E /* RevenueCat in Frameworks */,
 				420E5C412EF55E43003293FD /* TelemetryClient in Frameworks */,
 				420E5C432EF55E43003293FD /* TelemetryDeck in Frameworks */,
+				42E415552EFC93F5002F695D /* FirebaseAnalytics in Frameworks */,
+				42E415572EFC93F5002F695D /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -146,6 +166,8 @@
 		A5000002000000000000001 /* NoteWall */ = {
 			isa = PBXGroup;
 			children = (
+				42E415522EFC7E7A002F695D /* GoogleService-Info.plist */,
+				42E415502EFC46BD002F695D /* WhatsNewView.swift */,
 				D00000000000000000000002 /* DeviceAdaptive.swift */,
 				D10000000000000000000002 /* OnboardingEnhanced.swift */,
 				D20000000000000000000002 /* SuperwallPaywallView.swift */,
@@ -187,6 +209,7 @@
 				101010101010101010101010 /* PromoCodePersistenceManager.swift */,
 				I2000001000000000000001 /* AppIconAnimationView.swift */,
 				UC200000000000000000001 /* UserCountService.swift */,
+				FA300000000000000000001 /* Analytics */,
 			);
 			path = NoteWall;
 			sourceTree = "<group>";
@@ -197,6 +220,19 @@
 				A3000001000000000000001 /* NoteWall.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		FA300000000000000000001 /* Analytics */ = {
+			isa = PBXGroup;
+			children = (
+				FA200000000000000000001 /* FirebaseSetup.swift */,
+				FA200000000000000000002 /* AnalyticsService.swift */,
+				FA200000000000000000003 /* AnalyticsEvent.swift */,
+				FA200000000000000000004 /* AnalyticsProperty.swift */,
+				FA200000000000000000005 /* AnalyticsViewModifiers.swift */,
+				FA200000000000000000006 /* OnboardingView+Analytics.swift */,
+			);
+			path = Analytics;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -220,6 +256,8 @@
 				425035A32ED5ADB20064014E /* RevenueCat */,
 				420E5C402EF55E43003293FD /* TelemetryClient */,
 				420E5C422EF55E43003293FD /* TelemetryDeck */,
+				42E415542EFC93F5002F695D /* FirebaseAnalytics */,
+				42E415562EFC93F5002F695D /* FirebaseCore */,
 			);
 			productName = NoteWall;
 			productReference = A3000001000000000000001 /* NoteWall.app */;
@@ -253,6 +291,7 @@
 				E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
 				425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				420E5C3F2EF55E43003293FD /* XCRemoteSwiftPackageReference "SwiftSDK" */,
+				42E415542EFC93E6002F695D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = A5000003000000000000001 /* Products */;
 			projectDirPath = "";
@@ -269,6 +308,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */,
+				42E415532EFC7E7A002F695D /* GoogleService-Info.plist in Resources */,
 				A1000009000000000000001 /* Assets.xcassets in Resources */,
 				E1000001000000000000002 /* pip-guide-new.mp4 in Resources */,
 				F1000001000000000000001 /* notifications-of-permissions.mp4 in Resources */,
@@ -318,10 +358,17 @@
 				111111111111111111111111 /* DeleteNotesLoadingView.swift in Sources */,
 				333333333333333333333333 /* Config.swift in Sources */,
 				777777777777777777777777 /* PromoSecurityManager.swift in Sources */,
+				42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */,
 				E00000000000000000000001 /* SuperwallUserAttributesManager.swift in Sources */,
 				999999999999999999999999 /* PromoCodePersistenceManager.swift in Sources */,
 				I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */,
 				UC100000000000000000001 /* UserCountService.swift in Sources */,
+				FA100000000000000000001 /* FirebaseSetup.swift in Sources */,
+				FA100000000000000000002 /* AnalyticsService.swift in Sources */,
+				FA100000000000000000003 /* AnalyticsEvent.swift in Sources */,
+				FA100000000000000000004 /* AnalyticsProperty.swift in Sources */,
+				FA100000000000000000005 /* AnalyticsViewModifiers.swift in Sources */,
+				FA100000000000000000006 /* OnboardingView+Analytics.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -557,6 +604,14 @@
 				minimumVersion = 5.49.0;
 			};
 		};
+		42E415542EFC93E6002F695D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.7.0;
+			};
+		};
 		E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/superwall/Superwall-iOS";
@@ -582,6 +637,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
 			productName = RevenueCat;
+		};
+		42E415542EFC93F5002F695D /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 42E415542EFC93E6002F695D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		42E415562EFC93F5002F695D /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 42E415542EFC93E6002F695D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
 		};
 		E00000000000000000000004 /* SuperwallKit */ = {
 			isa = XCSwiftPackageProductDependency;

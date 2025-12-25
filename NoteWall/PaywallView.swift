@@ -269,6 +269,14 @@ struct PaywallView: View {
         .onAppear {
             paywallManager.trackPaywallView()
             
+            // Track paywall impression with Firebase Analytics
+            let paywallId: PaywallId = applyExitInterceptDiscount ? .exitIntercept : triggerReasonToPaywallId(triggerReason)
+            AnalyticsService.shared.trackPaywallImpression(
+                paywallId: paywallId.rawValue,
+                trigger: triggerReason.rawValue,
+                placement: applyExitInterceptDiscount ? "exit_intercept" : nil
+            )
+            
             // Track exit-intercept discount view
             if applyExitInterceptDiscount {
                 CrashReporter.logMessage("Paywall: Exit-intercept 30% discount shown", level: .info)
@@ -298,6 +306,12 @@ struct PaywallView: View {
                 selectedProductIndex = max(0, packages.count - 1)
             }
             initializePlanSelection()
+        }
+        .onChange(of: paywallManager.isPremium) { isPremium in
+            // Auto-dismiss paywall when user becomes premium (e.g., after restore or purchase)
+            if isPremium {
+                dismiss()
+            }
         }
         .modifier(OfferCodeRedemptionModifier(
             isPresented: $showOfferCodeRedemption,
@@ -462,20 +476,34 @@ struct PaywallView: View {
     private var step1PlanSelection: some View {
         paywallScrollView {
         VStack(spacing: 20) {
-                // Close button at top
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        paywallManager.trackPaywallDismiss()
-                        dismiss()
-                    }) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
-                            .foregroundColor(.secondary)
+                // Close button at top - only show if dismissible
+                if allowDismiss {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            paywallManager.trackPaywallDismiss()
+                            
+                            // Track paywall close without conversion
+                            let paywallId = applyExitInterceptDiscount ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
+                            AnalyticsService.shared.trackPaywallClose(
+                                paywallId: paywallId.rawValue,
+                                converted: false
+                            )
+                            
+                            dismiss()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(.secondary)
+                        }
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                } else {
+                    // Add top padding when close button is hidden (hard paywall)
+                    Spacer()
+                        .frame(height: 40)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 20)
                 
                 logoHeader
                     .opacity(animateIn ? 1 : 0)
@@ -571,8 +599,20 @@ struct PaywallView: View {
                     .frame(minWidth: 44, minHeight: 44)
                     
                     Button("Restore Purchases") {
+                        // Track restore tap
+                        AnalyticsService.shared.trackRestoreTap()
+                        
                         Task {
                             await paywallManager.restoreRevenueCatPurchases()
+                            
+                            // Track restore result
+                            await MainActor.run {
+                                if paywallManager.isPremium {
+                                    AnalyticsService.shared.trackRestoreSuccess()
+                                } else {
+                                    AnalyticsService.shared.trackRestoreFail(errorCode: "no_purchases_found")
+                                }
+                            }
                         }
                     }
                     .font(.system(size: 14))
@@ -603,6 +643,14 @@ struct PaywallView: View {
                     Spacer()
                     Button(action: {
                         paywallManager.trackPaywallDismiss()
+                        
+                        // Track paywall close without conversion
+                        let paywallId = applyExitInterceptDiscount ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
+                        AnalyticsService.shared.trackPaywallClose(
+                            paywallId: paywallId.rawValue,
+                            converted: false
+                        )
+                        
                         dismiss()
                     }) {
                         Image(systemName: "xmark.circle.fill")
@@ -1337,6 +1385,11 @@ struct PaywallView: View {
             transaction.disablesAnimations = false
             withTransaction(transaction) {
                 selectedProductIndex = index
+                
+                // Track plan selection
+                if index < availablePackages.count {
+                    trackPlanSelection(availablePackages[index])
+                }
             }
         }) {
             HStack(alignment: .center, spacing: 14) {
@@ -1652,12 +1705,28 @@ struct PaywallView: View {
     }
     
     private func purchase(_ package: Package) {
+        let productId = package.storeProduct.productIdentifier
+        
+        // Track purchase start
+        AnalyticsService.shared.trackPurchaseStart(productId: productId)
+        
         Task {
             isPurchasing = true
             do {
                 try await paywallManager.purchase(package: package)
                 await MainActor.run {
                     isPurchasing = false
+                    
+                    // Track purchase success
+                    let price = package.storeProduct.price as? Double
+                    let currency = package.storeProduct.currencyCode
+                    AnalyticsService.shared.trackPurchaseSuccess(
+                        productId: productId,
+                        transactionId: nil, // RevenueCat handles this
+                        revenue: price,
+                        currency: currency
+                    )
+                    
                     let generator = UINotificationFeedbackGenerator()
                     generator.notificationOccurred(.success)
                     // Only dismiss on successful purchase
@@ -1670,10 +1739,18 @@ struct PaywallView: View {
                     // Check if this is a cancellation - don't show error or dismiss
                     if let purchasesError = error as? ErrorCode,
                        purchasesError == .purchaseCancelledError {
+                        // Track cancellation
+                        AnalyticsService.shared.trackPurchaseCancel(productId: productId)
                         // User cancelled - silently handle, keep paywall open
                         // No error message, no dismiss, just reset purchasing state
                         return
                     }
+                    
+                    // Track purchase failure
+                    AnalyticsService.shared.trackPurchaseFail(
+                        productId: productId,
+                        errorCode: error.localizedDescription
+                    )
                     
                     // For other errors, show error message but DON'T dismiss paywall
                     errorMessage = paywallManager.lastErrorMessage ?? error.localizedDescription
@@ -3393,3 +3470,51 @@ struct OfferCodeRedemptionModifier: ViewModifier {
     }
 }
 
+// MARK: - Analytics Helpers
+
+extension PaywallView {
+    /// Convert trigger reason to PaywallId for analytics
+    func triggerReasonToPaywallId(_ reason: PaywallTriggerReason) -> PaywallId {
+        switch reason {
+        case .firstWallpaperCreated:
+            return .postOnboarding
+        case .limitReached:
+            return .limitReached
+        case .settings:
+            return .settings
+        case .manual:
+            return .manual
+        case .exitIntercept:
+            return .exitIntercept
+        }
+    }
+    
+    /// Track plan selection change
+    func trackPlanSelection(_ package: Package?) {
+        guard let package = package else { return }
+        
+        let productId = package.storeProduct.productIdentifier
+        let price = (package.storeProduct.price as NSDecimalNumber).doubleValue
+        let currency = package.storeProduct.currencyCode
+        
+        // Determine period
+        let period: String?
+        switch package.packageType {
+        case .monthly:
+            period = "monthly"
+        case .annual:
+            period = "yearly"
+        case .lifetime:
+            period = "lifetime"
+        default:
+            period = nil
+        }
+        
+        AnalyticsService.shared.trackPlanSelected(
+            productId: productId,
+            price: price,
+            period: period,
+            currency: currency
+        )
+    }
+}

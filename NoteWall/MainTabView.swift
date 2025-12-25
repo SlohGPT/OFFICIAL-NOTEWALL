@@ -12,6 +12,9 @@ struct MainTabView: View {
     @State private var showExitFeedback = false
     @State private var showDiscountedPaywall = false
     @State private var shouldRestartOnboarding = false
+    
+    // What's New popup state
+    @State private var showWhatsNew = false
 
     var body: some View {
         ZStack {
@@ -89,6 +92,11 @@ struct MainTabView: View {
                 SuperwallPaywallView(placement: paywallManager.superwallPlacement)
             }
         }
+        // What's New popup for app updates
+        .sheet(isPresented: $showWhatsNew) {
+            WhatsNewView(isPresented: $showWhatsNew)
+                .interactiveDismissDisabled(true)
+        }
         // Quick Action handler
         .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
             #if DEBUG
@@ -97,6 +105,9 @@ struct MainTabView: View {
             handleQuickAction(notification)
         }
         .onAppear {
+            // Check if What's New popup should be shown (for app updates)
+            checkAndShowWhatsNew()
+            
             // Check if there's a pending Quick Action on app appear
             if let triggeredAction = QuickActionsManager.shared.triggeredAction {
                 #if DEBUG
@@ -141,6 +152,20 @@ struct MainTabView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     self.handleQuickAction(Notification(name: .quickActionTriggered, object: triggeredAction))
                 }
+            }
+        }
+    }
+    
+    // MARK: - What's New Popup
+    
+    private func checkAndShowWhatsNew() {
+        // Delay slightly to let the view fully appear
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if WhatsNewManager.shared.checkShouldShow() {
+                #if DEBUG
+                print("🎉 MainTabView: Showing What's New popup")
+                #endif
+                self.showWhatsNew = true
             }
         }
     }

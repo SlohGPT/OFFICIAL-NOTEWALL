@@ -72,39 +72,55 @@ class OnboardingQuizState: ObservableObject {
 struct OnboardingAnalytics {
     static func trackStepShown(_ step: String) {
         #if DEBUG
-        print("📊 Analytics: Step shown - \(step)")
+        print("📊 Legacy Analytics: Step shown - \(step)")
         #endif
-        // TODO: Integrate with your analytics service (Mixpanel, Amplitude, etc.)
+        // Using Firebase Analytics via AnalyticsService
+        AnalyticsService.shared.trackScreenView(screenName: "onboarding_\(step)")
     }
     
     static func trackStepCompleted(_ step: String, timeSpent: TimeInterval) {
         #if DEBUG
-        print("📊 Analytics: Step completed - \(step) (took \(String(format: "%.1f", timeSpent))s)")
+        print("📊 Legacy Analytics: Step completed - \(step) (took \(String(format: "%.1f", timeSpent))s)")
         #endif
+        // Duration is tracked automatically by AnalyticsService
     }
     
     static func trackQuizAnswer(question: String, answer: String) {
         #if DEBUG
-        print("📊 Analytics: Quiz answer - \(question): \(answer)")
+        print("📊 Legacy Analytics: Quiz answer - \(question): \(answer)")
         #endif
+        // Forward to Firebase Analytics
+        AnalyticsService.shared.trackQuizAnswer(
+            question: question,
+            answer: answer,
+            stepId: "quiz",
+            stepIndex: 0
+        )
     }
     
     static func trackPaywallShown(totalSetupTime: TimeInterval) {
         #if DEBUG
-        print("📊 Analytics: Paywall shown after \(String(format: "%.1f", totalSetupTime))s setup")
+        print("📊 Legacy Analytics: Paywall shown after \(String(format: "%.1f", totalSetupTime))s setup")
         #endif
+        AnalyticsService.shared.trackPaywallImpression(
+            paywallId: PaywallId.postOnboarding.rawValue,
+            trigger: "onboarding_complete",
+            placement: "post_onboarding"
+        )
     }
     
     static func trackPaywallConversion(success: Bool, product: String?) {
         #if DEBUG
-        print("📊 Analytics: Paywall conversion - \(success ? "SUCCESS" : "DECLINED") - \(product ?? "none")")
+        print("📊 Legacy Analytics: Paywall conversion - \(success ? "SUCCESS" : "DECLINED") - \(product ?? "none")")
         #endif
+        // Purchase tracking is handled in PaywallManager
     }
     
     static func trackDropOff(step: String, reason: String?) {
         #if DEBUG
-        print("📊 Analytics: Drop-off at \(step) - \(reason ?? "unknown")")
+        print("📊 Legacy Analytics: Drop-off at \(step) - \(reason ?? "unknown")")
         #endif
+        // Abandonment is tracked automatically by OnboardingAnalyticsTracker
     }
 }
 

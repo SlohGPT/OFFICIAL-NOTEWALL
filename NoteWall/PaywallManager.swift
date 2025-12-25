@@ -30,7 +30,8 @@ final class PaywallManager: NSObject, ObservableObject {
     @Published var lastErrorMessage: String?
     
     // MARK: - Constants
-    private let freeExportLimit = 3
+    // Hard paywall: No free exports allowed - users must subscribe after onboarding
+    private let freeExportLimit = 0
     private let entitlementID = "Notewall+"
     private let lifetimeProductID = "lifetime"
     private var paywallDelayWorkItem: DispatchWorkItem?
@@ -257,6 +258,16 @@ final class PaywallManager: NSObject, ObservableObject {
         
         wallpaperExportCount += 1
         
+        // Track wallpaper export for conversion analytics
+        AnalyticsService.shared.logEvent(
+            .wallpaperExport(count: wallpaperExportCount, isPremium: isPremium),
+            additionalParams: [
+                "free_limit": freeExportLimit,
+                "remaining": max(0, freeExportLimit - wallpaperExportCount),
+                "reached_limit": hasReachedFreeLimit
+            ]
+        )
+        
         // Update Superwall attributes when usage changes
         SuperwallUserAttributesManager.shared.updateUsageAttributes()
         
@@ -285,7 +296,8 @@ final class PaywallManager: NSObject, ObservableObject {
     }
     
     func canExportWallpaper() -> Bool {
-        isPremium || !hasReachedFreeLimit
+        // Hard paywall: Only premium users can export wallpapers
+        isPremium
     }
     
     func showPaywall(reason: PaywallTriggerReason = .manual) {

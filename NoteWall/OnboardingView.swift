@@ -169,7 +169,7 @@ struct CroppedVideoPlayerView: UIViewControllerRepresentable {
     }
 }
 
-private enum OnboardingPage: Int, CaseIterable, Hashable {
+enum OnboardingPage: Int, CaseIterable, Hashable {
     // Phase 1: Emotional Hook
     case preOnboardingHook
     case painPoint
@@ -363,6 +363,13 @@ struct OnboardingView: View {
             shortcutLaunchFallback = nil
             wallpaperVerificationTask?.cancel()
             wallpaperVerificationTask = nil
+            
+            // Track onboarding start (fires only once per session)
+            OnboardingAnalyticsTracker.shared.onboardingDidAppear()
+        }
+        .onChange(of: currentPage) { newPage in
+            // Track step view whenever page changes
+            OnboardingAnalyticsTracker.shared.trackStepView(newPage)
         }
         .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
             completeShortcutLaunch()
@@ -603,11 +610,15 @@ struct OnboardingView: View {
             troubleshootingModalView
         }
         .sheet(isPresented: $showPostOnboardingPaywall) {
-            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: true)
+            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: false)
+                .interactiveDismissDisabled() // Hard paywall - must subscribe
                 .onDisappear {
                     // Mark onboarding as complete when paywall is dismissed
                     hasCompletedSetup = true
                     completedOnboardingVersion = onboardingVersion
+                    
+                    // Mark current version as seen for What's New (so new users don't see it)
+                    WhatsNewManager.shared.markAsShown()
 
                     // Track analytics
                     OnboardingQuizState.shared.paywallShown = true
@@ -5011,6 +5022,9 @@ struct OnboardingView: View {
     private func handlePrimaryButton() {
         debugLog("🎯 Onboarding: Primary button tapped on page: \(currentPage.progressTitle)")
         
+        // Track button tap action
+        OnboardingAnalyticsTracker.shared.trackAction(.next, on: currentPage)
+        
         // Light impact haptic for primary button tap
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
@@ -5080,6 +5094,9 @@ struct OnboardingView: View {
     private func goBackStep() {
         guard currentPage.rawValue > 0 else { return }
         guard let previous = OnboardingPage(rawValue: currentPage.rawValue - 1) else { return }
+        
+        // Track back action
+        OnboardingAnalyticsTracker.shared.trackAction(.back, on: currentPage)
         
         // Light impact haptic for going back
         let generator = UIImpactFeedbackGenerator(style: .light)
@@ -5158,6 +5175,9 @@ struct OnboardingView: View {
 
     private func installShortcut() {
         guard let url = URL(string: shortcutURL) else { return }
+        
+        // Track shortcut install action
+        OnboardingAnalyticsTracker.shared.trackAction(.installShortcut, on: currentPage)
         
         // If user is on "Ready to Try Again" page (userWentToSettings == true),
         // we need to reload the video with the fix guide version
@@ -5353,6 +5373,9 @@ struct OnboardingView: View {
     private func completeOnboarding() {
         // Save notes to AppStorage before completing
         saveOnboardingNotes()
+        
+        // Track onboarding completion
+        OnboardingAnalyticsTracker.shared.trackOnboardingComplete()
         
         // Success notification haptic for completing onboarding
         let generator = UINotificationFeedbackGenerator()

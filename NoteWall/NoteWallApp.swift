@@ -2,6 +2,7 @@ import SwiftUI
 import RevenueCat
 import TelemetryDeck
 import SuperwallKit
+import FirebaseCore
 
 @main
 struct NoteWallApp: App {
@@ -17,6 +18,10 @@ struct NoteWallApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
+        // IMPORTANT: Configure Firebase FIRST before any other Firebase services
+        // This must be called before RevenueCat, Superwall, etc.
+        FirebaseSetup.shared.configure()
+        
         // Initialize crash reporting
         setupCrashReporting()
         HomeScreenImageManager.prepareStorageStructure()
