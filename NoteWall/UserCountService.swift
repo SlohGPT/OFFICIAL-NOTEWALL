@@ -10,135 +10,73 @@ final class UserCountService: ObservableObject {
     static let shared = UserCountService()
     
     // MARK: - Published Properties
-    @Published private(set) var currentCount: Int = 57 // Default fallback
+    @Published private(set) var currentCount: Int = 300 // Synced count
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var lastUpdateTime: Date?
     @Published private(set) var fetchError: String?
     
-    // MARK: - AppStorage for persistence
-    @AppStorage("cachedUserCount") private var cachedUserCount: Int = 57
-    @AppStorage("userCountLastFetch") private var lastFetchTimestamp: Double = 0
-    @AppStorage("userCountBaseValue") private var baseValue: Int = 80 // Your real download count
-    
     // MARK: - Configuration
-    private let cacheValidityDuration: TimeInterval = 3600 // 1 hour cache
-    private let minimumDisplayCount: Int = 50 // Never show less than this
+    // Start date: December 31, 2024 (today)
+    // Start count: 300
+    // Daily increase: 7 per day
+    private let startDate: Date = {
+        var components = DateComponents()
+        components.year = 2024
+        components.month = 12
+        components.day = 31
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }()
+    private let startCount: Int = 300
+    private let dailyIncrease: Int = 7
     
     // MARK: - Computed Properties
     
-    /// Estimated count based on base value with slight variation
-    /// This provides a realistic number even when API is unavailable
-    var estimatedCount: Int {
-        // Apply a slight reduction (70-85% of total downloads)
-        // to represent "active focused users" rather than total downloads
-        let activeUserRatio = Double.random(in: 0.70...0.85)
-        let estimated = Int(Double(baseValue) * activeUserRatio)
-        return max(minimumDisplayCount, estimated)
-    }
-    
-    /// Whether cached data is still valid
-    var isCacheValid: Bool {
-        guard lastFetchTimestamp > 0 else { return false }
-        let cacheAge = Date().timeIntervalSince1970 - lastFetchTimestamp
-        return cacheAge < cacheValidityDuration
+    /// Calculate count based on days since start date
+    /// Formula: startCount + (daysSinceStart * dailyIncrease)
+    var calculatedCount: Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let start = calendar.startOfDay(for: startDate)
+        
+        guard let daysSinceStart = calendar.dateComponents([.day], from: start, to: today).day else {
+            return startCount
+        }
+        
+        // Ensure we never go below start count
+        let count = startCount + (daysSinceStart * dailyIncrease)
+        return max(startCount, count)
     }
     
     // MARK: - Initialization
     
     private init() {
-        // Load cached value or use estimated
-        if cachedUserCount > 0 && isCacheValid {
-            currentCount = cachedUserCount
-        } else {
-            currentCount = estimatedCount
-        }
+        // Calculate and set the current count
+        currentCount = calculatedCount
+        lastUpdateTime = Date()
     }
     
     // MARK: - Public Methods
     
-    /// Fetch latest count from API or return cached/estimated value
+    /// Get the current user count (calculated based on days since start)
+    /// This is synced across all pages that use this service
+    func getUserCount() -> Int {
+        let count = calculatedCount
+        currentCount = count
+        lastUpdateTime = Date()
+        return count
+    }
+    
+    /// Refresh the count (recalculates based on current date)
     @MainActor
-    func fetchUserCount() async -> Int {
-        // Return cached if still valid
-        if isCacheValid {
-            currentCount = cachedUserCount
-            return currentCount
-        }
-        
-        isLoading = true
-        fetchError = nil
-        
-        // Try to fetch from API
-        if let apiURL = Config.userCountAPIURL, let url = URL(string: apiURL) {
-            do {
-                let (data, response) = try await URLSession.shared.data(from: url)
-                
-                if let httpResponse = response as? HTTPURLResponse,
-                   httpResponse.statusCode == 200 {
-                    
-                    // Try to parse JSON response
-                    if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                       let count = json["count"] as? Int {
-                        updateCache(with: count)
-                        isLoading = false
-                        return count
-                    }
-                    
-                    // Try plain text number
-                    if let countString = String(data: data, encoding: .utf8),
-                       let count = Int(countString.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                        updateCache(with: count)
-                        isLoading = false
-                        return count
-                    }
-                }
-            } catch {
-                #if DEBUG
-                print("📊 UserCountService: API fetch failed - \(error.localizedDescription)")
-                #endif
-                fetchError = error.localizedDescription
-            }
-        }
-        
-        // Fallback to estimated count
-        let estimated = estimatedCount
-        currentCount = estimated
-        isLoading = false
-        
-        #if DEBUG
-        print("📊 UserCountService: Using estimated count - \(estimated)")
-        #endif
-        
-        return estimated
-    }
-    
-    /// Update the base value (call this when you know the real download count)
-    func updateBaseCount(_ count: Int) {
-        baseValue = count
-        // Recalculate current count if cache is stale
-        if !isCacheValid {
-            currentCount = estimatedCount
-        }
-    }
-    
-    /// Force refresh from API
-    @MainActor
-    func forceRefresh() async -> Int {
-        lastFetchTimestamp = 0 // Invalidate cache
-        return await fetchUserCount()
-    }
-    
-    // MARK: - Private Methods
-    
-    private func updateCache(with count: Int) {
-        let validCount = max(minimumDisplayCount, count)
-        cachedUserCount = validCount
-        currentCount = validCount
-        lastFetchTimestamp = Date().timeIntervalSince1970
+    func refreshCount() {
+        currentCount = calculatedCount
         lastUpdateTime = Date()
         
         #if DEBUG
-        print("📊 UserCountService: Updated cache with count - \(validCount)")
+        print("📊 UserCountService: Refreshed count - \(currentCount)")
         #endif
     }
 }
@@ -148,7 +86,7 @@ final class UserCountService: ObservableObject {
 extension UserCountService {
     static var preview: UserCountService {
         let service = UserCountService.shared
-        service.currentCount = 85
+        service.currentCount = service.calculatedCount
         return service
     }
 }

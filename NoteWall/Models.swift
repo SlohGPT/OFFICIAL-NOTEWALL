@@ -24,6 +24,7 @@ extension Notification.Name {
     static let navigateToHomeTab = Notification.Name("navigateToHomeTab")
     static let showDeleteNotesLoadingOverlay = Notification.Name("showDeleteNotesLoadingOverlay")
     static let dismissPaywallAfterPromoCode = Notification.Name("dismissPaywallAfterPromoCode")
+    static let restartMarqueeAnimations = Notification.Name("restartMarqueeAnimations")
 }
 
 struct WallpaperUpdateRequest {

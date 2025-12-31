@@ -1665,12 +1665,9 @@ struct SocialProofView: View {
     @State private var numberScale: CGFloat = 0.8
     @State private var pulseScale: CGFloat = 1.0
     
-    // MARK: - User Count Service
-    @StateObject private var userCountService = UserCountService.shared
-    
-    // Get target count from service
+    // Fixed target count: 2,855 (synced with review page)
     private var targetCount: Int {
-        userCountService.currentCount
+        2855
     }
     
     // Adaptive layout
@@ -1978,11 +1975,6 @@ struct SocialProofView: View {
             }
         }
         .onAppear {
-            // Fetch latest user count
-            Task {
-                let _ = await userCountService.fetchUserCount()
-            }
-            
             // MARK: - Animation Sequence
             
             // 1. Header appears first (connection from previous step)

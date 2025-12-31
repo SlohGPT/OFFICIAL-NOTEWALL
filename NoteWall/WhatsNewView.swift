@@ -425,7 +425,7 @@ class WhatsNewManager: ObservableObject {
     }
     
     /// Check if What's New popup has EVER been shown to this user
-    /// This is the key flag - once true, popup NEVER shows again
+    /// This is the - once true, popup NEVER shows again
     var hasBeenShownOnce: Bool {
         UserDefaults.standard.bool(forKey: whatsNewHasBeenShownKey)
     }

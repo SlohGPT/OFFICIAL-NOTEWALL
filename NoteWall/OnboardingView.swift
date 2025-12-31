@@ -181,6 +181,7 @@ enum OnboardingPage: Int, CaseIterable, Hashable {
     
     // Phase 2: Social Proof & Value Demo
     case socialProof
+    case reviewPage
     
     // Phase 3: Technical Setup (wrapped in encouragement)
     case setupIntro
@@ -772,7 +773,7 @@ struct OnboardingView: View {
             // These pages have their own dark backgrounds
             let needsDarkBackground = [
                 OnboardingPage.painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-                .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .videoIntroduction,
+                .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .videoIntroduction,
                 .shortcutSuccess, .setupComplete
             ].contains(currentPage)
             
@@ -858,6 +859,10 @@ struct OnboardingView: View {
                             }
                         case .socialProof:
                             SocialProofView {
+                                advanceStep()
+                            }
+                        case .reviewPage:
+                            ReviewPageView {
                                 advanceStep()
                             }
                         case .setupIntro:
@@ -4942,7 +4947,7 @@ struct OnboardingView: View {
     private var primaryButtonTitle: String {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return "" // These pages have their own buttons
         case .welcome:
             return "Next"
@@ -4964,7 +4969,7 @@ struct OnboardingView: View {
     private var primaryButtonIconName: String? {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return nil // These pages have their own buttons
         case .welcome:
             return "arrow.right.circle.fill"
@@ -4986,7 +4991,7 @@ struct OnboardingView: View {
     private var primaryButtonEnabled: Bool {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return false // These pages have their own buttons
         case .welcome:
             return true
@@ -5034,7 +5039,7 @@ struct OnboardingView: View {
         
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             // These pages have their own buttons and handle navigation internally
             break
         case .welcome:
@@ -6843,6 +6848,8 @@ struct OnboardingView: View {
             return "Personalized Plan"
         case .socialProof:
             return "What Others Say"
+        case .reviewPage:
+            return "Reviews"
         case .setupIntro:
             return "Setup Introduction"
         case .welcome:
@@ -7347,6 +7354,8 @@ private extension OnboardingPage {
             return ""
         case .socialProof:
             return ""
+        case .reviewPage:
+            return ""
         case .setupIntro:
             return ""
         case .welcome:
@@ -7384,6 +7393,8 @@ private extension OnboardingPage {
             return "Your Profile"
         case .socialProof:
             return "Community"
+        case .reviewPage:
+            return "Reviews"
         case .setupIntro:
             return "Setup Preview"
         case .welcome:
@@ -7425,6 +7436,8 @@ private extension OnboardingPage {
             return "Your personalized results"
         case .socialProof:
             return "Community proof"
+        case .reviewPage:
+            return "User reviews"
         case .setupIntro:
             return "Setup introduction"
         case .welcome:
@@ -7453,7 +7466,7 @@ private extension OnboardingPage {
     var stepNumber: Int? {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return nil // These don't show step numbers
         case .welcome:
             return 1
@@ -7475,7 +7488,7 @@ private extension OnboardingPage {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview:
             return "Getting to Know You"
-        case .socialProof, .setupIntro:
+        case .socialProof, .reviewPage, .setupIntro:
             return "Almost Ready"
         case .welcome, .videoIntroduction, .installShortcut, .shortcutSuccess, .addNotes, .chooseWallpapers, .allowPermissions:
             return "Setup"
@@ -7488,7 +7501,7 @@ private extension OnboardingPage {
     var showsProgressIndicator: Bool {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return false
         case .welcome, .videoIntroduction, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions:
             return true
@@ -8058,5 +8071,375 @@ struct AutoPlayingLoopingVideoPlayer: UIViewRepresentable {
     
     class Coordinator {
         var playerLayer: AVPlayerLayer?
+    }
+}
+
+// MARK: - Review Page View
+
+// Particle data structure for floating dots
+private struct ReviewParticleData {
+    let opacity: Double
+    let size: CGFloat
+    let x: Double  // 0.0 to 1.0 (relative position)
+    let y: Double  // 0.0 to 1.0 (relative position)
+    let duration: Double
+    let delay: Double
+}
+
+struct ReviewModel: Identifiable {
+    let id = UUID()
+    let name: String
+    let username: String
+    let text: String
+    let rating: Int
+    let initial: String
+    let color: Color
+}
+
+struct ReviewPageView: View {
+    let onContinue: () -> Void
+    
+    // MARK: - Animation States
+    @State private var scrollOffset1: CGFloat = 0
+    @State private var scrollOffset2: CGFloat = 0
+    @State private var isAnimating = false
+    
+    // MARK: - Floating Particles (Optimized for smooth animation)
+    @State private var particleData: [ReviewParticleData] = []
+    @State private var particleAnimationTime: Double = 0
+    private let particleAnimationTimer = Timer.publish(every: 0.033, on: .main, in: .common).autoconnect() // ~30fps for smooth animation
+    
+    // Adaptive layout
+    private var isCompact: Bool {
+        let screenHeight = UIScreen.main.bounds.height
+        return screenHeight < 750
+    }
+    
+    // Fixed user count: 2,855 (formatted with space)
+    private var formattedUserCount: String {
+        return "2 855"
+    }
+    
+    // NoteWall-specific reviews - Row 1
+    private let reviews1: [ReviewModel] = [
+        ReviewModel(name: "Sarah Jenkins", username: "@sarahj_92", text: "Love seeing my notes on my lock screen! It's like having a personal reminder that's always there.", rating: 5, initial: "S", color: .purple),
+        ReviewModel(name: "Michael Chen", username: "@mchen_dev", text: "The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone.", rating: 5, initial: "M", color: .blue),
+        ReviewModel(name: "Jessica Lee", username: "@jesslee", text: "Simple and effective. My lock screen keeps me focused on what matters. Game changer!", rating: 5, initial: "J", color: .pink)
+    ]
+    
+    // NoteWall-specific reviews - Row 2 (will be blurred)
+    private let reviews2: [ReviewModel] = [
+        ReviewModel(name: "David Miller", username: "@dmiller", text: "Finally stopped forgetting important things. The shortcut setup was easy and it just works!", rating: 5, initial: "D", color: .orange),
+        ReviewModel(name: "Emily Wilson", username: "@emilyw", text: "Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated.", rating: 5, initial: "E", color: .green),
+        ReviewModel(name: "Alex Thompson", username: "@alex_t", text: "The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!", rating: 5, initial: "A", color: .teal)
+    ]
+    
+    var body: some View {
+        ZStack {
+            // Paywall-style background
+            paywallBackground
+                .ignoresSafeArea()
+            
+            // Floating particles
+            floatingParticles
+            
+            VStack(spacing: 0) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: isCompact ? 20 : 40)
+                        
+                        // Header Image (FaithWall Logo)
+                        Image("FAITHWALL")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: isCompact ? 120 : 160)
+                            .padding(.bottom, 10)
+                        
+                        // Subtitle
+                        Text("This app was designed for people like you...")
+                            .font(.system(size: isCompact ? 16 : 18, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        
+                        // User Count Section (Avatars + Text)
+                        HStack(spacing: 12) {
+                            HStack(spacing: -12) {
+                                ForEach(["image-3-review", "image-2-review", "image-1-review"], id: \.self) { imageName in
+                                    Image(imageName)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.appAccent, lineWidth: 2)
+                                        )
+                                }
+                            }
+                            
+                            Text("+\(formattedUserCount) believers")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.vertical, isCompact ? 20 : 30)
+                        
+                        // Reviews Marquee (Scrolling Review Cards) - Optimized for smooth scrolling
+                        VStack(spacing: 16) {
+                            // Row 1: Right to Left
+                            ReviewMarqueeRow(reviews: reviews1, direction: .rightToLeft, speed: 30)
+                            
+                            // Row 2: Left to Right (Uniform blur with opacity)
+                            ReviewMarqueeRow(reviews: reviews2, direction: .leftToRight, speed: 35)
+                                .blur(radius: 0.25)
+                                .opacity(0.70)
+                        }
+                        .frame(height: 280)
+                        .drawingGroup() // Optimize entire marquee section as one layer for smooth scrolling
+                        .mask(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .clear, location: 0),
+                                    .init(color: .black, location: 0.1),
+                                    .init(color: .black, location: 0.9),
+                                    .init(color: .clear, location: 1)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        
+                        Spacer(minLength: 40)
+                    }
+                }
+                
+                // Bottom Button
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    onContinue()
+                }) {
+                    Text("Next")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color.white)
+                        .cornerRadius(30)
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, isCompact ? 20 : 40)
+            }
+        }
+        .onAppear {
+            // Initialize particles if needed (optimized count for smooth animation)
+            if particleData.isEmpty {
+                particleData = (0..<10).map { _ in
+                    ReviewParticleData(
+                        opacity: Double.random(in: 0.15...0.35),
+                        size: CGFloat.random(in: 3...7),
+                        x: Double.random(in: 0...1),
+                        y: Double.random(in: 0...1),
+                        duration: Double.random(in: 4...6),
+                        delay: Double.random(in: 0...3)
+                    )
+                }
+            }
+            
+            // Request App Store review popup
+            if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: windowScene)
+            }
+        }
+        .onReceive(particleAnimationTimer) { _ in
+            // Smooth continuous animation - increment matches timer interval for consistent speed
+            particleAnimationTime += 0.033
+        }
+    }
+    
+    // Floating particles (dots) - optimized for smooth animation
+    private var floatingParticles: some View {
+        GeometryReader { geo in
+            ForEach(particleData.indices, id: \.self) { i in
+                let particle = particleData[i]
+                // Calculate smooth animation phase with proper wrapping
+                let totalCycle = particle.duration * 2
+                let currentTime = particleAnimationTime + particle.delay
+                let wrappedTime = currentTime.truncatingRemainder(dividingBy: totalCycle)
+                let normalizedPhase = wrappedTime / totalCycle
+                
+                // Use smooth sine wave for natural floating motion
+                let offset = sin(normalizedPhase * .pi * 2) * 20
+                
+                Circle()
+                    .fill(Color.appAccent.opacity(particle.opacity))
+                    .frame(width: particle.size, height: particle.size)
+                    .offset(
+                        x: particle.x * geo.size.width,
+                        y: particle.y * geo.size.height + offset
+                    )
+            }
+        }
+        .compositingGroup() // First composite particles
+        .drawingGroup() // Then render as single layer for maximum performance
+        .allowsHitTesting(false)
+        .zIndex(0) // Behind content
+    }
+    
+    // Paywall-style background matching PaywallView
+    private var paywallBackground: some View {
+        ZStack {
+            // Base dark gradient - matching paywall
+            LinearGradient(
+                colors: [
+                    Color(red: 0.06, green: 0.06, blue: 0.12),
+                    Color(red: 0.02, green: 0.02, blue: 0.06)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
+            // Accent glow orbs - matching paywall
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.3), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 200
+                    )
+                )
+                .frame(width: 400, height: 400)
+                .offset(x: -100, y: -200)
+                .blur(radius: 60)
+            
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.2), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 150
+                    )
+                )
+                .frame(width: 300, height: 300)
+                .offset(x: 150, y: 300)
+                .blur(radius: 50)
+            
+            // Subtle noise texture overlay for depth
+            Rectangle()
+                .fill(Color.white.opacity(0.02))
+        }
+        .compositingGroup() // Optimize background composition
+    }
+}
+
+// MARK: - Review Marquee Row (Horizontal Scrolling)
+
+struct ReviewMarqueeRow: View {
+    let reviews: [ReviewModel]
+    let direction: MarqueeDirection
+    let speed: Double
+    
+    enum MarqueeDirection {
+        case leftToRight
+        case rightToLeft
+    }
+    
+    @State private var offset: CGFloat = 0
+    private let cardWidth: CGFloat = 280
+    private let spacing: CGFloat = 16
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let contentWidth = CGFloat(reviews.count) * (cardWidth + spacing)
+            
+            HStack(spacing: spacing) {
+                // Repeat 20 times to create seamless infinite scroll
+                ForEach(0..<20) { _ in 
+                    ForEach(reviews) { review in
+                        ReviewCard(review: review)
+                    }
+                }
+            }
+            .offset(x: offset)
+            .onAppear {
+                // Reset state first
+                offset = direction == .rightToLeft ? 0 : -contentWidth
+                
+                // Start infinite scroll animation - use linear for smooth constant speed
+                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
+                    offset = direction == .rightToLeft ? -contentWidth : 0
+                }
+            }
+        }
+        .frame(height: 130)
+        .clipped() // Clip to bounds for better performance
+        .drawingGroup() // Render as single layer for smooth scrolling
+    }
+}
+
+// MARK: - Review Card (Individual Review Display)
+
+struct ReviewCard: View {
+    let review: ReviewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                // Avatar Circle
+                Circle()
+                    .fill(review.color.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(review.initial)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(review.color)
+                    )
+                
+                // Name & Username
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(review.name)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text(review.username)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                // 5 Stars
+                HStack(spacing: 2) {
+                    ForEach(0..<5) { _ in
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.yellow)
+                    }
+                }
+            }
+            
+            // Review Text
+            Text(review.text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.9))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(height: 40, alignment: .topLeading)
+        }
+        .padding(16)
+        .frame(width: 280, height: 130)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 }

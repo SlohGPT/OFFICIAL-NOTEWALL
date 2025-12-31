@@ -89,6 +89,7 @@ enum OnboardingStepId: String, CaseIterable {
     
     // Phase 2: Social Proof
     case socialProof = "social_proof"
+    case reviewPage = "review_page"
     
     // Phase 3: Technical Setup
     case setupIntro = "setup_intro"
@@ -120,6 +121,7 @@ enum OnboardingStepId: String, CaseIterable {
         case .personalizationLoading: return "Personalization"
         case .resultsPreview: return "Results Preview"
         case .socialProof: return "Social Proof"
+        case .reviewPage: return "Review Page"
         case .setupIntro: return "Setup Intro"
         case .welcome: return "Welcome"
         case .videoIntroduction: return "Video Introduction"

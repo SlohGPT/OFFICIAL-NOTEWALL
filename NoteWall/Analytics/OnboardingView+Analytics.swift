@@ -22,6 +22,7 @@ extension OnboardingPage {
         case .personalizationLoading: return .personalizationLoading
         case .resultsPreview: return .resultsPreview
         case .socialProof: return .socialProof
+        case .reviewPage: return .reviewPage
         case .setupIntro: return .setupIntro
         case .welcome: return .welcome
         case .videoIntroduction: return .videoIntroduction
