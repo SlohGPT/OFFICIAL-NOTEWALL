@@ -25,7 +25,7 @@ struct WhatsNewView: View {
     // MARK: - Current Version Info
     
     private var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.1"
     }
     
     private var buildNumber: String {
@@ -47,20 +47,20 @@ struct WhatsNewView: View {
             UpdateItem(
                 icon: "sparkles",
                 iconColor: .appAccent,
-                title: "Performance Boost",
-                description: "Faster wallpaper generation and smoother animations."
+                title: "Improved Noteful",
+                description: "We've improved Noteful to help you remember tasks, routines, and important things more easily."
             ),
             UpdateItem(
                 icon: "wrench.and.screwdriver.fill",
                 iconColor: .appAccent.opacity(0.8),
-                title: "Bug Fixes",
-                description: "Fixed issues reported by our users. Thank you!"
+                title: "Minor Fixes",
+                description: "Various bug fixes and stability improvements."
             ),
             UpdateItem(
                 icon: "paintbrush.fill",
                 iconColor: .appAccent.opacity(0.6),
-                title: "UI Polish",
-                description: "Refined design elements for a better experience."
+                title: "Improvements",
+                description: "General improvements to enhance your experience."
             )
         ]
     }
@@ -405,10 +405,7 @@ class WhatsNewManager: ObservableObject {
     
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
-    
-    /// Runtime flag - resets every time app is launched (not persisted)
-    /// This ensures DEBUG builds show the popup after each clean build + run
-    private var hasShownThisSession = false
+    private let whatsNewHasBeenShownKey = "WhatsNewHasBeenShownOnce"
     
     private init() {}
     
@@ -427,27 +424,49 @@ class WhatsNewManager: ObservableObject {
         UserDefaults.standard.bool(forKey: hasCompletedSetupKey)
     }
     
+    /// Check if What's New popup has EVER been shown to this user
+    /// This is the key flag - once true, popup NEVER shows again
+    var hasBeenShownOnce: Bool {
+        UserDefaults.standard.bool(forKey: whatsNewHasBeenShownKey)
+    }
+    
+    /// The expiration date for showing the What's New popup
+    /// After this date, the popup will never show to anyone
+    /// Set to January 9, 2025 (end of the promotional period)
+    private var expirationDate: Date {
+        var components = DateComponents()
+        components.year = 2025
+        components.month = 1
+        components.day = 9
+        components.hour = 0
+        components.minute = 0
+        components.second = 0
+        return Calendar.current.date(from: components) ?? Date()
+    }
+    
     /// Determines if What's New should be shown
-    /// - Only shows to EXISTING users who update to a new version
-    /// - Shows to existing v1.2 users when they update to v1.3 (first time migration)
+    /// - Only shows ONCE EVER to existing users who update
     /// - Never shows to new users who just installed the app
-    /// - Only shows once per version
-    /// - In DEBUG mode with clean build, always shows (first time per app launch)
+    /// - Has an expiration date - after that, never shows to anyone
+    /// - Once shown and dismissed, NEVER shows again
     func checkShouldShow() -> Bool {
-        #if DEBUG
-        // For testing: Show every time the app is freshly launched (clean build + run)
-        // hasShownThisSession is a runtime flag that resets when app is killed
-        // Show if user has completed setup (simulating existing user)
-        if !hasShownThisSession && hasCompletedSetup {
-            print("🎉 WhatsNewManager: DEBUG mode - showing What's New for testing")
-            print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup)")
-            print("   Last shown version: \(lastShownVersion ?? "none")")
-            return true
+        // CRITICAL: If already shown once, NEVER show again
+        if hasBeenShownOnce {
+            #if DEBUG
+            print("🎉 WhatsNewManager: Already shown once before - NEVER showing again")
+            #endif
+            return false
         }
-        #endif
         
-        // Normal logic for production:
-        // 1. User must have completed setup (existing user, not new install)
+        // Check if the promotional period has expired
+        if Date() > expirationDate {
+            #if DEBUG
+            print("🎉 WhatsNewManager: Promotional period expired - not showing")
+            #endif
+            return false
+        }
+        
+        // User must have completed setup (existing user, not new install)
         guard hasCompletedSetup else {
             #if DEBUG
             print("🎉 WhatsNewManager: User hasn't completed setup - skipping What's New")
@@ -455,39 +474,23 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // 2. Check if this is a migration from v1.2 (no lastShownVersion exists yet)
-        // These are existing users who installed v1.2 before this feature existed
-        guard let lastVersion = lastShownVersion else {
-            #if DEBUG
-            print("🎉 WhatsNewManager: Existing user from v1.2 updating to \(currentVersion) - showing What's New")
-            #endif
-            // This is an existing user from v1.2 - show them the What's New!
-            return true
-        }
-        
-        // 3. Haven't shown for this version yet (user updated from previous version)
-        if lastVersion == currentVersion {
-            #if DEBUG
-            print("🎉 WhatsNewManager: Already shown for version \(currentVersion) - skipping")
-            #endif
-            return false
-        }
-        
-        // 4. User is updating from an older version - show What's New!
+        // This is an existing user who hasn't seen the What's New yet - show it!
         #if DEBUG
-        print("🎉 WhatsNewManager: User updated from \(lastVersion) to \(currentVersion) - showing What's New")
+        print("🎉 WhatsNewManager: Existing user, first time seeing What's New - showing popup")
+        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup)")
         #endif
         return true
     }
     
-    /// Mark the What's New as shown for current version
+    /// Mark the What's New as shown - this permanently prevents it from showing again
     func markAsShown() {
+        // Set the permanent flag - popup will NEVER show again after this
+        UserDefaults.standard.set(true, forKey: whatsNewHasBeenShownKey)
         UserDefaults.standard.set(currentVersion, forKey: lastShownVersionKey)
         shouldShowWhatsNew = false
-        hasShownThisSession = true
         
         #if DEBUG
-        print("🎉 WhatsNewManager: Marked as shown for version \(currentVersion)")
+        print("🎉 WhatsNewManager: Marked as shown PERMANENTLY - will never show again")
         #endif
     }
     
@@ -495,7 +498,7 @@ class WhatsNewManager: ObservableObject {
     func resetForTesting() {
         #if DEBUG
         UserDefaults.standard.removeObject(forKey: lastShownVersionKey)
-        hasShownThisSession = false
+        UserDefaults.standard.removeObject(forKey: whatsNewHasBeenShownKey)
         print("🎉 WhatsNewManager: Reset for testing - popup will show on next launch")
         #endif
     }
