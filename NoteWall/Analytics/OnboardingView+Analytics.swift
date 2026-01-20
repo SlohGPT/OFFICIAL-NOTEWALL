@@ -21,6 +21,7 @@ extension OnboardingPage {
         case .quizDistraction: return .quizDistraction
         case .personalizationLoading: return .personalizationLoading
         case .resultsPreview: return .resultsPreview
+        case .resultsInsight: return .resultsInsight
         case .socialProof: return .socialProof
         case .reviewPage: return .reviewPage
         case .setupIntro: return .setupIntro

@@ -1,0 +1,244 @@
+// MARK: - Social Proof View (Give Us A Rating Page)
+
+struct ReviewModel: Identifiable {
+    let id = UUID()
+    let name: String
+    let username: String
+    let text: String
+    let rating: Int
+    let initial: String
+    let color: Color
+}
+
+struct SocialProofView: View {
+    let onContinue: () -> Void
+    
+    // MARK: - Animation States
+    @State private var scrollOffset1: CGFloat = 0
+    @State private var scrollOffset2: CGFloat = 0
+    @State private var isAnimating = false
+    
+    // Adaptive layout
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    // Sample Data
+    private let reviews1: [ReviewModel] = [
+        ReviewModel(name: "Sarah Jenkins", username: "@sarahj_92", text: "Simple, effective, and beautiful. Exactly what I needed to get back on track.", rating: 5, initial: "S", color: .purple),
+        ReviewModel(name: "Michael Chen", username: "@mchen_dev", text: "The daily reminders are perfect. Not too pushy but keeps me accountable.", rating: 5, initial: "M", color: .blue),
+        ReviewModel(name: "Jessica Lee", username: "@jesslee", text: "Love the clean design and how easy it is to use. A must-have.", rating: 5, initial: "J", color: .pink)
+    ]
+    
+    private let reviews2: [ReviewModel] = [
+        ReviewModel(name: "David Miller", username: "@dmiller", text: "Finally an app that understands what I need. Highly recommend!", rating: 5, initial: "D", color: .orange),
+        ReviewModel(name: "Emily Wilson", username: "@emilyw", text: "Changed my life. So grateful for this app and the community.", rating: 5, initial: "E", color: .green),
+        ReviewModel(name: "Alex Thompson", username: "@alex_t", text: "Great for building consistent habits. The widgets are amazing.", rating: 5, initial: "A", color: .teal)
+    ]
+    
+    var body: some View {
+        ZStack {
+            // Orange Background (App Accent Color)
+            Color.appAccent
+                .ignoresSafeArea()
+            
+            VStack(spacing: 0) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: isCompact ? 20 : 40)
+                        
+                        // Header Image (FaithWall Logo)
+                        Image("FAITHWALL")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: isCompact ? 120 : 160)
+                            .padding(.bottom, 10)
+                        
+                        // Subtitle
+                        Text("This app was designed for people like you...")
+                            .font(.system(size: isCompact ? 16 : 18, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                        
+                        // User Count Section (Avatars + Text)
+                        HStack(spacing: 12) {
+                            HStack(spacing: -12) {
+                                ForEach(["image-3-review", "image-2-review", "image-1-review"], id: \.self) { imageName in
+                                    Image(imageName)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: 36, height: 36)
+                                        .clipShape(Circle())
+                                        .overlay(
+                                            Circle()
+                                                .stroke(Color.orange, lineWidth: 2)
+                                        )
+                                }
+                            }
+                            
+                            Text("+10 000 believers")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.vertical, isCompact ? 20 : 30)
+                        
+                        // Reviews Marquee (Scrolling Review Cards)
+                        VStack(spacing: 16) {
+                            // Row 1: Right to Left
+                            ReviewMarqueeRow(reviews: reviews1, direction: .rightToLeft, speed: 30)
+                            
+                            // Row 2: Left to Right (Blurred)
+                            ReviewMarqueeRow(reviews: reviews2, direction: .leftToRight, speed: 35)
+                                .blur(radius: 0.5)
+                        }
+                        .frame(height: 280)
+                        .mask(
+                            LinearGradient(
+                                gradient: Gradient(stops: [
+                                    .init(color: .clear, location: 0),
+                                    .init(color: .black, location: 0.1),
+                                    .init(color: .black, location: 0.9),
+                                    .init(color: .clear, location: 1)
+                                ]),
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        
+                        Spacer(minLength: 40)
+                    }
+                }
+                
+                // Bottom Button
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    onContinue()
+                }) {
+                    Text("Next")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.black)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 18)
+                        .background(Color.white)
+                        .cornerRadius(30)
+                }
+                .padding(.horizontal, DS.Spacing.xl)
+                .padding(.bottom, isCompact ? 20 : 40)
+            }
+        }
+        .onAppear {
+            // Request App Store review popup
+            if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: windowScene)
+            }
+        }
+    }
+}
+
+// MARK: - Review Marquee Row (Horizontal Scrolling)
+
+struct ReviewMarqueeRow: View {
+    let reviews: [ReviewModel]
+    let direction: MarqueeDirection
+    let speed: Double
+    
+    enum MarqueeDirection {
+        case leftToRight
+        case rightToLeft
+    }
+    
+    @State private var offset: CGFloat = 0
+    private let cardWidth: CGFloat = 280
+    private let spacing: CGFloat = 16
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let contentWidth = CGFloat(reviews.count) * (cardWidth + spacing)
+            
+            HStack(spacing: spacing) {
+                // Repeat 20 times to create seamless infinite scroll
+                ForEach(0..<20) { _ in 
+                    ForEach(reviews) { review in
+                        ReviewCard(review: review)
+                    }
+                }
+            }
+            .offset(x: offset)
+            .onAppear {
+                // Reset state first
+                offset = direction == .rightToLeft ? 0 : -contentWidth
+                
+                // Start infinite scroll animation
+                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
+                    offset = direction == .rightToLeft ? -contentWidth : 0
+                }
+            }
+        }
+        .frame(height: 130)
+    }
+}
+
+// MARK: - Review Card (Individual Review Display)
+
+struct ReviewCard: View {
+    let review: ReviewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                // Avatar Circle
+                Circle()
+                    .fill(review.color.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(review.initial)
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(review.color)
+                    )
+                
+                // Name & Username
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(review.name)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                    
+                    Text(review.username)
+                        .font(.system(size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                }
+                
+                Spacer()
+                
+                // 5 Stars
+                HStack(spacing: 2) {
+                    ForEach(0..<5) { _ in
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(.yellow)
+                    }
+                }
+            }
+            
+            // Review Text
+            Text(review.text)
+                .font(.system(size: 14))
+                .foregroundColor(.white.opacity(0.9))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(height: 40, alignment: .topLeading)
+        }
+        .padding(16)
+        .frame(width: 280, height: 130)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                )
+        )
+    }
+}

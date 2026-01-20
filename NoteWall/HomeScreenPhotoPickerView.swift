@@ -107,7 +107,7 @@ struct HomeScreenPhotoPickerView: View {
             selection: $photoLibrarySelection,
             matching: .images
         )
-        .onChange(of: photoLibrarySelection) { newValue in
+        .onChange(of: photoLibrarySelection) { _, newValue in
             guard let item = newValue else { return }
             Task {
                 do {
@@ -132,7 +132,7 @@ struct HomeScreenPhotoPickerView: View {
                 }
             }
         }
-        .onChange(of: homeScreenImageAvailable) { _ in
+        .onChange(of: homeScreenImageAvailable) { _, _ in
             syncHomeIconState()
         }
         .sheet(item: $activePicker) { picker in
@@ -455,7 +455,7 @@ struct LockScreenBackgroundPickerView: View {
             selection: $photoLibrarySelection,
             matching: .images
         )
-        .onChange(of: photoLibrarySelection) { newValue in
+        .onChange(of: photoLibrarySelection) { _, newValue in
             guard let item = newValue else { return }
             Task {
                 do {
@@ -480,10 +480,10 @@ struct LockScreenBackgroundPickerView: View {
                 }
             }
         }
-        .onChange(of: backgroundMode) { _ in
+        .onChange(of: backgroundMode) { _, _ in
             syncLockIconState()
         }
-        .onChange(of: backgroundPhotoData) { _ in
+        .onChange(of: backgroundPhotoData) { _, _ in
             syncLockIconState()
         }
         .sheet(item: $activePicker) { picker in

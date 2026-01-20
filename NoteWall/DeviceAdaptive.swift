@@ -14,11 +14,21 @@ enum DeviceSizeCategory {
     
     /// Returns the device's size category based on screen dimensions
     static var current: DeviceSizeCategory {
-        let screenHeight = UIScreen.main.bounds.height
-        let screenWidth = UIScreen.main.bounds.width
+        // Use UIWindowScene to get screen dimensions instead of deprecated UIScreen.main
+        var screenHeight: CGFloat = 844 // Default to iPhone 12/13/14 height
+        var screenWidth: CGFloat = 390
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            screenHeight = windowScene.screen.bounds.height
+            screenWidth = windowScene.screen.bounds.width
+        } else {
+            // Fallback for cases where scene isn't ready
+            screenHeight = UIScreen.main.bounds.height
+            screenWidth = UIScreen.main.bounds.width
+        }
         
         // Use the smaller dimension to determine category (works for both orientations)
-        let minDimension = min(screenWidth, screenHeight)
+        // let minDimension = min(screenWidth, screenHeight) // Unused
         let maxDimension = max(screenWidth, screenHeight)
         
         // iPhone SE/8 has height of 667 points
@@ -40,8 +50,19 @@ enum DeviceSizeCategory {
 
 /// Provides convenient access to screen dimensions
 struct ScreenDimensions {
-    static var width: CGFloat { UIScreen.main.bounds.width }
-    static var height: CGFloat { UIScreen.main.bounds.height }
+    static var width: CGFloat {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            return windowScene.screen.bounds.width
+        }
+        return UIScreen.main.bounds.width
+    }
+    
+    static var height: CGFloat {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            return windowScene.screen.bounds.height
+        }
+        return UIScreen.main.bounds.height
+    }
     
     /// Safe area insets for the current device
     static var safeAreaInsets: UIEdgeInsets {

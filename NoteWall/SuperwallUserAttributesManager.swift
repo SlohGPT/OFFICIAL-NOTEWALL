@@ -141,7 +141,7 @@ final class SuperwallUserAttributesManager {
         }
         
         // MARK: - Promo Code Usage
-        if let promoManager = try? PromoCodeManager.shared {
+        if let _ = try? PromoCodeManager.shared {
             // Check if user has used promo codes
             let hasUsedLifetimeCode = (UserDefaults.standard.array(forKey: "promo_codes_used_lifetime") as? [String])?.isEmpty == false
             let hasUsedMonthlyCode = (UserDefaults.standard.array(forKey: "promo_codes_used_monthly") as? [String])?.isEmpty == false

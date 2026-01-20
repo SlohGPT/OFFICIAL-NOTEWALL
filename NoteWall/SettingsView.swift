@@ -134,7 +134,7 @@ struct SettingsView: View {
                 }
             }
         }
-        .onChange(of: shouldRestartOnboarding) { shouldRestart in
+        .onChange(of: shouldRestartOnboarding) { _, shouldRestart in
             if shouldRestart {
                 // Reinstall shortcut only - preserve subscription and user info
                 reinstallShortcutOnly()
@@ -1025,7 +1025,7 @@ private struct UpdateWallpaperButton: View {
         .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
             isGenerating = false
         }
-        .onChange(of: scenePhase) { phase in
+        .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 isGenerating = false
             }

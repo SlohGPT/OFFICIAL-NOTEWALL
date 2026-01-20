@@ -51,10 +51,17 @@ struct WallpaperRenderer {
     /// This handles edge cases where proportions might still be slightly off
     private static func getDeviceAdjustedTopPadding(basePadding: CGFloat) -> CGFloat {
         // Get actual device screen height with safety check
+        // Get actual device screen height with safety check
         let deviceScreenHeight: CGFloat
-        if UIScreen.main.nativeBounds.height > 0 {
-            deviceScreenHeight = UIScreen.main.nativeBounds.height
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            deviceScreenHeight = windowScene.screen.nativeBounds.height
         } else {
+            // Fallback for cases where scene isn't ready
+            deviceScreenHeight = UIScreen.main.nativeBounds.height
+        }
+        
+        if deviceScreenHeight <= 0 {
             // Fallback: use base padding if screen detection fails
             return basePadding
         }
@@ -91,8 +98,16 @@ struct WallpaperRenderer {
     
     /// Debug function to help test on different devices
     private static func logPositioningInfo(hasLockScreenWidgets: Bool) {
-        let deviceHeight = UIScreen.main.nativeBounds.height
-        let deviceWidth = UIScreen.main.nativeBounds.width
+        var deviceHeight: CGFloat = 0
+        var deviceWidth: CGFloat = 0
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            deviceHeight = windowScene.screen.nativeBounds.height
+            deviceWidth = windowScene.screen.nativeBounds.width
+        } else {
+            deviceHeight = UIScreen.main.nativeBounds.height
+            deviceWidth = UIScreen.main.nativeBounds.width
+        }
         let baseTopPadding = hasLockScreenWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
         let adjustedTopPadding = topPadding(hasWidgets: hasLockScreenWidgets)
         let availableHeight = screenHeight - adjustedTopPadding - bottomSafeArea

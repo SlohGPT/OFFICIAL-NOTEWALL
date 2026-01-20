@@ -143,14 +143,14 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             AnyView(ContentViewRoot(context: viewContext))
-                .onChange(of: shouldRestartOnboarding) { shouldRestart in
+                .onChange(of: shouldRestartOnboarding) { _, shouldRestart in
                     if shouldRestart {
                         // Reset hasCompletedSetup to force onboarding to show
                         hasCompletedSetup = false
                         shouldRestartOnboarding = false
                     }
                 }
-                .onChange(of: showWallpaperUpdateLoading) { isShowing in
+                .onChange(of: showWallpaperUpdateLoading) { _, isShowing in
                     // Reset generating state when overlay is dismissed
                     if !isShowing {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -889,7 +889,7 @@ private struct RootConfiguredModifier: ViewModifier {
                     context.pendingLockScreenImage.wrappedValue = nil
                 }
             }
-            .onChange(of: context.savedNotesData.wrappedValue) { _ in
+            .onChange(of: context.savedNotesData.wrappedValue) { _, _ in
                 let previousNotesCount = context.notes.wrappedValue.count
                 context.loadNotes()
                 

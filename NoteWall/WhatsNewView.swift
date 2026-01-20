@@ -18,8 +18,7 @@ struct WhatsNewView: View {
     
     // Adaptive layout
     private var isCompact: Bool {
-        let screenHeight = UIScreen.main.bounds.height
-        return screenHeight < 750
+        return ScreenDimensions.height < 750
     }
     
     // MARK: - Current Version Info

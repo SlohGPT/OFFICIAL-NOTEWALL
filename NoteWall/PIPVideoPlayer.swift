@@ -152,17 +152,15 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         self.videoURL = url
         
         // Create AVAsset
-        let asset = AVAsset(url: url)
+        let asset = AVURLAsset(url: url)
         
         // Create player item
         let playerItem = AVPlayerItem(asset: asset)
         
         // CRITICAL: Disable seeking controls in PiP
         // Setting this to true hides the skip forward/back buttons
-        if #available(iOS 9.0, *) {
-            playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = false
-            playerItem.preferredForwardBufferDuration = 1
-        }
+        playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = false
+        playerItem.preferredForwardBufferDuration = 1
         
         // Create player
         let newPlayer = AVPlayer(playerItem: playerItem)
@@ -171,9 +169,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         newPlayer.actionAtItemEnd = .none // Don't stop at end - we'll handle looping
         
         // Prevent user interaction with playback controls
-        if #available(iOS 14.2, *) {
-            newPlayer.preventsDisplaySleepDuringVideoPlayback = true
-        }
+        newPlayer.preventsDisplaySleepDuringVideoPlayback = true
         
         self.player = newPlayer
         
@@ -425,10 +421,8 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
         // PiP is available on iPad (iOS 9+) and iPhone (iOS 14+)
         if UIDevice.current.userInterfaceIdiom == .pad {
             isPiPAvailable = true
-        } else if #available(iOS 14.0, *) {
-            isPiPAvailable = AVPictureInPictureController.isPictureInPictureSupported()
         } else {
-            isPiPAvailable = false
+            isPiPAvailable = AVPictureInPictureController.isPictureInPictureSupported()
         }
         
         debugPrint("📱 PIPVideoPlayerManager: PiP available: \(isPiPAvailable)")
@@ -488,18 +482,6 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
             } else {
                 debugPrint("⚠️ PIPVideoPlayerManager: PiP not possible yet")
                 debugPrint("   - Player rate: \(player.rate)")
-            }
-        } else {
-            // Fallback for older iOS versions
-            if let controller = AVPictureInPictureController(playerLayer: layer) {
-                self.pipController = controller
-                controller.delegate = self
-                
-                if #available(iOS 14.2, *) {
-                    controller.canStartPictureInPictureAutomaticallyFromInline = true
-                }
-                
-                debugPrint("✅ PIPVideoPlayerManager: PiP controller created (legacy)")
             }
         }
         
@@ -654,7 +636,7 @@ final class PIPVideoPlayerManager: NSObject, ObservableObject {
 
 extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
     
-    func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+    nonisolated func pictureInPictureControllerWillStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.isPiPActive = true
@@ -662,7 +644,7 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
         }
     }
     
-    func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+    nonisolated func pictureInPictureControllerDidStartPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.isPiPActive = true
@@ -670,14 +652,14 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
         }
     }
     
-    func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+    nonisolated func pictureInPictureControllerWillStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.debugPrint("⏹️ PIPVideoPlayerManager: Picture-in-Picture will stop")
         }
     }
     
-    func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
+    nonisolated func pictureInPictureControllerDidStopPictureInPicture(_ pictureInPictureController: AVPictureInPictureController) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.isPiPActive = false
@@ -685,7 +667,7 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
         }
     }
     
-    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
+    nonisolated func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, failedToStartPictureInPictureWithError error: Error) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.isPiPActive = false
@@ -696,7 +678,7 @@ extension PIPVideoPlayerManager: AVPictureInPictureControllerDelegate {
         }
     }
     
-    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
+    nonisolated func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, restoreUserInterfaceForPictureInPictureStopWithCompletionHandler completionHandler: @escaping (Bool) -> Void) {
         Task { @MainActor [weak self] in
             guard let self = self else { return }
             self.debugPrint("🔄 PIPVideoPlayerManager: Restoring user interface for PiP stop")
@@ -749,10 +731,10 @@ struct PIPVideoPlayerView: View {
                     .onDisappear {
                         playerManager.stop()
                     }
-                    .onChange(of: scenePhase) { newPhase in
+                    .onChange(of: scenePhase) { _, newPhase in
                         handleScenePhaseChange(newPhase)
                     }
-                    .onChange(of: playerManager.observableError) { errorWrapper in
+                    .onChange(of: playerManager.observableError) { _, errorWrapper in
                         if let error = errorWrapper.error {
                             onError?(error)
                         }

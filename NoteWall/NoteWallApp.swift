@@ -18,6 +18,11 @@ struct NoteWallApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
+        #if DEBUG
+        // DEBUG: Always show onboarding when running from Xcode
+        UserDefaults.standard.set(false, forKey: "hasCompletedSetup")
+        #endif
+
         // IMPORTANT: Configure Firebase FIRST before any other Firebase services
         // This must be called before RevenueCat, Superwall, etc.
         FirebaseSetup.shared.configure()
@@ -33,11 +38,23 @@ struct NoteWallApp: App {
         TelemetryDeck.initialize(config: telemetryConfig)
         
         // Check onboarding status on init (only show for first launch)
-        let shouldShow = !hasCompletedSetup
+        var shouldShow = !hasCompletedSetup
+        
+        #if DEBUG
+        // Force show onboarding in debug mode even if AppStorage is stale
+        shouldShow = true
+        #endif
+        
         _showOnboarding = State(initialValue: shouldShow)
         
         // Reset paywall data if this is a fresh install
-        if !hasCompletedSetup {
+        var isFreshInstall = !hasCompletedSetup
+        
+        #if DEBUG
+        isFreshInstall = true
+        #endif
+        
+        if isFreshInstall {
             PaywallManager.shared.resetForFreshInstall()
         }
         

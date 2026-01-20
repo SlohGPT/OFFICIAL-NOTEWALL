@@ -178,10 +178,10 @@ enum OnboardingPage: Int, CaseIterable, Hashable {
     case quizDistraction
     case personalizationLoading
     case resultsPreview
+    case resultsInsight
     
     // Phase 2: Social Proof & Value Demo
     case socialProof
-    case reviewPage
     
     // Phase 3: Technical Setup (wrapped in encouragement)
     case setupIntro
@@ -195,7 +195,8 @@ enum OnboardingPage: Int, CaseIterable, Hashable {
     
     // Phase 4: Celebration & Completion
     case setupComplete
-    case overview
+    case overview    // Mockup/Overview first
+    case reviewPage  // Then Review Page
 }
 
 struct OnboardingView: View {
@@ -368,7 +369,7 @@ struct OnboardingView: View {
             // Track onboarding start (fires only once per session)
             OnboardingAnalyticsTracker.shared.onboardingDidAppear()
         }
-        .onChange(of: currentPage) { newPage in
+        .onChange(of: currentPage) { _, newPage in
             // Track step view whenever page changes
             OnboardingAnalyticsTracker.shared.trackStepView(newPage)
         }
@@ -378,7 +379,7 @@ struct OnboardingView: View {
         .onReceive(NotificationCenter.default.publisher(for: .wallpaperGenerationFinished)) { _ in
             handleWallpaperGenerationFinished()
         }
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 debugLog("📱 Onboarding: App became active, currentPage: \(currentPage), didOpenShortcut: \(didOpenShortcut)")
                 // ALWAYS stop PiP when returning to app - be aggressive about it
@@ -480,7 +481,7 @@ struct OnboardingView: View {
                 }
             }
         }
-        .onChange(of: currentPage) { page in
+        .onChange(of: currentPage) { _, page in
             if page == .chooseWallpapers {
                 HomeScreenImageManager.prepareStorageStructure()
             }
@@ -553,7 +554,7 @@ struct OnboardingView: View {
                 }
             }
         }
-        .onChange(of: shouldRestartOnboarding) { shouldRestart in
+        .onChange(of: shouldRestartOnboarding) { _, shouldRestart in
             if shouldRestart {
                 // Reset to first page and restart onboarding
                 withAnimation {
@@ -562,7 +563,7 @@ struct OnboardingView: View {
                 shouldRestartOnboarding = false
             }
         }
-        .onChange(of: showShortcutsCheckAlert) { isShowing in
+        .onChange(of: showShortcutsCheckAlert) { _, isShowing in
             if isShowing {
                 // Pause video when Requirements check appears
                 if let player = welcomeVideoPlayer {
@@ -580,7 +581,7 @@ struct OnboardingView: View {
                 }
             }
         }
-        .onChange(of: showInstallSheet) { isShowing in
+        .onChange(of: showInstallSheet) { _, isShowing in
             if isShowing {
                 // Pause video when Install sheet appears
                 if let player = welcomeVideoPlayer {
@@ -611,27 +612,27 @@ struct OnboardingView: View {
             troubleshootingModalView
         }
         .sheet(isPresented: $showPostOnboardingPaywall) {
-            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: false)
-                .interactiveDismissDisabled() // Hard paywall - must subscribe
+            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: true)
                 .onDisappear {
-                    // Mark onboarding as complete when paywall is dismissed
-                    hasCompletedSetup = true
-                    completedOnboardingVersion = onboardingVersion
+                    // When paywall is dismissed (user subscribed, restored, or Xed out)
                     
-                    // Mark current version as seen for What's New (so new users don't see it)
-                    WhatsNewManager.shared.markAsShown()
-
                     // Track analytics
                     OnboardingQuizState.shared.paywallShown = true
                     OnboardingAnalytics.trackPaywallShown(totalSetupTime: OnboardingQuizState.shared.totalSetupTime)
                     
-                    // Update Superwall attributes when onboarding completes
+                    // Update Superwall attributes
                     SuperwallUserAttributesManager.shared.updateOnboardingAttributes()
 
-                    debugLog("✅ Onboarding completed - User dismissed paywall, now in main app")
+                    debugLog("✅ Onboarding Paywall dismissed")
                     
-                    // Request app review after paywall is dismissed (either paid or canceled)
-                    requestAppReviewIfNeeded()
+                    // Complete onboarding regardless of subscription status
+                    // Freemium users get access to home but features are gated
+                    if currentPage == .reviewPage {
+                        debugLog("✅ Completing onboarding - user may proceed as freemium")
+                        hasCompletedSetup = true
+                        completedOnboardingVersion = onboardingVersion
+                        WhatsNewManager.shared.markAsShown()
+                    }
                 }
         }
         .preferredColorScheme(.dark)
@@ -857,12 +858,12 @@ struct OnboardingView: View {
                             ResultsPreviewView {
                                 advanceStep()
                             }
-                        case .socialProof:
-                            SocialProofView {
+                        case .resultsInsight:
+                            ResultsInsightView {
                                 advanceStep()
                             }
-                        case .reviewPage:
-                            ReviewPageView {
+                        case .socialProof:
+                            SocialProofView {
                                 advanceStep()
                             }
                         case .setupIntro:
@@ -901,6 +902,10 @@ struct OnboardingView: View {
                             SetupCompleteView {
                                 // Trigger countdown transition after setup complete
                                 startTransitionCountdown()
+                            }
+                        case .reviewPage:
+                            ReviewPageView {
+                                advanceStep()
                             }
                         case .overview:
                             overviewStep()
@@ -964,7 +969,7 @@ struct OnboardingView: View {
         }
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: showHelpSheet) { isShowing in
+        .onChange(of: showHelpSheet) { _, isShowing in
             if !isShowing && currentPage == .videoIntroduction {
                 // Resume video if help sheet is dismissed and we're still on step 2
                 if let player = welcomeVideoPlayer, player.rate == 0 {
@@ -1176,11 +1181,6 @@ struct OnboardingView: View {
                 .frame(width: mockupWidth, height: mockupHeight)
                 .opacity(mockupOpacity)
                 .scaleEffect(mockupScale)
-                .rotation3DEffect(
-                    .degrees(mockupRotation),
-                    axis: (x: 0, y: 1, z: 0),
-                    perspective: 0.5
-                )
                 .shadow(color: Color.black.opacity(0.5), radius: 30, x: 0, y: 15)
                 .zIndex(1) // Mockup behind notes
             
@@ -1430,10 +1430,9 @@ struct OnboardingView: View {
                 }
             }
             
-            // 3D tilt animation (8-10° rotation on Y-axis)
+            // Scale up to 1.0 (removed tilt animation)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 withAnimation(.easeInOut(duration: 0.7)) {
-                    mockupRotation = 9
                     mockupScale = 1.0
                 }
             }
@@ -1456,6 +1455,7 @@ struct OnboardingView: View {
         }
     }
     
+    @ViewBuilder
     private func welcomeStep() -> some View {
         let isCompact = ScreenDimensions.isCompactDevice
         let iconSize: CGFloat = isCompact ? 85 : 110
@@ -1463,15 +1463,18 @@ struct OnboardingView: View {
         let sectionSpacing: CGFloat = isCompact ? 18 : 28
         let cardSpacing: CGFloat = isCompact ? 10 : 16
         
-        return ScrollView(.vertical, showsIndicators: false) {
+        ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: sectionSpacing) {
                 VStack(spacing: isCompact ? 10 : 16) {
                     AppIconAnimationView(size: iconSize)
+                        .scaleEffect(welcomeIconScale)
+                        .opacity(welcomeIconOpacity)
                     
                     Text("Welcome to NoteWall")
                         .font(.system(size: titleFontSize, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity)
+                        .opacity(welcomeTitleOpacity)
                     
                     VStack(spacing: 8) {
                         Text("You forget things for one simple reason: you don't see them. NoteWall fixes that.")
@@ -1481,6 +1484,7 @@ struct OnboardingView: View {
                         
                     }
                     .padding(.horizontal, isCompact ? 8 : 12)
+                    .opacity(welcomeSubtitleOpacity)
                 }
                 
                 VStack(spacing: cardSpacing) {
@@ -1489,18 +1493,27 @@ struct OnboardingView: View {
                         subtitle: "You pick up your phone up to 498× per day. Now each one becomes a reminder of what matters.",
                         icon: "bolt.fill"
                     )
+                    .opacity(welcomeCard1Opacity)
+                    .scaleEffect(welcomeCard1Scale)
+                    .offset(y: welcomeCard1Offset)
                     
                     welcomeHighlightCard(
                         title: "Keep Your Goals Always in Sight",
                         subtitle: "Your lock screen becomes a visual cue you can't ignore.",
                         icon: "target"
                     )
+                    .opacity(welcomeCard2Opacity)
+                    .scaleEffect(welcomeCard2Scale)
+                    .offset(y: welcomeCard2Offset)
                     
                     welcomeHighlightCard(
                         title: "Beat Scrolling Before It Starts",
                         subtitle: "See your goals before TikTok, Instagram, or distractions.",
                         icon: "stop.fill"
                     )
+                    .opacity(welcomeCard3Opacity)
+                    .scaleEffect(welcomeCard3Scale)
+                    .offset(y: welcomeCard3Offset)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -1509,16 +1522,98 @@ struct OnboardingView: View {
             .padding(.bottom, AdaptiveLayout.bottomScrollPadding)
         }
         .scrollAlwaysBounceIfAvailable()
+        .onAppear {
+            // Reset animation states when view appears
+            welcomeIconScale = 0.3
+            welcomeIconOpacity = 0
+            welcomeTitleOpacity = 0
+            welcomeSubtitleOpacity = 0
+            welcomeCard1Opacity = 0
+            welcomeCard1Scale = 0.9
+            welcomeCard1Offset = 20
+            welcomeCard2Opacity = 0
+            welcomeCard2Scale = 0.9
+            welcomeCard2Offset = 20
+            welcomeCard3Opacity = 0
+            welcomeCard3Scale = 0.9
+            welcomeCard3Offset = 20
+            
+            // Staggered animation sequence
+            // 1. App icon bounces in with spring
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.1)) {
+                welcomeIconScale = 1.0
+                welcomeIconOpacity = 1.0
+            }
+            
+            // 2. Title fades in
+            withAnimation(.easeOut(duration: 0.5).delay(0.4)) {
+                welcomeTitleOpacity = 1.0
+            }
+            
+            // 3. Subtitle fades in
+            withAnimation(.easeOut(duration: 0.5).delay(0.6)) {
+                welcomeSubtitleOpacity = 1.0
+            }
+            
+            // 4. First card slides up and fades in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.9)) {
+                welcomeCard1Opacity = 1.0
+                welcomeCard1Scale = 1.0
+                welcomeCard1Offset = 0
+            }
+            
+            // 5. Second card slides up and fades in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.75).delay(1.1)) {
+                welcomeCard2Opacity = 1.0
+                welcomeCard2Scale = 1.0
+                welcomeCard2Offset = 0
+            }
+            
+            // 6. Third card slides up and fades in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.75).delay(1.3)) {
+                welcomeCard3Opacity = 1.0
+                welcomeCard3Scale = 1.0
+                welcomeCard3Offset = 0
+            }
+            
+            // Light haptic feedback when cards appear
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred(intensity: 0.5)
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred(intensity: 0.5)
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred(intensity: 0.5)
+            }
+        }
     }
     
     private func welcomeHighlightCard(title: String, subtitle: String, icon: String) -> some View {
         let isCompact = ScreenDimensions.isCompactDevice
         
         return HStack(alignment: .top, spacing: isCompact ? 12 : 16) {
-            Image(systemName: icon)
-                .font(.system(size: isCompact ? 22 : 28, weight: .semibold))
-                .foregroundColor(.appAccent)
-                .frame(width: isCompact ? 32 : 40, height: isCompact ? 32 : 40)
+            // Icon with circular background and subtle glow
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.appAccent.opacity(0.15), Color.appAccent.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: isCompact ? 44 : 52, height: isCompact ? 44 : 52)
+                
+                Image(systemName: icon)
+                    .font(.system(size: isCompact ? 20 : 24, weight: .semibold))
+                    .foregroundColor(.appAccent)
+            }
             
             VStack(alignment: .leading, spacing: isCompact ? 4 : 6) {
                 Text(title)
@@ -1530,17 +1625,59 @@ struct OnboardingView: View {
             }
             Spacer(minLength: 0)
         }
-        .padding(isCompact ? 14 : 20)
+        .padding(isCompact ? 16 : 20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: isCompact ? 14 : 18, style: .continuous)
-                .fill(Color(.secondarySystemBackground))
+            ZStack {
+                // Gradient background
+                RoundedRectangle(cornerRadius: isCompact ? 14 : 18, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(.secondarySystemBackground),
+                                Color(.secondarySystemBackground).opacity(0.8)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                
+                // Subtle accent border
+                RoundedRectangle(cornerRadius: isCompact ? 14 : 18, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.appAccent.opacity(0.1),
+                                Color.appAccent.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            }
         )
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
     
     @State private var showTextVersion = false
     @State private var showInstallSheet = false
     @State private var userWentToSettings = false
+    
+    // Welcome step animation states
+    @State private var welcomeIconScale: CGFloat = 0.3
+    @State private var welcomeIconOpacity: Double = 0
+    @State private var welcomeTitleOpacity: Double = 0
+    @State private var welcomeSubtitleOpacity: Double = 0
+    @State private var welcomeCard1Opacity: Double = 0
+    @State private var welcomeCard1Scale: CGFloat = 0.9
+    @State private var welcomeCard1Offset: CGFloat = 20
+    @State private var welcomeCard2Opacity: Double = 0
+    @State private var welcomeCard2Scale: CGFloat = 0.9
+    @State private var welcomeCard2Offset: CGFloat = 20
+    @State private var welcomeCard3Opacity: Double = 0
+    @State private var welcomeCard3Scale: CGFloat = 0.9
+    @State private var welcomeCard3Offset: CGFloat = 20
 
     private func videoIntroductionStep() -> some View {
         let isCompact = ScreenDimensions.isCompactDevice
@@ -1804,7 +1941,7 @@ struct OnboardingView: View {
                                     if let player = welcomeVideoPlayer {
                                         AutoPlayingLoopingVideoPlayer(player: player)
                                             .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: UIScreen.main.bounds.width * videoWidthRatio)
+                                            .frame(width: ScreenDimensions.width * videoWidthRatio)
                                             .cornerRadius(isCompact ? 12 : 16)
                                             .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
                                             .transition(.asymmetric(
@@ -1815,7 +1952,7 @@ struct OnboardingView: View {
                                         RoundedRectangle(cornerRadius: isCompact ? 12 : 16)
                                             .fill(Color.gray.opacity(0.2))
                                             .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: UIScreen.main.bounds.width * videoWidthRatio)
+                                            .frame(width: ScreenDimensions.width * videoWidthRatio)
                                             .overlay(
                                                 VStack(spacing: 8) {
                                                     ProgressView()
@@ -1830,7 +1967,7 @@ struct OnboardingView: View {
                                     RoundedRectangle(cornerRadius: isCompact ? 12 : 16)
                                         .fill(Color.gray.opacity(0.2))
                                         .aspectRatio(9/16, contentMode: .fit)
-                                        .frame(width: UIScreen.main.bounds.width * videoWidthRatio)
+                                        .frame(width: ScreenDimensions.width * videoWidthRatio)
                                         .overlay(
                                             VStack(spacing: 8) {
                                                 Image(systemName: "video.slash")
@@ -1846,11 +1983,11 @@ struct OnboardingView: View {
                             
                             // Overlay buttons (positioned in black space outside video)
                             if welcomeVideoPlayer != nil {
-                                let videoWidth = UIScreen.main.bounds.width * videoWidthRatio
-                                let leftEdge = (UIScreen.main.bounds.width - videoWidth) / 2
+                                let videoWidth = ScreenDimensions.width * videoWidthRatio
+                                let leftEdge = (ScreenDimensions.width - videoWidth) / 2
                                 let rightEdge = leftEdge + videoWidth
                                 let leftSpace = leftEdge
-                                let rightSpace = UIScreen.main.bounds.width - rightEdge
+                                let rightSpace = ScreenDimensions.width - rightEdge
                                 
                                 VStack {
                                     Spacer()
@@ -1898,17 +2035,17 @@ struct OnboardingView: View {
                                         }
                                         .frame(width: rightSpace)
                                     }
-                                    .frame(width: UIScreen.main.bounds.width)
+                                    .frame(width: ScreenDimensions.width)
                                     
                                     Spacer()
                                 }
-                                .frame(width: UIScreen.main.bounds.width)
+                                .frame(width: ScreenDimensions.width)
                                 
                                 // Progress bar (top of video, only spans video width, accounting for rounded corners)
                                 VStack {
                                     HStack {
                                         Spacer()
-                                            .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * videoWidthRatio) / 2)
+                                            .frame(width: (ScreenDimensions.width - ScreenDimensions.width * videoWidthRatio) / 2)
                                         
                                         GeometryReader { geometry in
                                             let availableWidth = geometry.size.width - 22 // Subtract padding (12 left + 10 right)
@@ -1928,10 +2065,10 @@ struct OnboardingView: View {
                                             .padding(.leading, 12) // Offset to account for rounded corners on left
                                             .padding(.trailing, 10) // Offset to account for rounded corners on right
                                         }
-                                        .frame(width: UIScreen.main.bounds.width * videoWidthRatio, height: 3)
+                                        .frame(width: ScreenDimensions.width * videoWidthRatio, height: 3)
                                         
                                         Spacer()
-                                            .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * videoWidthRatio) / 2)
+                                            .frame(width: (ScreenDimensions.width - ScreenDimensions.width * videoWidthRatio) / 2)
                                     }
                                     .padding(.top, 0)
                                     
@@ -1957,7 +2094,7 @@ struct OnboardingView: View {
                                                         )
                                                 )
                                         }
-                                        .padding(.leading, UIScreen.main.bounds.width * ((1 - videoWidthRatio) / 2) + 12)
+                                        .padding(.leading, ScreenDimensions.width * ((1 - videoWidthRatio) / 2) + 12)
                                         .padding(.top, 12)
                                         Spacer()
                                         
@@ -1989,7 +2126,7 @@ struct OnboardingView: View {
                                                         )
                                                 )
                                         }
-                                        .padding(.trailing, UIScreen.main.bounds.width * ((1 - videoWidthRatio) / 2) + 12)
+                                        .padding(.trailing, ScreenDimensions.width * ((1 - videoWidthRatio) / 2) + 12)
                                         .padding(.top, 12)
                                     }
                                     Spacer()
@@ -2523,7 +2660,7 @@ struct OnboardingView: View {
                                     if let player = stuckGuideVideoPlayer {
                                         AutoPlayingLoopingVideoPlayer(player: player)
                                             .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .frame(width: ScreenDimensions.width * 0.7)
                                             .cornerRadius(16)
                                             .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
                                     } else {
@@ -2531,7 +2668,7 @@ struct OnboardingView: View {
                                         RoundedRectangle(cornerRadius: 16)
                                             .fill(Color.gray.opacity(0.2))
                                             .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: UIScreen.main.bounds.width * 0.7)
+                                            .frame(width: ScreenDimensions.width * 0.7)
                                             .overlay(
                                                 VStack(spacing: 8) {
                                                     ProgressView()
@@ -2544,11 +2681,11 @@ struct OnboardingView: View {
                                     }
                                     
                                     // Overlay controls styled the same as the intro video
-                                    let videoWidth = UIScreen.main.bounds.width * 0.7
-                                    let leftEdge = (UIScreen.main.bounds.width - videoWidth) / 2
+                                    let videoWidth = ScreenDimensions.width * 0.7
+                                    let leftEdge = (ScreenDimensions.width - videoWidth) / 2
                                     let rightEdge = leftEdge + videoWidth
                                     let leftSpace = leftEdge
-                                    let rightSpace = UIScreen.main.bounds.width - rightEdge
+                                    let rightSpace = ScreenDimensions.width - rightEdge
                                     
                                     VStack {
                                         Spacer()
@@ -2599,17 +2736,17 @@ struct OnboardingView: View {
                                             }
                                             .frame(width: rightSpace)
                                         }
-                                        .frame(width: UIScreen.main.bounds.width)
+                                        .frame(width: ScreenDimensions.width)
                                         
                                         Spacer()
                                     }
-                                    .frame(width: UIScreen.main.bounds.width)
+                                    .frame(width: ScreenDimensions.width)
                                     
                                     // Progress bar
                                     VStack {
                                         HStack {
                                             Spacer()
-                                                .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                                .frame(width: (ScreenDimensions.width - ScreenDimensions.width * 0.7) / 2)
                                             
                                             GeometryReader { geometry in
                                                 let availableWidth = geometry.size.width - 22
@@ -2627,10 +2764,10 @@ struct OnboardingView: View {
                                                 .padding(.leading, 12)
                                                 .padding(.trailing, 10)
                                             }
-                                            .frame(width: UIScreen.main.bounds.width * 0.7, height: 3)
+                                            .frame(width: ScreenDimensions.width * 0.7, height: 3)
                                             
                                             Spacer()
-                                                .frame(width: (UIScreen.main.bounds.width - UIScreen.main.bounds.width * 0.7) / 2)
+                                                .frame(width: (ScreenDimensions.width - ScreenDimensions.width * 0.7) / 2)
                                         }
                                         .padding(.top, 0)
                                         
@@ -2658,7 +2795,7 @@ struct OnboardingView: View {
                                                     .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
                                             }
                                             .disabled(stuckGuideVideoPlayer == nil)
-                                            .padding(.leading, UIScreen.main.bounds.width * 0.15 + 12)
+                                            .padding(.leading, ScreenDimensions.width * 0.15 + 12)
                                             .padding(.top, 12)
                                             Spacer()
                                             
@@ -2687,7 +2824,7 @@ struct OnboardingView: View {
                                                     .opacity(stuckGuideVideoPlayer == nil ? 0.5 : 1)
                                             }
                                             .disabled(stuckGuideVideoPlayer == nil)
-                                            .padding(.trailing, UIScreen.main.bounds.width * 0.15 + 12)
+                                            .padding(.trailing, ScreenDimensions.width * 0.15 + 12)
                                             .padding(.top, 12)
                                         }
                                         Spacer()
@@ -2704,7 +2841,7 @@ struct OnboardingView: View {
                                 Image("InstructionWallpaper")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: UIScreen.main.bounds.width * 0.5)
+                                    .frame(width: ScreenDimensions.width * 0.5)
                                     .cornerRadius(12)
                                     .shadow(color: Color.black.opacity(0.3), radius: 10, x: 0, y: 5)
                                 
@@ -2784,7 +2921,7 @@ struct OnboardingView: View {
         .onDisappear {
             stopStuckVideoPlayback()
         }
-        .onChange(of: showHelpSheet) { isShowing in
+        .onChange(of: showHelpSheet) { _, isShowing in
             if isShowing {
                 pauseStuckVideo()
             }
@@ -3073,6 +3210,7 @@ struct OnboardingView: View {
         }
     }
     
+    @ViewBuilder
     private func installShortcutStep() -> some View {
         let isCompact = ScreenDimensions.isCompactDevice
         let titleFontSize: CGFloat = isCompact ? 26 : 32
@@ -3090,7 +3228,7 @@ struct OnboardingView: View {
         let ringSize: CGFloat = isCompact ? 100 : 130
         let heroHeight: CGFloat = isCompact ? 130 : 160
         
-        return ZStack {
+        ZStack {
             // Black background for step 3
             Color.black
                 .ignoresSafeArea()
@@ -4266,6 +4404,7 @@ struct OnboardingView: View {
         )
     }
 
+    @ViewBuilder
     private func overviewStep() -> some View {
         let isCompact = ScreenDimensions.isCompactDevice
         let subtitleFontSize: CGFloat = isCompact ? 14 : 16
@@ -4275,7 +4414,7 @@ struct OnboardingView: View {
         let horizontalPadding: CGFloat = isCompact ? 28 : 40
         let buttonBottomPadding: CGFloat = isCompact ? 24 : 40
         
-        return ZStack {
+        ZStack {
             // Dark background
             Color.black.ignoresSafeArea()
             
@@ -4314,8 +4453,8 @@ struct OnboardingView: View {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
                     
-                    // Complete onboarding immediately (show paywall)
-                    completeOnboarding()
+                    // Continue to next step (Review Page)
+                    advanceStep()
                 }) {
                     Text("Continue")
                         .font(.system(size: buttonFontSize, weight: .semibold))
@@ -4366,6 +4505,7 @@ struct OnboardingView: View {
     
     // MARK: - Transition Countdown View (Epic Version)
     
+    @ViewBuilder
     private var transitionCountdownView: some View {
         let isCompact = ScreenDimensions.isCompactDevice
         let readyFontSize: CGFloat = isCompact ? 18 : 22
@@ -4374,7 +4514,7 @@ struct OnboardingView: View {
         let ringSize: CGFloat = isCompact ? 140 : 180
         let outerRingSize: CGFloat = isCompact ? 160 : 200
         
-        return ZStack {
+        ZStack {
             // Animated gradient background
             animatedGradientBackground
                 .ignoresSafeArea()
@@ -4538,6 +4678,9 @@ struct OnboardingView: View {
                 .frame(width: 500, height: 500)
                 .offset(x: 150, y: 400)
                 .rotationEffect(.degrees(-gradientRotation * 0.5))
+                .onAppear {
+                    // Review prompt removed from here - only shown on Review Page now
+                }
         }
         .onAppear {
             withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
@@ -4696,7 +4839,7 @@ struct OnboardingView: View {
                 confettiTrigger += 1
             }
             
-            // Transition to overview (mockup preview & paywall)
+            // Transition to overview page (Mockup) -> Review -> Paywall
             // Delay slightly to let confetti boom first
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -4947,7 +5090,7 @@ struct OnboardingView: View {
     private var primaryButtonTitle: String {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return "" // These pages have their own buttons
         case .welcome:
             return "Next"
@@ -4969,7 +5112,7 @@ struct OnboardingView: View {
     private var primaryButtonIconName: String? {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return nil // These pages have their own buttons
         case .welcome:
             return "arrow.right.circle.fill"
@@ -4991,7 +5134,7 @@ struct OnboardingView: View {
     private var primaryButtonEnabled: Bool {
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return false // These pages have their own buttons
         case .welcome:
             return true
@@ -5039,7 +5182,7 @@ struct OnboardingView: View {
         
         switch currentPage {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             // These pages have their own buttons and handle navigation internally
             break
         case .welcome:
@@ -5057,6 +5200,17 @@ struct OnboardingView: View {
             // This is now handled by custom buttons in the view
              break
         case .addNotes:
+            // Auto-save pending note content if present
+            let trimmed = currentNoteText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                let newNote = Note(text: trimmed, isCompleted: false)
+                onboardingNotes.append(newNote)
+                currentNoteText = ""
+                // Generate haptic feedback for the save
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            }
+            
             // Move directly to wallpapers
             withAnimation(.easeInOut(duration: 0.3)) {
                 self.currentPage = .chooseWallpapers
@@ -5074,6 +5228,16 @@ struct OnboardingView: View {
     }
 
     private func advanceStep() {
+        // INTERCEPT: Show Paywall after Review Page
+        // This must be checked BEFORE the 'next' guard because reviewPage is the last step
+        if currentPage == .reviewPage {
+            // Only show if we haven't already (though logic should prevent loops)
+            if !showPostOnboardingPaywall {
+                showPostOnboardingPaywall = true
+                return // Stop advancement until paywall is dismissed
+            }
+        }
+
         guard let next = OnboardingPage(rawValue: currentPage.rawValue + 1) else { 
             return 
         }
@@ -5330,7 +5494,7 @@ struct OnboardingView: View {
     
     private func preparePiPVideo() {
         // Determine which video to use based on whether user went to Settings (fix flow)
-        let videoResourceName = userWentToSettings ? "fix-guide-final-version" : "pip-guide-new"
+        let videoResourceName = userWentToSettings ? "fix-guide-final-version" : "notewall-pip-vid"
         
         // If userWentToSettings is true, always reload (we're switching to fix guide)
         // Otherwise, only load if not already loaded
@@ -5399,17 +5563,18 @@ struct OnboardingView: View {
         
         NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
         
-        // Show soft paywall after onboarding completion
-        // hasCompletedSetup will be set after paywall is dismissed
-        // Review popup will be shown after paywall is dismissed
-        showPostOnboardingPaywall = true
+        // Mark as complete immediately since paywall is now earlier
+        hasCompletedSetup = true
+        completedOnboardingVersion = onboardingVersion
+        WhatsNewManager.shared.markAsShown()
+        requestAppReviewIfNeeded()
     }
 
     
 
     private func prepareDemoVideoPlayerIfNeeded() {
         guard demoVideoPlayer == nil else { return }
-        guard let bundleURL = Bundle.main.url(forResource: "pip-guide-new", withExtension: "mp4") else {
+        guard let bundleURL = Bundle.main.url(forResource: "notewall-pip-vid", withExtension: "mp4") else {
             debugLog("⚠️ Onboarding: Demo video not found in bundle")
             return
         }
@@ -6030,7 +6195,7 @@ struct OnboardingView: View {
             #endif
             if let windowScene = UIApplication.shared.connectedScenes
                 .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                SKStoreReviewController.requestReview(in: windowScene)
+                // SKStoreReviewController.requestReview(in: windowScene) // DISABLED - Duplicate
                 #if DEBUG
                 print("🌟 Review request sent to window scene")
                 #endif
@@ -6843,9 +7008,12 @@ struct OnboardingView: View {
         case .quizDistraction:
             return "Quick Quiz"
         case .personalizationLoading:
-            return "Customizing Experience"
+             return "Loading"
         case .resultsPreview:
-            return "Personalized Plan"
+             return "Your Profile"
+        case .resultsInsight:
+             return "Insights"
+
         case .socialProof:
             return "What Others Say"
         case .reviewPage:
@@ -7352,6 +7520,8 @@ private extension OnboardingPage {
             return ""
         case .resultsPreview:
             return ""
+        case .resultsInsight:
+            return ""
         case .socialProof:
             return ""
         case .reviewPage:
@@ -7391,6 +7561,8 @@ private extension OnboardingPage {
             return "Customizing"
         case .resultsPreview:
             return "Your Profile"
+        case .resultsInsight:
+            return "Insights"
         case .socialProof:
             return "Community"
         case .reviewPage:
@@ -7434,6 +7606,8 @@ private extension OnboardingPage {
             return "Customizing your experience"
         case .resultsPreview:
             return "Your personalized results"
+        case .resultsInsight:
+            return "Insights"
         case .socialProof:
             return "Community proof"
         case .reviewPage:
@@ -7466,7 +7640,7 @@ private extension OnboardingPage {
     var stepNumber: Int? {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return nil // These don't show step numbers
         case .welcome:
             return 1
@@ -7486,13 +7660,13 @@ private extension OnboardingPage {
     // Phase for progress indicator
     var phase: String {
         switch self {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview:
+        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview, .resultsInsight:
             return "Getting to Know You"
-        case .socialProof, .reviewPage, .setupIntro:
+        case .socialProof, .setupIntro:
             return "Almost Ready"
         case .welcome, .videoIntroduction, .installShortcut, .shortcutSuccess, .addNotes, .chooseWallpapers, .allowPermissions:
             return "Setup"
-        case .setupComplete, .overview:
+        case .setupComplete, .reviewPage, .overview:
             return "Complete"
         }
     }
@@ -7501,7 +7675,7 @@ private extension OnboardingPage {
     var showsProgressIndicator: Bool {
         switch self {
         case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return false
         case .welcome, .videoIntroduction, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions:
             return true
@@ -7898,7 +8072,7 @@ struct AnimatedWord: View {
             .scaleEffect(scale)
             .opacity(opacity)
             .offset(y: yOffset)
-            .onChange(of: isVisible) { visible in
+            .onChange(of: isVisible) { _, visible in
                 if visible {
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
                         withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
@@ -8111,8 +8285,7 @@ struct ReviewPageView: View {
     
     // Adaptive layout
     private var isCompact: Bool {
-        let screenHeight = UIScreen.main.bounds.height
-        return screenHeight < 750
+        return ScreenDimensions.height < 750
     }
     
     // Fixed user count: 2,855 (formatted with space)

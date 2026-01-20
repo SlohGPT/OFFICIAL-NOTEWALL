@@ -90,10 +90,10 @@ struct ShortcutSetupView: View {
                     }
             }
         }
-        .onChange(of: scenePhase) { newPhase in
+        .onChange(of: scenePhase) { _, newPhase in
             handleScenePhaseChange(newPhase)
         }
-        .onChange(of: viewModel.setupState) { newState in
+        .onChange(of: viewModel.setupState) { _, newState in
             handleSetupStateChange(newState)
         }
     }

@@ -43,6 +43,10 @@ struct PaywallView: View {
     @State private var pendingPackage: Package?
     @State private var particleData: [ParticleData] = []
     @State private var particleAnimationTime: Double = 0
+    
+    // Urgency countdown timer (5 minutes = 300 seconds)
+    @State private var urgencyTimeRemaining: Int = 300
+    private let urgencyCountdownTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private let benefitSlides: [BenefitSlide] = [
         BenefitSlide(
@@ -301,13 +305,13 @@ struct PaywallView: View {
                 animateIn = true
             }
         }
-        .onChange(of: paywallManager.availablePackages) { packages in
+        .onChange(of: paywallManager.availablePackages) { _, packages in
             if selectedProductIndex >= packages.count {
                 selectedProductIndex = max(0, packages.count - 1)
             }
             initializePlanSelection()
         }
-        .onChange(of: paywallManager.isPremium) { isPremium in
+        .onChange(of: paywallManager.isPremium) { _, isPremium in
             // Auto-dismiss paywall when user becomes premium (e.g., after restore or purchase)
             if isPremium {
                 dismiss()
@@ -366,7 +370,7 @@ struct PaywallView: View {
                 shouldDismissAfterPromoCode = true
             }
         }
-        .onChange(of: shouldDismissAfterPromoCode) { newValue in
+        .onChange(of: shouldDismissAfterPromoCode) { _, newValue in
             if newValue {
                 shouldDismissAfterPromoCode = false
                 dismiss()
@@ -524,19 +528,19 @@ struct PaywallView: View {
                     .offset(y: animateIn ? 0 : 24)
                     .animation(.spring(response: 0.6, dampingFraction: 0.85).delay(0.1), value: animateIn)
                 
-                // Pricing options
+                // Urgency banner (44% Off Sale + 9 spots remaining)
+                urgencyBanner
+                    .padding(.horizontal, 24)
+                    .opacity(animateIn ? 1 : 0)
+                    .offset(y: animateIn ? 0 : 20)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15), value: animateIn)
+                
+                // Pricing options (Lifetime first, then Monthly)
                 pricingSection
                     .padding(.horizontal, 24)
                     .opacity(animateIn ? 1 : 0)
                     .offset(y: animateIn ? 0 : 30)
                     .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: animateIn)
-                
-                lifetimePrompt
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, -8)
-                    .opacity(animateIn ? 1 : 0)
-                    .offset(y: animateIn ? 0 : 20)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.35), value: animateIn)
                 
                 // Purchase button
                 Button(action: {
@@ -597,6 +601,14 @@ struct PaywallView: View {
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .frame(minWidth: 44, minHeight: 44)
+                    .simultaneousGesture(
+                        LongPressGesture(minimumDuration: 1.5)
+                            .onEnded { _ in
+                                let generator = UIImpactFeedbackGenerator(style: .medium)
+                                generator.impactOccurred()
+                                showPromoCodeSheet = true
+                            }
+                    )
                     
                     Button("Restore Purchases") {
                         // Track restore tap
@@ -958,23 +970,59 @@ struct PaywallView: View {
         .zIndex(10)
     }
     
-    private var lifetimePrompt: some View {
-        VStack(spacing: 6) {
-            Text("Have a special promo code?")
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(.primary)
-            
-            Button(action: {
-                showPromoCodeSheet = true
-            }) {
-                Text("Redeem your code here →")
-                    .font(.footnote)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.appAccent)
+    // MARK: - Urgency Banner (44% Off Sale + 9 spots remaining)
+    
+    private var urgencyBanner: some View {
+        HStack(spacing: 0) {
+            // Left side: Sale badge with sparkle icon
+            HStack(spacing: 10) {
+                // Sparkle icon with gradient
+                ZStack {
+                    Image(systemName: "sparkle")
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color.appAccent, Color.appAccent.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    // Small sparkles around
+                    ForEach(0..<4, id: \.self) { i in
+                        Image(systemName: "plus")
+                            .font(.system(size: 6, weight: .bold))
+                            .foregroundColor(Color.appAccent.opacity(0.7))
+                            .offset(
+                                x: CGFloat([12, -10, 8, -8][i]),
+                                y: CGFloat([-10, -8, 10, 6][i])
+                            )
+                    }
+                }
+                .frame(width: 36, height: 36)
+                
+                Text("44% Sale")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
             }
-            .buttonStyle(.plain)
+            
+            Spacer()
+            
+            // Right side: Spots remaining
+            Text("9 spots remaining")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundColor(.white.opacity(0.9))
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color(red: 0.08, green: 0.08, blue: 0.14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.appAccent.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
     
     private var redemptionInstructionsButton: some View {
@@ -1341,7 +1389,7 @@ struct PaywallView: View {
                 displayPrice = package.localizedPriceString
                 // Show $29.99 (or equivalent) as crossed-out original price
                 showOriginalPrice = getLifetimeOriginalPrice(for: package)
-                badgeText = "BEST VALUE" // Most effective badge for lifetime plans
+                badgeText = "TIMER" // Will show countdown timer
             }
         } else {
             displayPrice = package.localizedPriceString
@@ -1545,11 +1593,7 @@ struct PaywallView: View {
         }
     }
 
-    private func isLifetimePlan(_ package: Package?) -> Bool {
-        guard let package else { return selectedProductIndex == 0 }
-        if package.packageType == .lifetime { return true }
-        return package.storeProduct.productIdentifier.lowercased().contains("lifetime")
-    }
+
 
     private func trialDaysForSelectedPackage(_ package: Package?) -> Int? {
         if let period = package?.storeProduct.introductoryDiscount?.subscriptionPeriod {
@@ -1718,7 +1762,7 @@ struct PaywallView: View {
                     isPurchasing = false
                     
                     // Track purchase success
-                    let price = package.storeProduct.price as? Double
+                    let price = NSDecimalNumber(decimal: package.storeProduct.price).doubleValue
                     let currency = package.storeProduct.currencyCode
                     AnalyticsService.shared.trackPurchaseSuccess(
                         productId: productId,
@@ -1958,7 +2002,12 @@ struct PaywallView: View {
         if kind == .yearly {
             let formatter = currencyFormatter(for: package)
             let locale = formatter.locale ?? Locale.current
-            let currencyCode = locale.currencyCode ?? "USD"
+            let currencyCode: String
+            if #available(iOS 16, *) {
+                currencyCode = locale.currency?.identifier ?? "USD"
+            } else {
+                currencyCode = locale.currencyCode ?? "USD"
+            }
             
             if applyDiscount {
                 // For exit-intercept discount, show $9.99/12 = $0.83/mo
@@ -1984,27 +2033,31 @@ struct PaywallView: View {
         return formatter.string(from: NSDecimalNumber(decimal: discountedPrice)) ?? package.localizedPriceString
     }
     
-    /// Returns $29.99 (or equivalent) for lifetime original price display (crossed out)
+    /// Returns €17.99 (or equivalent) for lifetime original price display (crossed out)
     private func getLifetimeOriginalPrice(for package: Package) -> String {
         let formatter = currencyFormatter(for: package)
         let locale = formatter.locale ?? Locale.current
         
         // Determine currency and set appropriate original price
-        let currencyCode = locale.currencyCode ?? "USD"
+        let currencyCode: String
+        if #available(iOS 16, *) {
+            currencyCode = locale.currency?.identifier ?? "USD"
+        } else {
+            currencyCode = locale.currencyCode ?? "USD"
+        }
         let originalAmount: Decimal
         
-        // Set $29.99 for USD, €29.99 for EUR, or equivalent
+        // Set €17.99 for EUR, $17.99 for USD, or equivalent
         if currencyCode == "EUR" {
-            originalAmount = 29.99
+            originalAmount = 17.99
         } else if currencyCode == "USD" {
-            originalAmount = 29.99
+            originalAmount = 17.99
         } else {
-            // For other currencies, use a reasonable conversion
-            // You can adjust this based on your pricing strategy
-            originalAmount = 29.99
+            // For other currencies, use the same base price
+            originalAmount = 17.99
         }
         
-        return formatter.string(from: NSDecimalNumber(decimal: originalAmount)) ?? "$29.99"
+        return formatter.string(from: NSDecimalNumber(decimal: originalAmount)) ?? "€17.99"
     }
     
     /// Returns $9.99 (or equivalent) for exit-intercept discount display
@@ -2013,7 +2066,12 @@ struct PaywallView: View {
         let locale = formatter.locale ?? Locale.current
         
         // Determine currency and set appropriate discounted price
-        let currencyCode = locale.currencyCode ?? "USD"
+        let currencyCode: String
+        if #available(iOS 16, *) {
+            currencyCode = locale.currency?.identifier ?? "USD"
+        } else {
+            currencyCode = locale.currencyCode ?? "USD"
+        }
         let discountedAmount: Decimal
         
         // Set $9.99 for USD, €9.99 for EUR, or equivalent
@@ -2063,17 +2121,48 @@ struct PaywallView: View {
     
     @ViewBuilder
     private func badgeLabel(text: String) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundColor(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 5)
-            .background(Capsule().fill(Color.appAccent))
-            .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
-            .padding(.trailing, 4)
-            .padding(.top, -2)
-            .offset(x: -10, y: -12)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        if text == "TIMER" {
+            // Countdown timer badge
+            timerBadge
+        } else {
+            Text(text)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 5)
+                .background(Capsule().fill(Color.appAccent))
+                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+                .padding(.trailing, 4)
+                .padding(.top, -2)
+                .offset(x: -10, y: -12)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        }
+    }
+    
+    private var timerBadge: some View {
+        let minutes = urgencyTimeRemaining / 60
+        let seconds = urgencyTimeRemaining % 60
+        
+        return HStack(spacing: 4) {
+            Image(systemName: "clock.fill")
+                .font(.system(size: 10, weight: .bold))
+            Text(String(format: "%02d:%02d", minutes, seconds))
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 5)
+        .background(Capsule().fill(Color.appAccent))
+        .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+        .padding(.trailing, 4)
+        .padding(.top, -2)
+        .offset(x: -10, y: -12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        .onReceive(urgencyCountdownTimer) { _ in
+            if urgencyTimeRemaining > 0 {
+                urgencyTimeRemaining -= 1
+            }
+        }
     }
     
     private func getLegalDocumentContent() -> String {

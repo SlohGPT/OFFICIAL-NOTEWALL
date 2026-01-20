@@ -86,6 +86,7 @@ enum OnboardingStepId: String, CaseIterable {
     case quizDistraction = "quiz_distraction"
     case personalizationLoading = "personalization_loading"
     case resultsPreview = "results_preview"
+    case resultsInsight = "results_insight"
     
     // Phase 2: Social Proof
     case socialProof = "social_proof"
@@ -120,6 +121,7 @@ enum OnboardingStepId: String, CaseIterable {
         case .quizDistraction: return "Quiz: Distraction"
         case .personalizationLoading: return "Personalization"
         case .resultsPreview: return "Results Preview"
+        case .resultsInsight: return "Insights"
         case .socialProof: return "Social Proof"
         case .reviewPage: return "Review Page"
         case .setupIntro: return "Setup Intro"
