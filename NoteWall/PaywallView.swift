@@ -14,7 +14,10 @@ struct PaywallView: View {
     
     let triggerReason: PaywallTriggerReason
     let allowDismiss: Bool
-    let applyExitInterceptDiscount: Bool // 30% discount for exit-intercept
+    private let initialExitInterceptDiscount: Bool // Stored solely for analytics/init
+    
+    // Dynamic state that can be updated via Quick Actions
+    @State private var discountApplied: Bool
     
     @State private var selectedProductIndex = 0  // Default to first package
     @State private var isPurchasing = false
@@ -43,10 +46,9 @@ struct PaywallView: View {
     @State private var pendingPackage: Package?
     @State private var particleData: [ParticleData] = []
     @State private var particleAnimationTime: Double = 0
+    @State private var showPrivacyOptions = false
     
-    // Urgency countdown timer (5 minutes = 300 seconds)
-    @State private var urgencyTimeRemaining: Int = 300
-    private let urgencyCountdownTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
 
     private let benefitSlides: [BenefitSlide] = [
         BenefitSlide(
@@ -82,7 +84,7 @@ struct PaywallView: View {
         return originalCount * 4 // Start in the middle (4 sets in, so we have 4 sets before and 4 sets after)
     }
 
-    @GestureState private var benefitDragOffset: CGFloat = 0
+    // @GestureState private var benefitDragOffset: CGFloat = 0 // Unused
     
     private let benefitsAutoScrollTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     private let particleAnimationTimer = Timer.publish(every: 0.033, on: .main, in: .common).autoconnect() // ~30fps for smooth, efficient animation
@@ -90,7 +92,8 @@ struct PaywallView: View {
     init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true, applyExitInterceptDiscount: Bool = false) {
         self.triggerReason = triggerReason
         self.allowDismiss = allowDismiss
-        self.applyExitInterceptDiscount = applyExitInterceptDiscount
+        self.initialExitInterceptDiscount = applyExitInterceptDiscount
+        _discountApplied = State(initialValue: applyExitInterceptDiscount)
     }
     
     var body: some View {
@@ -274,15 +277,15 @@ struct PaywallView: View {
             paywallManager.trackPaywallView()
             
             // Track paywall impression with Firebase Analytics
-            let paywallId: PaywallId = applyExitInterceptDiscount ? .exitIntercept : triggerReasonToPaywallId(triggerReason)
+            let paywallId: PaywallId = discountApplied ? .exitIntercept : triggerReasonToPaywallId(triggerReason)
             AnalyticsService.shared.trackPaywallImpression(
                 paywallId: paywallId.rawValue,
                 trigger: triggerReason.rawValue,
-                placement: applyExitInterceptDiscount ? "exit_intercept" : nil
+                placement: discountApplied ? "exit_intercept" : nil
             )
             
             // Track exit-intercept discount view
-            if applyExitInterceptDiscount {
+            if discountApplied {
                 CrashReporter.logMessage("Paywall: Exit-intercept 30% discount shown", level: .info)
                 CrashReporter.setCustomKey("showed_exit_discount", value: "true")
             }
@@ -374,6 +377,47 @@ struct PaywallView: View {
             if newValue {
                 shouldDismissAfterPromoCode = false
                 dismiss()
+            }
+        }
+        .confirmationDialog("Privacy Options", isPresented: $showPrivacyOptions, titleVisibility: .visible) {
+            Button("Privacy Policy") {
+                if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
+                    UIApplication.shared.open(url)
+                }
+            }
+            
+            Button("Redeem Code") {
+                showPromoCodeSheet = true
+            }
+            
+            Button("Cancel", role: .cancel) { }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
+            if let actionType = notification.object as? QuickActionsManager.QuickActionType {
+                if actionType == .claimDiscount {
+                    // Upgrade to discounted paywall in-place
+                    if !discountApplied {
+                        withAnimation {
+                            discountApplied = true
+                        }
+                        
+                        // Re-initialize selection to pick the discounted plan
+                        hasInitializedPlanSelection = false
+                        initializePlanSelection()
+                        
+                        // Track the new impression/event
+                        CrashReporter.logMessage("Paywall: In-place upgrade to 30% discount via Quick Action", level: .info)
+                        AnalyticsService.shared.trackPaywallImpression(
+                            paywallId: PaywallId.exitIntercept.rawValue,
+                            trigger: "quick_action_upgrade",
+                            placement: "exit_intercept"
+                        )
+                        
+                        // Haptic feedback
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                }
             }
         }
     }
@@ -488,7 +532,8 @@ struct PaywallView: View {
                             paywallManager.trackPaywallDismiss()
                             
                             // Track paywall close without conversion
-                            let paywallId = applyExitInterceptDiscount ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
+                            // Track paywall close without conversion
+                            let paywallId = discountApplied ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
                             AnalyticsService.shared.trackPaywallClose(
                                 paywallId: paywallId.rawValue,
                                 converted: false
@@ -515,7 +560,7 @@ struct PaywallView: View {
                     .animation(.spring(response: 0.6, dampingFraction: 0.85), value: animateIn)
                 
                 // Exit-intercept discount badge
-                if applyExitInterceptDiscount {
+                if discountApplied {
                     exitInterceptDiscountBadge
                         .opacity(animateIn ? 1 : 0)
                         .scaleEffect(animateIn ? 1 : 0.9)
@@ -529,11 +574,14 @@ struct PaywallView: View {
                     .animation(.spring(response: 0.6, dampingFraction: 0.85).delay(0.1), value: animateIn)
                 
                 // Urgency banner (44% Off Sale + 9 spots remaining)
-                urgencyBanner
-                    .padding(.horizontal, 24)
-                    .opacity(animateIn ? 1 : 0)
-                    .offset(y: animateIn ? 0 : 20)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15), value: animateIn)
+                // Only show if NOT showing the special offer (exit intercept)
+                if !discountApplied {
+                    urgencyBanner
+                        .padding(.horizontal, 24)
+                        .opacity(animateIn ? 1 : 0)
+                        .offset(y: animateIn ? 0 : 20)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.15), value: animateIn)
+                }
                 
                 // Pricing options (Lifetime first, then Monthly)
                 pricingSection
@@ -594,21 +642,11 @@ struct PaywallView: View {
                     .frame(minWidth: 44, minHeight: 44)
                     
                     Button("Privacy") {
-                        if let url = URL(string: "https://peat-appendix-c3c.notion.site/PRIVACY-POLICY-2b7f6a63758f804cab16f58998d7787e?source=copy_link") {
-                            UIApplication.shared.open(url)
-                        }
+                        showPrivacyOptions = true
                     }
                     .font(.system(size: 14))
                     .foregroundColor(.secondary)
                     .frame(minWidth: 44, minHeight: 44)
-                    .simultaneousGesture(
-                        LongPressGesture(minimumDuration: 1.5)
-                            .onEnded { _ in
-                                let generator = UIImpactFeedbackGenerator(style: .medium)
-                                generator.impactOccurred()
-                                showPromoCodeSheet = true
-                            }
-                    )
                     
                     Button("Restore Purchases") {
                         // Track restore tap
@@ -657,7 +695,7 @@ struct PaywallView: View {
                         paywallManager.trackPaywallDismiss()
                         
                         // Track paywall close without conversion
-                        let paywallId = applyExitInterceptDiscount ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
+                        let paywallId = discountApplied ? PaywallId.exitIntercept : triggerReasonToPaywallId(triggerReason)
                         AnalyticsService.shared.trackPaywallClose(
                             paywallId: paywallId.rawValue,
                             converted: false
@@ -801,7 +839,7 @@ struct PaywallView: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.yellow)
                 
-                Text("SPECIAL OFFER")
+                Text("🚨🚨 SPECIAL OFFER 🚨🚨")
                     .font(.system(size: 14, weight: .black, design: .rounded))
                     .foregroundColor(.white)
                 
@@ -859,34 +897,13 @@ struct PaywallView: View {
                     }
                 }
                 .zIndex(10)
-                .offset(x: baseOffset + benefitDragOffset)
+                .offset(x: baseOffset)
                 .animation(.spring(response: 0.45, dampingFraction: 0.85), value: benefitCarouselIndex)
                 .frame(width: screenWidth, height: cardHeight, alignment: .leading)
                 .clipped()
                 .compositingGroup() // First composite
                 .drawingGroup() // Then render as single layer for smooth scrolling
-                .gesture(
-                    DragGesture(minimumDistance: 5) // Add minimum distance to reduce gesture conflicts
-                        .updating($benefitDragOffset) { value, state, _ in
-                            state = value.translation.width
-                        }
-                        .onChanged { _ in
-                            if !isUserDraggingBenefits {
-                                isUserDraggingBenefits = true
-                                lastManualSwipeTime = Date()
-                            }
-                        }
-                        .onEnded { value in
-                            isUserDraggingBenefits = false
-                            lastManualSwipeTime = Date()
-                            handleCarouselDragEnd(
-                                translation: value.translation.width,
-                                itemWidth: itemWidth,
-                                originalCount: originalCount,
-                                totalCount: slides.count
-                            )
-                        }
-                )
+
                 .onAppear {
                     if benefitCarouselIndex == 0 {
                         benefitCarouselIndex = startingIndex
@@ -1130,7 +1147,7 @@ struct PaywallView: View {
     private var primaryPackages: [Package] {
         // Show Lifetime and Monthly in main paywall (Lifetime replaces Yearly)
         // When exit intercept discount is active, prefer the discounted lifetime product
-        if applyExitInterceptDiscount {
+        if discountApplied {
             return availablePackages.filter { package in
                 let kind = planKind(for: package)
                 let identifier = package.storeProduct.productIdentifier.lowercased()
@@ -1206,7 +1223,7 @@ struct PaywallView: View {
     
     private var lifetimePackage: Package? {
         // If exit intercept discount is active, prefer the discounted lifetime product
-        if applyExitInterceptDiscount {
+        if discountApplied {
             // Look for the discounted lifetime product first
             if let discountedLifetime = availablePackages.first(where: { package in
                 let identifier = package.storeProduct.productIdentifier.lowercased()
@@ -1243,7 +1260,7 @@ struct PaywallView: View {
     @discardableResult
     private func selectLifetimePackage() -> Bool {
         // If exit intercept discount is active, prefer the discounted lifetime product
-        if applyExitInterceptDiscount {
+        if discountApplied {
             if let discountedLifetimeIndex = availablePackages.firstIndex(where: { package in
                 let identifier = package.storeProduct.productIdentifier.lowercased()
                 return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
@@ -1304,7 +1321,7 @@ struct PaywallView: View {
     }
     
     private func fallbackPricingCard(plan: FallbackPlan, index: Int) -> some View {
-        let isLifetimePlan = plan.kind == .lifetime
+        // Unused: let isLifetimePlan = plan.kind == .lifetime
         
         // Determine display price
         let displayPrice = plan.priceText
@@ -1367,7 +1384,7 @@ struct PaywallView: View {
                                        package.storeProduct.productIdentifier.lowercased() == "lifetime_discount"
             
             // For exit-intercept discount, use the discounted lifetime product's actual price
-            if applyExitInterceptDiscount && isDiscountedLifetime {
+            if discountApplied && isDiscountedLifetime {
                 // Use the discounted product's price (it's already discounted in App Store Connect)
                 displayPrice = package.localizedPriceString
                 // Find the regular lifetime package to show as original price
@@ -1380,7 +1397,7 @@ struct PaywallView: View {
                     showOriginalPrice = getLifetimeOriginalPrice(for: package)
                 }
                 badgeText = "30% OFF" // Show discount badge
-            } else if applyExitInterceptDiscount && !isDiscountedLifetime {
+            } else if discountApplied && !isDiscountedLifetime {
                 // Fallback: calculate discount if discounted product not found
                 displayPrice = getDiscountedPriceString(for: package)
                 showOriginalPrice = package.localizedPriceString
@@ -1389,7 +1406,7 @@ struct PaywallView: View {
                 displayPrice = package.localizedPriceString
                 // Show $29.99 (or equivalent) as crossed-out original price
                 showOriginalPrice = getLifetimeOriginalPrice(for: package)
-                badgeText = "TIMER" // Will show countdown timer
+                badgeText = "BEST VALUE"
             }
         } else {
             displayPrice = package.localizedPriceString
@@ -1684,7 +1701,7 @@ struct PaywallView: View {
         guard !packages.isEmpty else { return }
         
         // If exit intercept discount is active, prefer the discounted lifetime product
-        if applyExitInterceptDiscount {
+        if discountApplied {
             if let discountedLifetimeIndex = packages.firstIndex(where: { package in
                 let identifier = package.storeProduct.productIdentifier.lowercased()
                 return identifier == "lifetime_discount" || identifier.contains("lifetime_discount")
@@ -2119,50 +2136,21 @@ struct PaywallView: View {
         return formatter
     }
     
+    // MARK: - Helper Views
+    
     @ViewBuilder
     private func badgeLabel(text: String) -> some View {
-        if text == "TIMER" {
-            // Countdown timer badge
-            timerBadge
-        } else {
-            Text(text)
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(Color.appAccent))
-                .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
-                .padding(.trailing, 4)
-                .padding(.top, -2)
-                .offset(x: -10, y: -12)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-        }
-    }
-    
-    private var timerBadge: some View {
-        let minutes = urgencyTimeRemaining / 60
-        let seconds = urgencyTimeRemaining % 60
-        
-        return HStack(spacing: 4) {
-            Image(systemName: "clock.fill")
-                .font(.system(size: 10, weight: .bold))
-            Text(String(format: "%02d:%02d", minutes, seconds))
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-        }
-        .foregroundColor(.white)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 5)
-        .background(Capsule().fill(Color.appAccent))
-        .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
-        .padding(.trailing, 4)
-        .padding(.top, -2)
-        .offset(x: -10, y: -12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-        .onReceive(urgencyCountdownTimer) { _ in
-            if urgencyTimeRemaining > 0 {
-                urgencyTimeRemaining -= 1
-            }
-        }
+        Text(text)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundColor(.white)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
+            .background(Capsule().fill(Color.appAccent))
+            .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+            .padding(.trailing, 4)
+            .padding(.top, -2)
+            .offset(x: -10, y: -12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
     }
     
     private func getLegalDocumentContent() -> String {
@@ -3113,7 +3101,7 @@ private struct PromoCodeInputView: View {
                             .onSubmit {
                                 validateAndRedeem()
                             }
-                            .onChange(of: promoCode) { newValue in
+                            .onChange(of: promoCode) { _, newValue in
                                 // Auto-format: PREFIX-XXXX-XXXX (LT- or MO-)
                                 let filtered = newValue.uppercased()
                                     .replacingOccurrences(of: " ", with: "")

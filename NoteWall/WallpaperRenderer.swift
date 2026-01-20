@@ -58,7 +58,11 @@ struct WallpaperRenderer {
             deviceScreenHeight = windowScene.screen.nativeBounds.height
         } else {
             // Fallback for cases where scene isn't ready
-            deviceScreenHeight = UIScreen.main.nativeBounds.height
+            if let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first {
+                deviceScreenHeight = screen.nativeBounds.height
+            } else {
+                deviceScreenHeight = 2532 // Default to iPhone 12/13/14 Pro height as safe fallback
+            }
         }
         
         if deviceScreenHeight <= 0 {
@@ -105,8 +109,13 @@ struct WallpaperRenderer {
             deviceHeight = windowScene.screen.nativeBounds.height
             deviceWidth = windowScene.screen.nativeBounds.width
         } else {
-            deviceHeight = UIScreen.main.nativeBounds.height
-            deviceWidth = UIScreen.main.nativeBounds.width
+            if let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first {
+                deviceHeight = screen.nativeBounds.height
+                deviceWidth = screen.nativeBounds.width
+            } else {
+                deviceHeight = 2532
+                deviceWidth = 1170
+            }
         }
         let baseTopPadding = hasLockScreenWidgets ? topPaddingWithWidgets : topPaddingNoWidgets
         let adjustedTopPadding = topPadding(hasWidgets: hasLockScreenWidgets)

@@ -23,8 +23,15 @@ enum DeviceSizeCategory {
             screenWidth = windowScene.screen.bounds.width
         } else {
             // Fallback for cases where scene isn't ready
-            screenHeight = UIScreen.main.bounds.height
-            screenWidth = UIScreen.main.bounds.width
+            // Note: UIScreen.main is deprecated in iOS 16, but may be necessary if no scene is connected
+            // Using a hardcoded fallback based on typical logical resolution if main screen isn't available
+             if let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first {
+                 screenHeight = screen.bounds.height
+                 screenWidth = screen.bounds.width
+            } else {
+                 screenHeight = 844
+                 screenWidth = 390
+            }
         }
         
         // Use the smaller dimension to determine category (works for both orientations)
@@ -54,14 +61,22 @@ struct ScreenDimensions {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             return windowScene.screen.bounds.width
         }
-        return UIScreen.main.bounds.width
+
+        if let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first {
+             return screen.bounds.width
+        }
+        return 390 // Default width fallback
     }
     
     static var height: CGFloat {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             return windowScene.screen.bounds.height
         }
-        return UIScreen.main.bounds.height
+
+        if let screen = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.screen }).first {
+             return screen.bounds.height
+        }
+        return 844 // Default height fallback
     }
     
     /// Safe area insets for the current device

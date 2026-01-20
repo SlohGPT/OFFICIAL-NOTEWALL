@@ -1745,9 +1745,13 @@ struct ResultsInsightView: View {
                 // Big Text Rows
                 VStack(alignment: .leading, spacing: 32) { // Bigger spacing
                     Group {
-                        Text("You check your phone\n") +
-                        Text(reminderFrequency.lowercased())
-                            .foregroundColor(.appAccent)
+                        if #available(iOS 15.0, *) {
+                            Text("You check your phone\n\(Text(reminderFrequency.lowercased()).foregroundColor(.appAccent))")
+                        } else {
+                            Text("You check your phone\n") +
+                            Text(reminderFrequency.lowercased())
+                                .foregroundColor(.appAccent)
+                        }
                     }
                     .font(.system(size: isCompact ? 22 : 26, weight: .medium))
                     .foregroundColor(.white.opacity(0.9))
@@ -1755,10 +1759,14 @@ struct ResultsInsightView: View {
                     .opacity(row1Opacity)
                     
                     Group {
-                        Text("That's ") +
-                        Text(phoneCheckCount)
-                            .foregroundColor(.appAccent) +
-                        Text(" daily chances to remember what matters.")
+                        if #available(iOS 15.0, *) {
+                            Text("That's \(Text(phoneCheckCount).foregroundColor(.appAccent)) daily chances to remember what matters.")
+                        } else {
+                            Text("That's ") +
+                            Text(phoneCheckCount)
+                                .foregroundColor(.appAccent) +
+                            Text(" daily chances to remember what matters.")
+                        }
                     }
                     .font(.system(size: isCompact ? 22 : 26, weight: .medium))
                     .foregroundColor(.white.opacity(0.9))
@@ -1920,9 +1928,13 @@ struct TrajectoryView: View {
                         
                         // MARK: - Subtitle
                         Group {
-                            Text("Never forget ") +
-                            Text("what matters")
-                                .foregroundColor(.appAccent)
+                            if #available(iOS 15.0, *) {
+                                Text("Never forget \(Text("what matters").foregroundColor(.appAccent))")
+                            } else {
+                                Text("Never forget ") +
+                                Text("what matters")
+                                    .foregroundColor(.appAccent)
+                            }
                         }
                         .font(.system(size: isCompact ? 16 : 20, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))

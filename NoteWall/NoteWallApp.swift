@@ -177,13 +177,13 @@ struct NoteWallApp: App {
                     UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
                 }
             }
-            .onChange(of: hasCompletedSetup) { newValue in
+            .onChange(of: hasCompletedSetup) { _, newValue in
                 // Update onboarding state when setup completion changes
                 showOnboarding = !newValue
                 // Update Superwall attributes when setup status changes
                 SuperwallUserAttributesManager.shared.updateOnboardingAttributes()
             }
-            .onChange(of: PaywallManager.shared.isPremium) { _ in
+            .onChange(of: PaywallManager.shared.isPremium) { _, _ in
                 // Update Quick Actions when premium status changes
                 QuickActionsManager.shared.refreshQuickActions()
             }

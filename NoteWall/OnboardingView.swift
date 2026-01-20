@@ -273,6 +273,7 @@ struct OnboardingView: View {
     
     // Post-onboarding paywall
     @State private var showPostOnboardingPaywall = false
+    @State private var showDiscountedPaywall = false
     @StateObject private var paywallManager = PaywallManager.shared
     
     // Final step mockup preview
@@ -634,6 +635,35 @@ struct OnboardingView: View {
                         WhatsNewManager.shared.markAsShown()
                     }
                 }
+        }
+        .sheet(isPresented: $showDiscountedPaywall) {
+            if #available(iOS 15.0, *) {
+                PaywallView(
+                    triggerReason: .exitIntercept,
+                    allowDismiss: true,
+                    applyExitInterceptDiscount: true
+                )
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
+            debugLog("📥 OnboardingView: Received quick action notification")
+            if let actionType = notification.object as? QuickActionsManager.QuickActionType {
+                if actionType == .claimDiscount {
+                    // Force show the discounted paywall
+                    // We need a slight delay to ensure any existing sheets are dismissed if needed,
+                    // or to present over them. Since sheets can stack in SwiftUI 2.0+ (iOS 15+),
+                    // simply setting this to true should work, but for safety:
+                    
+                    debugLog("✅ OnboardingView: Presenting discounted paywall via Quick Action")
+                    
+                    // Provide haptic feedback
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
+                    
+                    // Present the sheet
+                    self.showDiscountedPaywall = true
+                }
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -8421,9 +8451,11 @@ struct ReviewPageView: View {
                 }
             }
             
-            // Request App Store review popup
-            if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
-                SKStoreReviewController.requestReview(in: windowScene)
+            // Request App Store review popup with delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                    SKStoreReviewController.requestReview(in: windowScene)
+                }
             }
         }
         .onReceive(particleAnimationTimer) { _ in
@@ -8521,31 +8553,29 @@ struct ReviewMarqueeRow: View {
         case rightToLeft
     }
     
-    @State private var offset: CGFloat = 0
     private let cardWidth: CGFloat = 280
     private let spacing: CGFloat = 16
     
     var body: some View {
-        GeometryReader { geometry in
-            let contentWidth = CGFloat(reviews.count) * (cardWidth + spacing)
-            
-            HStack(spacing: spacing) {
-                // Repeat 20 times to create seamless infinite scroll
-                ForEach(0..<20) { _ in 
-                    ForEach(reviews) { review in
-                        ReviewCard(review: review)
+        TimelineView(.animation) { timeline in
+            GeometryReader { geometry in
+                let contentWidth = CGFloat(reviews.count) * (cardWidth + spacing)
+                let duration = speed
+                let time = timeline.date.timeIntervalSinceReferenceDate
+                let progress = (time / duration).truncatingRemainder(dividingBy: 1.0)
+                let currentOffset = contentWidth * progress
+                
+                let xOffset: CGFloat = direction == .rightToLeft ? -currentOffset : -contentWidth + currentOffset
+                
+                HStack(spacing: spacing) {
+                    // Repeat 20 times to create seamless infinite scroll
+                    ForEach(0..<20) { _ in 
+                        ForEach(reviews) { review in
+                            ReviewCard(review: review)
+                        }
                     }
                 }
-            }
-            .offset(x: offset)
-            .onAppear {
-                // Reset state first
-                offset = direction == .rightToLeft ? 0 : -contentWidth
-                
-                // Start infinite scroll animation - use linear for smooth constant speed
-                withAnimation(.linear(duration: speed).repeatForever(autoreverses: false)) {
-                    offset = direction == .rightToLeft ? -contentWidth : 0
-                }
+                .offset(x: xOffset)
             }
         }
         .frame(height: 130)

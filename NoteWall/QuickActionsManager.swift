@@ -19,7 +19,7 @@ final class QuickActionsManager: NSObject, ObservableObject {
         var title: String {
             switch self {
             case .claimDiscount:
-                return "Claim 30% Special Offer"
+                return "🚨🚨 Claim Special Offer"
             case .giveFeedback:
                 return "Before you delete… Can we ask why?"
             case .autoFix:
