@@ -64,7 +64,8 @@
 		H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = H2000001000000000000001 /* how-to-fix-guide.mp4 */; };
 		I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I2000001000000000000001 /* AppIconAnimationView.swift */; };
 		J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = J2000001000000000000001 /* fix-guide-final-version.mp4 */; };
-		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };
+		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };		0A0C74223922411BB0A76091 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -122,7 +123,8 @@
 		H2000001000000000000001 /* how-to-fix-guide.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "how-to-fix-guide.mp4"; sourceTree = "<group>"; };
 		I2000001000000000000001 /* AppIconAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconAnimationView.swift; sourceTree = "<group>"; };
 		J2000001000000000000001 /* fix-guide-final-version.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fix-guide-final-version.mp4"; sourceTree = "<group>"; };
-		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };
+		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };		9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -210,7 +212,8 @@
 				I2000001000000000000001 /* AppIconAnimationView.swift */,
 				UC200000000000000000001 /* UserCountService.swift */,
 				FA300000000000000000001 /* Analytics */,
-			);
+			
+				9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */,);
 			path = NoteWall;
 			sourceTree = "<group>";
 		};
@@ -315,7 +318,8 @@
 				G1000001000000000000001 /* welcome-video.mp4 in Resources */,
 				H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */,
 				J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */,
-			);
+			
+				0A0C74223922411BB0A76091 /* PrivacyInfo.xcprivacy in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
