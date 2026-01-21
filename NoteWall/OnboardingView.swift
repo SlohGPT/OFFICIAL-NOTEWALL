@@ -8452,7 +8452,7 @@ struct ReviewPageView: View {
             }
             
             // Request App Store review popup with delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
                 if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
                     SKStoreReviewController.requestReview(in: windowScene)
                 }

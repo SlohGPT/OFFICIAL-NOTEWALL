@@ -240,6 +240,12 @@ final class PaywallManager: NSObject, ObservableObject {
     // MARK: - Usage Tracking
 
     func checkPaywallOnLaunch() {
+        #if DEBUG
+        // Skip automatic paywall in debug mode to allow testing What's New
+        print("🔧 DEBUG: Skipping automatic paywall on launch")
+        return
+        #endif
+        
         guard !isPremium else { return }
         
         let hasCompletedSetup = UserDefaults.standard.bool(forKey: "hasCompletedSetup")

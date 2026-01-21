@@ -52,25 +52,25 @@ struct DeleteNotesLoadingView: View {
                 ZStack {
                     // Outer subtle glow
                     Circle()
-                        .fill(Color.appAccent.opacity(0.08))
+                        .fill(Color("AppAccent").opacity(0.08))
                         .frame(width: 88, height: 88)
                         .scaleEffect(pulseScale)
                     
                     // Background track
                     Circle()
-                        .stroke(Color.appAccent.opacity(0.15), lineWidth: 5)
+                        .stroke(Color("AppAccent").opacity(0.15), lineWidth: 5)
                         .frame(width: 76, height: 76)
                     
                     // Progress circle that fills up
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
-                            Color.appAccent,
+                            Color("AppAccent"),
                             style: StrokeStyle(lineWidth: 5, lineCap: .round)
                         )
                         .frame(width: 76, height: 76)
                         .rotationEffect(.degrees(-90)) // Start from top
-                        .shadow(color: Color.appAccent.opacity(0.4), radius: 6, x: 0, y: 2)
+                        .shadow(color: Color("AppAccent").opacity(0.4), radius: 6, x: 0, y: 2)
                     
                     // Countdown number in center
                     VStack(spacing: 2) {
@@ -107,15 +107,15 @@ struct DeleteNotesLoadingView: View {
             ZStack {
                 // Outer glow effect
                 Circle()
-                    .fill(Color.appAccent.opacity(0.12))
+                    .fill(Color("AppAccent").opacity(0.12))
                     .frame(width: 72, height: 72)
                     .blur(radius: 10)
                 
                 // Success circle background
                 Circle()
-                    .fill(Color.appAccent)
+                    .fill(Color("AppAccent"))
                     .frame(width: 64, height: 64)
-                    .shadow(color: Color.appAccent.opacity(0.3), radius: 12, x: 0, y: 6)
+                    .shadow(color: Color("AppAccent").opacity(0.3), radius: 12, x: 0, y: 6)
                 
                 // Checkmark
                 Image(systemName: "checkmark")

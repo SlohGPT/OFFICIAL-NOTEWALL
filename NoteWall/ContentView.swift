@@ -1093,8 +1093,8 @@ private struct NotesListView: View {
                 FirstNoteHintBannerView(context: context)
             }
             
-            // Troubleshooting banner appears after notes
-            if context.shouldShowTroubleshootingBanner.wrappedValue && !context.isEditMode.wrappedValue {
+            // Troubleshooting banner appears after notes - always show on every boot
+            if !context.isEditMode.wrappedValue {
                 TroubleshootingBannerView(context: context)
             }
 
@@ -1636,6 +1636,10 @@ private struct TroubleshootingBannerView: View {
                     removal: .scale.combined(with: .opacity)
                 ))
             }
+        }
+        .onAppear {
+            // Reset visibility on every app launch so banner reappears
+            isTemporarilyHidden = false
         }
     }
 }

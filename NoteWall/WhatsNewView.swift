@@ -15,6 +15,8 @@ struct WhatsNewView: View {
     @State private var feedbackOpacity: Double = 0
     @State private var buttonOpacity: Double = 0
     @State private var confettiTrigger = 0
+    @State private var showFeatureRequestAlert = false
+    @State private var featureRequestText = ""
     
     // Adaptive layout
     private var isCompact: Bool {
@@ -44,22 +46,22 @@ struct WhatsNewView: View {
     private var updateItems: [UpdateItem] {
         [
             UpdateItem(
-                icon: "sparkles",
-                iconColor: .appAccent,
-                title: "Improved Noteful",
-                description: "We've improved Noteful to help you remember tasks, routines, and important things more easily."
+                icon: "wrench.and.screwdriver.fill",
+                iconColor: Color("AppAccent"),
+                title: "Quick Troubleshooting Access",
+                description: "Troubleshooting banner now shows on every app launch for instant help when wallpaper isn't showing."
             ),
             UpdateItem(
-                icon: "wrench.and.screwdriver.fill",
-                iconColor: .appAccent.opacity(0.8),
-                title: "Minor Fixes",
-                description: "Various bug fixes and stability improvements."
+                icon: "sparkles",
+                iconColor: Color("AppAccent").opacity(0.8),
+                title: "Improved User Experience",
+                description: "Enhanced onboarding flow and better guidance for new users."
             ),
             UpdateItem(
                 icon: "paintbrush.fill",
-                iconColor: .appAccent.opacity(0.6),
-                title: "Improvements",
-                description: "General improvements to enhance your experience."
+                iconColor: Color("AppAccent").opacity(0.6),
+                title: "Bug Fixes",
+                description: "Various stability improvements and minor bug fixes."
             )
         ]
     }
@@ -140,6 +142,17 @@ struct WhatsNewView: View {
                 confettiTrigger += 1
             }
         }
+        .alert("Want a new feature? 💡", isPresented: $showFeatureRequestAlert) {
+            TextField("Describe your feature idea...", text: $featureRequestText)
+            Button("Send") {
+                sendFeatureRequest()
+            }
+            Button("No Thanks", role: .cancel) {
+                finalDismiss()
+            }
+        } message: {
+            Text("Let us know what feature you'd like and we'll build it!")
+        }
     }
     
     // MARK: - Background
@@ -155,7 +168,7 @@ struct WhatsNewView: View {
             
             // Subtle radial glow
             RadialGradient(
-                colors: [Color.appAccent.opacity(0.06), Color.clear],
+                colors: [Color("AppAccent").opacity(0.06), Color.clear],
                 center: .center,
                 startRadius: 0,
                 endRadius: 350
@@ -171,34 +184,34 @@ struct WhatsNewView: View {
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                     .font(.system(size: isCompact ? 12 : 14))
-                    .foregroundColor(.appAccent)
+                    .foregroundColor(Color("AppAccent"))
                 
                 Text("What's New")
                     .font(.system(size: isCompact ? 12 : 13, weight: .medium))
-                    .foregroundColor(.appAccent)
+                    .foregroundColor(Color("AppAccent"))
             }
             .padding(.horizontal, isCompact ? 12 : 16)
             .padding(.vertical, isCompact ? 6 : 8)
             .background(
                 Capsule()
-                    .fill(Color.appAccent.opacity(0.1))
+                    .fill(Color("AppAccent").opacity(0.1))
                     .overlay(
                         Capsule()
-                            .strokeBorder(Color.appAccent.opacity(0.2), lineWidth: 1)
+                            .strokeBorder(Color("AppAccent").opacity(0.2), lineWidth: 1)
                     )
             )
             
             // Main icon
             ZStack {
                 Circle()
-                    .fill(Color.appAccent.opacity(0.12))
+                    .fill(Color("AppAccent").opacity(0.12))
                     .frame(width: isCompact ? 70 : 85, height: isCompact ? 70 : 85)
                 
                 Image(systemName: "party.popper.fill")
                     .font(.system(size: isCompact ? 32 : 40, weight: .medium))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.appAccent, .appAccent.opacity(0.7)],
+                            colors: [Color("AppAccent"), Color("AppAccent").opacity(0.7)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -235,7 +248,7 @@ struct WhatsNewView: View {
             // Icon
             ZStack {
                 Circle()
-                    .fill(Color.appAccent.opacity(0.15))
+                    .fill(Color("AppAccent").opacity(0.15))
                     .frame(width: isCompact ? 40 : 46, height: isCompact ? 40 : 46)
                 
                 Image(systemName: item.icon)
@@ -279,7 +292,7 @@ struct WhatsNewView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "heart.fill")
                         .font(.system(size: isCompact ? 16 : 18))
-                        .foregroundColor(.appAccent)
+                        .foregroundColor(Color("AppAccent"))
                     
                     Text("Love NoteWall?")
                         .font(.system(size: isCompact ? 17 : 19, weight: .bold, design: .rounded))
@@ -298,7 +311,7 @@ struct WhatsNewView: View {
                     .fill(Color.white.opacity(0.04))
                     .overlay(
                         RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
-                            .strokeBorder(Color.appAccent.opacity(0.15), lineWidth: 1)
+                            .strokeBorder(Color("AppAccent").opacity(0.15), lineWidth: 1)
                     )
             )
         }
@@ -388,9 +401,38 @@ struct WhatsNewView: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            isPresented = false
-            dismiss()
+            // Show feature request popup after What's New is dismissed
+            showFeatureRequestAlert = true
         }
+    }
+    
+    private func sendFeatureRequest() {
+        guard !featureRequestText.isEmpty else {
+            finalDismiss()
+            return
+        }
+        
+        // Send feature request via FeedbackService
+        FeedbackService.shared.sendFeedback(
+            reason: "Feature Request",
+            details: featureRequestText,
+            isPremium: PaywallManager.shared.isPremium
+        ) { success, error in
+            #if DEBUG
+            if success {
+                print("✅ Feature request sent successfully")
+            } else {
+                print("❌ Feature request failed: \(error ?? "Unknown")")
+            }
+            #endif
+        }
+        
+        finalDismiss()
+    }
+    
+    private func finalDismiss() {
+        isPresented = false
+        dismiss()
     }
 }
 
@@ -405,6 +447,10 @@ class WhatsNewManager: ObservableObject {
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
     private let whatsNewHasBeenShownKey = "WhatsNewHasBeenShownOnce"
+    
+    // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
+    // ⚠️ MUST be set to false before production release!
+    private let debugForceShow = false
     
     private init() {}
     
@@ -429,26 +475,46 @@ class WhatsNewManager: ObservableObject {
         UserDefaults.standard.bool(forKey: whatsNewHasBeenShownKey)
     }
     
-    /// The expiration date for showing the What's New popup
-    /// After this date, the popup will never show to anyone
-    /// Set to January 9, 2025 (end of the promotional period)
-    private var expirationDate: Date {
+    /// Start date for showing the What's New popup
+    /// January 23, 2026 at 00:00:00
+    private var startDate: Date {
         var components = DateComponents()
-        components.year = 2025
+        components.year = 2026
         components.month = 1
-        components.day = 9
+        components.day = 23
         components.hour = 0
         components.minute = 0
         components.second = 0
         return Calendar.current.date(from: components) ?? Date()
     }
     
+    /// End date for showing the What's New popup
+    /// January 27, 2026 at 23:59:59
+    private var endDate: Date {
+        var components = DateComponents()
+        components.year = 2026
+        components.month = 1
+        components.day = 27
+        components.hour = 23
+        components.minute = 59
+        components.second = 59
+        return Calendar.current.date(from: components) ?? Date()
+    }
+    
     /// Determines if What's New should be shown
-    /// - Only shows ONCE EVER to existing users who update
-    /// - Never shows to new users who just installed the app
-    /// - Has an expiration date - after that, never shows to anyone
+    /// - Only shows ONCE EVER to paid users who update
+    /// - Only shows between Jan 23-27, 2026
+    /// - Only shows to users with active premium subscription
     /// - Once shown and dismissed, NEVER shows again
     func checkShouldShow() -> Bool {
+        #if DEBUG
+        // In debug mode, force show if flag is enabled
+        if debugForceShow {
+            print("🚨 WhatsNewManager: DEBUG MODE - Forcing popup to show for testing")
+            return true
+        }
+        #endif
+        
         // CRITICAL: If already shown once, NEVER show again
         if hasBeenShownOnce {
             #if DEBUG
@@ -457,10 +523,12 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // Check if the promotional period has expired
-        if Date() > expirationDate {
+        // Check if we're within the date window (Jan 23-27, 2026)
+        let now = Date()
+        if now < startDate || now > endDate {
             #if DEBUG
-            print("🎉 WhatsNewManager: Promotional period expired - not showing")
+            print("🎉 WhatsNewManager: Outside date window (Jan 23-27, 2026) - not showing")
+            print("   Current: \(now), Start: \(startDate), End: \(endDate)")
             #endif
             return false
         }
@@ -473,10 +541,18 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // This is an existing user who hasn't seen the What's New yet - show it!
+        // User must have active premium subscription
+        guard PaywallManager.shared.isPremium else {
+            #if DEBUG
+            print("🎉 WhatsNewManager: User is not premium - skipping What's New")
+            #endif
+            return false
+        }
+        
+        // This is a paid user who hasn't seen the What's New yet - show it!
         #if DEBUG
-        print("🎉 WhatsNewManager: Existing user, first time seeing What's New - showing popup")
-        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup)")
+        print("🎉 WhatsNewManager: Paid user, first time seeing What's New - showing popup")
+        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup), Premium: true")
         #endif
         return true
     }

@@ -313,6 +313,11 @@
 				42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */,
 				42E415532EFC7E7A002F695D /* GoogleService-Info.plist in Resources */,
 				A1000009000000000000001 /* Assets.xcassets in Resources */,
+				42D731FA2F200D670020F9D6 /* notewall-pip-vid.mp4 in Resources */,
+				F1000001000000000000001 /* notifications-of-permissions.mp4 in Resources */,
+				G1000001000000000000001 /* welcome-video.mp4 in Resources */,
+				H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */,
+				J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */,
 			
 				0A0C74223922411BB0A76091 /* PrivacyInfo.xcprivacy in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -505,7 +510,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NoteWall/Info.plist;
@@ -518,7 +523,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.3;
+				MARKETING_VERSION = 1.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.notewall;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -538,7 +543,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 11;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NoteWall/Info.plist;
@@ -551,7 +556,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.3;
+				MARKETING_VERSION = 1.3.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.notewall;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

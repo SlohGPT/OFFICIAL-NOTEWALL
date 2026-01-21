@@ -25,6 +25,6 @@ struct Config {
     ]
     
     /// Fallback: Try bundle first, then URL (for development/testing)
-    static let useBundleVideosAsFallback = false
+    static let useBundleVideosAsFallback = true
 }
 
