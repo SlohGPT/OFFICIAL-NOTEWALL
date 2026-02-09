@@ -4600,19 +4600,19 @@ struct OnboardingView: View {
         switch currentPage {
         case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
              .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
-            return "" // These pages have their own buttons
+            return ""
         case .welcome:
-            return "Continue"
+            return NSLocalizedString("Continue", comment: "")
         case .installShortcut:
-            return didOpenShortcut ? "Next" : "Install"
+            return didOpenShortcut ? NSLocalizedString("Next", comment: "") : NSLocalizedString("Install", comment: "")
         case .addNotes:
-            return "Continue"
+            return NSLocalizedString("Continue", comment: "")
         case .chooseWallpapers:
-            return isLaunchingShortcut ? "Launching Shortcut…" : "Next"
+            return isLaunchingShortcut ? NSLocalizedString("Launching Shortcut…", comment: "") : NSLocalizedString("Next", comment: "")
         case .allowPermissions:
-            return hasConfirmedPermissions ? "Continue" : "Grant Permissions First"
+            return hasConfirmedPermissions ? NSLocalizedString("Continue", comment: "") : NSLocalizedString("Grant Permissions First", comment: "")
         case .overview:
-            return "Start Using NoteWall"
+            return NSLocalizedString("Start Using NoteWall", comment: "")
         }
     }
 
@@ -6263,7 +6263,7 @@ struct OnboardingView: View {
                                         Image(systemName: "paperplane.fill")
                                             .font(.system(size: 18, weight: .semibold))
                                     }
-                                    Text(isSendingImprovement ? "Sending..." : "Send Suggestion")
+                                    Text(isSendingImprovement ? NSLocalizedString("Sending...", comment: "") : NSLocalizedString("Send Suggestion", comment: ""))
                                         .font(.headline)
                                         .fontWeight(.semibold)
                                 }

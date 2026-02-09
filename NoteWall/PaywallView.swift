@@ -993,7 +993,22 @@ struct PaywallView: View {
         .zIndex(10)
     }
     
-    // MARK: - Urgency Banner (44% Off Sale + 9 spots remaining)
+    // MARK: - Dynamic Sale Percentage
+    
+    /// Computes the sale percentage dynamically from the actual product price vs the computed "original" price
+    private var dynamicSalePercentageText: String {
+        // ~44% off based on 1.8x multiplier
+        if let package = lifetimePackage {
+            let actual = package.storeProduct.price
+            let original = actual * Decimal(string: "1.8")!
+            let discount = ((original - actual) / original * 100)
+            let pct = NSDecimalNumber(decimal: discount).intValue
+            return "\(pct)% Sale"
+        }
+        return "44% Sale"
+    }
+    
+    // MARK: - Urgency Banner
     
     private var urgencyBanner: some View {
         HStack(spacing: 0) {
@@ -1024,7 +1039,7 @@ struct PaywallView: View {
                 }
                 .frame(width: 36, height: 36)
                 
-                Text("44% Sale")
+                Text(dynamicSalePercentageText)
                     .font(.system(size: 18, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
@@ -2056,31 +2071,18 @@ struct PaywallView: View {
         return formatter.string(from: NSDecimalNumber(decimal: discountedPrice)) ?? package.localizedPriceString
     }
     
-    /// Returns €17.99 (or equivalent) for lifetime original price display (crossed out)
+    /// Returns the "original" price for lifetime display (crossed out)
+    /// Dynamically calculated from the actual product price so the currency always matches
     private func getLifetimeOriginalPrice(for package: Package) -> String {
+        let actualPrice = package.storeProduct.price
+        // Calculate original price as ~1.8x the actual price (gives ~44% discount display)
+        let originalAmount = (actualPrice * Decimal(string: "1.8")!)
+        // Round to nearest .99 for a clean look
+        let rounded = NSDecimalNumber(decimal: originalAmount).rounding(accordingToBehavior: NSDecimalNumberHandler(roundingMode: .up, scale: 0, raiseOnExactness: false, raiseOnOverflow: false, raiseOnUnderflow: false, raiseOnDivideByZero: false))
+        let cleanPrice = rounded.decimalValue - Decimal(string: "0.01")!
+        
         let formatter = currencyFormatter(for: package)
-        let locale = formatter.locale ?? Locale.current
-        
-        // Determine currency and set appropriate original price
-        let currencyCode: String
-        if #available(iOS 16, *) {
-            currencyCode = locale.currency?.identifier ?? "USD"
-        } else {
-            currencyCode = locale.currencyCode ?? "USD"
-        }
-        let originalAmount: Decimal
-        
-        // Set €17.99 for EUR, $17.99 for USD, or equivalent
-        if currencyCode == "EUR" {
-            originalAmount = 17.99
-        } else if currencyCode == "USD" {
-            originalAmount = 17.99
-        } else {
-            // For other currencies, use the same base price
-            originalAmount = 17.99
-        }
-        
-        return formatter.string(from: NSDecimalNumber(decimal: originalAmount)) ?? "€17.99"
+        return formatter.string(from: NSDecimalNumber(decimal: cleanPrice)) ?? package.localizedPriceString
     }
     
     /// Returns $9.99 (or equivalent) for exit-intercept discount display

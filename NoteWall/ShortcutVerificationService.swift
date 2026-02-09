@@ -52,22 +52,22 @@ enum ShortcutVerificationService {
         var displayName: String {
             switch self {
             case .shortcutFileExists:
-                return "Shortcut file not found"
+                return NSLocalizedString("Shortcut file not found", comment: "")
             case .lockScreenFolderAccess:
-                return "Lock Screen folder access denied"
+                return NSLocalizedString("Lock Screen folder access denied", comment: "")
             case .shortcutExecutable:
-                return "Shortcut cannot be executed"
+                return NSLocalizedString("Shortcut cannot be executed", comment: "")
             }
         }
         
         var userFacingMessage: String {
             switch self {
             case .shortcutFileExists:
-                return "The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app."
+                return NSLocalizedString("The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app.", comment: "")
             case .lockScreenFolderAccess:
-                return "The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access."
+                return NSLocalizedString("The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access.", comment: "")
             case .shortcutExecutable:
-                return "The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app."
+                return NSLocalizedString("The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app.", comment: "")
             }
         }
     }

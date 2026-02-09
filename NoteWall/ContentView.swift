@@ -1082,7 +1082,7 @@ private struct EditModeMenuButton: View {
                     .frame(width: 44, height: 44) // Ensure good touch target
                     .contentShape(Rectangle()) // Ensure entire 44x44 area is tappable
             }
-            .accessibilityLabel(context.isEditMode.wrappedValue ? "Close editing" : "Edit notes")
+            .accessibilityLabel(context.isEditMode.wrappedValue ? NSLocalizedString("Close editing", comment: "") : NSLocalizedString("Edit notes", comment: ""))
             .highPriorityGesture(
                 TapGesture()
                     .onEnded { _ in
@@ -1217,7 +1217,7 @@ private struct EditModeSupplementView: View {
     }
 
     private var selectionButtonTitle: String {
-        context.selectedNotes.wrappedValue.count == notes.count ? "Deselect All" : "Select All"
+        context.selectedNotes.wrappedValue.count == notes.count ? NSLocalizedString("Deselect All", comment: "") : NSLocalizedString("Select All", comment: "")
     }
 
     private func toggleSelection() {
@@ -1298,7 +1298,7 @@ private struct UpdateWallpaperButtonView: View {
                     ProgressView()
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                 }
-                Text(context.isGeneratingWallpaper.wrappedValue && !context.showWallpaperUpdateLoading.wrappedValue ? "Generating..." : "Update Wallpaper")
+                Text(context.isGeneratingWallpaper.wrappedValue && !context.showWallpaperUpdateLoading.wrappedValue ? NSLocalizedString("Generating...", comment: "") : NSLocalizedString("Update Wallpaper", comment: ""))
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
@@ -1406,7 +1406,7 @@ struct NoteRowView: View {
                     onToggleCompletion()
                 } label: {
                     Label(
-                        note.isCompleted ? "Unmark" : "Done",
+                        note.isCompleted ? NSLocalizedString("Unmark", comment: "") : NSLocalizedString("Done", comment: ""),
                         systemImage: note.isCompleted ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill"
                     )
                 }

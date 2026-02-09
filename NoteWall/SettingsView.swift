@@ -25,6 +25,7 @@ struct SettingsView: View {
     @State private var showTroubleshooting = false
     @State private var shouldRestartOnboarding = false
     @State private var showExitFeedback = false
+    @State private var showSubscriptionFeedback = false
     @State private var showSupportView = false
     @State private var showLegalSelection = false
     @State private var supportViewAnimateIn = false
@@ -125,6 +126,9 @@ struct SettingsView: View {
         .sheet(isPresented: $showExitFeedback) {
             ExitFeedbackView()
         }
+        .sheet(isPresented: $showSubscriptionFeedback) {
+            SubscriptionFeedbackView()
+        }
         .sheet(isPresented: $showSupportView) {
             supportOnlyView
             }
@@ -166,7 +170,11 @@ struct SettingsView: View {
     private var premiumSection: some View {
         Section {
             if paywallManager.isPremium {
-                Button(action: openSubscriptionManagement) {
+                Button(action: {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    showSubscriptionFeedback = true
+                }) {
                     HStack(spacing: 12) {
                         Image(systemName: "crown.fill")
                             .font(.system(size: 24))
@@ -177,7 +185,7 @@ struct SettingsView: View {
                                 .font(.headline)
                                 .foregroundColor(.primary)
                             
-                            Text(paywallManager.hasLifetimeAccess ? "Lifetime Access" : "Subscription Active")
+                            Text(paywallManager.hasLifetimeAccess ? NSLocalizedString("Lifetime Access", comment: "") : NSLocalizedString("Subscription Active", comment: ""))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -460,8 +468,8 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("I use lock screen widgets")
                     Text(hasLockScreenWidgets 
-                        ? "Notes start appearing lower to avoid widgets that are below the time." 
-                        : "Notes start closer to the time for more space and aesthetic look.")
+                        ? NSLocalizedString("Notes start appearing lower to avoid widgets that are below the time.", comment: "") 
+                        : NSLocalizedString("Notes start closer to the time for more space and aesthetic look.", comment: ""))
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
@@ -1206,7 +1214,7 @@ private struct UpdateWallpaperButton: View {
                         .font(.system(size: 18, weight: .semibold))
                 }
 
-                Text(isGenerating ? "Updating…" : "Update Wallpaper Now")
+                Text(isGenerating ? NSLocalizedString("Updating…", comment: "") : NSLocalizedString("Update Wallpaper Now", comment: ""))
                     .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)

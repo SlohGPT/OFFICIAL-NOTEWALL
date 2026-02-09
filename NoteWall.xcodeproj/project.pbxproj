@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		L0BF0001000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = L0VG0001000000000000001 /* Localizable.strings */; };
 		111111111111111111111111 /* DeleteNotesLoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222222 /* DeleteNotesLoadingView.swift */; };
 		123456789012345678901234 /* PromoCodeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 234567890123456789012345 /* PromoCodeManager.swift */; };
 		333333333333333333333333 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444444444444444444444444 /* Config.swift */; };
@@ -21,6 +22,7 @@
 		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
 		42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E415502EFC46BD002F695D /* WhatsNewView.swift */; };
 		486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
+		SF20000000000000000001 /* SubscriptionFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF10000000000000000001 /* SubscriptionFeedbackView.swift */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 		777777777777777777777777 /* PromoSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888888888888888888888888 /* PromoSecurityManager.swift */; };
 		837611352366433428582121 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 950124043593401227364632 /* AppDelegate.swift */; };
@@ -60,7 +62,8 @@
 		H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = H2000001000000000000001 /* how-to-fix-guide.mp4 */; };
 		I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I2000001000000000000001 /* AppIconAnimationView.swift */; };
 		J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = J2000001000000000000001 /* fix-guide-final-version.mp4 */; };
-		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };		0A0C74223922411BB0A76091 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */; };
+		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };
+
 
 /* End PBXBuildFile section */
 
@@ -80,6 +83,7 @@
 		434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoFixWorkflowView.swift; sourceTree = "<group>"; };
 		444444444444444444444444 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitFeedbackView.swift; sourceTree = "<group>"; };
+		SF10000000000000000001 /* SubscriptionFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeedbackView.swift; sourceTree = "<group>"; };
 		606640631211416417165230 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		688891131442405819145593 /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		888888888888888888888888 /* PromoSecurityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromoSecurityManager.swift; sourceTree = "<group>"; };
@@ -118,7 +122,12 @@
 		H2000001000000000000001 /* how-to-fix-guide.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "how-to-fix-guide.mp4"; sourceTree = "<group>"; };
 		I2000001000000000000001 /* AppIconAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconAnimationView.swift; sourceTree = "<group>"; };
 		J2000001000000000000001 /* fix-guide-final-version.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "fix-guide-final-version.mp4"; sourceTree = "<group>"; };
-		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };		9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };
+
+		L0EN0001000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L0DE0001000000000000001 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L0ES0001000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
+		L0FR0001000000000000001 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 
 /* End PBXFileReference section */
 
@@ -190,6 +199,7 @@
 				D3F7D2FEBFCCE27BA8058728 /* TroubleshootingView.swift */,
 				179742655116427522430919 /* QuickActionsManager.swift */,
 				571205128022447414641365 /* ExitFeedbackView.swift */,
+				SF10000000000000000001 /* SubscriptionFeedbackView.swift */,
 				434025501223443399045143 /* AutoFixWorkflowView.swift */,
 				950124043593401227364632 /* AppDelegate.swift */,
 				688891131442405819145593 /* FeedbackService.swift */,
@@ -203,8 +213,10 @@
 				I2000001000000000000001 /* AppIconAnimationView.swift */,
 				UC200000000000000000001 /* UserCountService.swift */,
 				FA300000000000000000001 /* Analytics */,
+				L0VG0001000000000000001 /* Localizable.strings */,
 			
-				9809E05ECFF24950B669E1DB /* PrivacyInfo.xcprivacy */,);
+
+);
 			path = NoteWall;
 			sourceTree = "<group>";
 		};
@@ -230,6 +242,20 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXVariantGroup section */
+		L0VG0001000000000000001 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				L0EN0001000000000000001 /* en */,
+				L0DE0001000000000000001 /* de */,
+				L0ES0001000000000000001 /* es */,
+				L0FR0001000000000000001 /* fr */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXNativeTarget section */
 		A6000001000000000000001 /* NoteWall */ = {
@@ -276,6 +302,9 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
+				es,
+				fr,
 			);
 			mainGroup = A5000001000000000000001;
 			packageReferences = (
@@ -304,8 +333,10 @@
 				G1000001000000000000001 /* welcome-video.mp4 in Resources */,
 				H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */,
 				J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */,
+				L0BF0001000000000000001 /* Localizable.strings in Resources */,
 			
-				0A0C74223922411BB0A76091 /* PrivacyInfo.xcprivacy in Resources */,);
+
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -340,6 +371,7 @@
 				874E701C5A960D9C43D2B335 /* TroubleshootingView.swift in Sources */,
 				652485545120494283652512 /* QuickActionsManager.swift in Sources */,
 				486563549087408615731241 /* ExitFeedbackView.swift in Sources */,
+				SF20000000000000000001 /* SubscriptionFeedbackView.swift in Sources */,
 				346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */,
 				837611352366433428582121 /* AppDelegate.swift in Sources */,
 				954208369699442397571273 /* FeedbackService.swift in Sources */,
@@ -464,7 +496,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 26AGTG2MU5;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -496,7 +528,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+		CURRENT_PROJECT_VERSION = 16;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NoteWall/Info.plist;
@@ -509,7 +541,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.7;
+				MARKETING_VERSION = 1.3.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.notewall;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -529,7 +561,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = NoteWall/NoteWall.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 14;
+			CURRENT_PROJECT_VERSION = 16;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = NoteWall/Info.plist;
@@ -542,7 +574,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.7;
+			MARKETING_VERSION = 1.3.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.app.notewall;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

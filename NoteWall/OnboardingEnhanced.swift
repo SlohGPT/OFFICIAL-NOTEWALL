@@ -912,26 +912,30 @@ struct NameInputView: View {
     // MARK: - Input Content
     
     private var inputContent: some View {
-        VStack(spacing: isCompact ? 28 : 40) {
+        VStack(spacing: isCompact ? 20 : 28) {
             // Animated hand wave
             Text("👋")
-                .font(.system(size: isCompact ? 56 : 72))
+                .font(.system(size: isCompact ? 48 : 60))
                 .scaleEffect(emojiScale)
                 .rotationEffect(.degrees(emojiRotation))
                 .opacity(emojiOpacity)
+                .padding(.bottom, isCompact ? 4 : 8)
             
-            // Title + Subtitle
-            VStack(spacing: isCompact ? 8 : 12) {
-                Text("What should we call you?")
-                    .font(.system(size: isCompact ? 26 : 32, weight: .bold, design: .rounded))
+            // Title with subtitle
+            VStack(spacing: isCompact ? 6 : 10) {
+                Text("First things first")
+                    .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+                    .opacity(subtitleOpacity)
+                
+                Text("What should we\ncall you?")
+                    .font(.system(size: isCompact ? 28 : 34, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.8)
+                    .fixedSize(horizontal: false, vertical: true)
                     .opacity(titleOpacity)
                     .offset(y: titleOffset)
-                
-                Text("So we can make this feel like yours")
-                    .font(.system(size: isCompact ? 15 : 17, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
-                    .opacity(subtitleOpacity)
             }
             .multilineTextAlignment(.center)
             .padding(.horizontal, 24)
@@ -953,7 +957,7 @@ struct NameInputView: View {
                     .fill(Color.appAccent.opacity(0.06))
                     .blur(radius: 20)
                     .scaleEffect(1.1)
-                    .opacity(fieldGlowOpacity)
+                    .opacity(1.0)
                 
                 HStack(spacing: 14) {
                     // Icon with animated color
@@ -970,7 +974,7 @@ struct NameInputView: View {
                     
                     TextField("", text: $nameText)
                         .placeholder(when: nameText.isEmpty) {
-                            Text("Your first name")
+                            Text("Enter your name")
                                 .foregroundColor(.white.opacity(0.25))
                                 .font(.system(size: isCompact ? 18 : 20, weight: .medium))
                         }
@@ -1002,14 +1006,12 @@ struct NameInputView: View {
                 .padding(.vertical, isCompact ? 14 : 18)
                 .background(
                     RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
-                        .fill(Color.white.opacity(isNameFieldFocused ? 0.07 : 0.04))
+                        .fill(Color.white.opacity(0.07))
                         .overlay(
                             RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
                                 .strokeBorder(
                                     LinearGradient(
-                                        colors: isNameFieldFocused
-                                            ? [Color.appAccent.opacity(0.6), Color.appAccent.opacity(0.2)]
-                                            : [Color.white.opacity(0.08), Color.white.opacity(0.04)],
+                                        colors: [Color.appAccent.opacity(0.6), Color.appAccent.opacity(0.2)],
                                         startPoint: .topLeading,
                                         endPoint: .bottomTrailing
                                     ),
@@ -1158,13 +1160,13 @@ struct NameInputView: View {
     
     private func animateEntrance() {
         // Background glow breathe-in
-        withAnimation(.easeOut(duration: 1.2).delay(0.1)) {
+        withAnimation(.easeOut(duration: 0.6)) {
             glowOpacity = 0.5
             glowScale = 1.0
         }
         
         // Start gentle glow pulse
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
                 glowScale = 1.1
                 glowOpacity = 0.6
@@ -1174,15 +1176,15 @@ struct NameInputView: View {
         // Floating particles drift
         startParticleAnimations()
         
-        // Wave emoji — bouncy spring with slight rotation
-        withAnimation(.spring(response: 0.55, dampingFraction: 0.5).delay(0.3)) {
+        // Wave emoji — bouncy spring (appears immediately)
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.55).delay(0.05)) {
             emojiScale = 1.0
             emojiOpacity = 1.0
             emojiRotation = 0
         }
         
         // Quick wave wiggle after landing
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             withAnimation(.easeInOut(duration: 0.15).repeatCount(3, autoreverses: true)) {
                 emojiRotation = 12
             }
@@ -1193,34 +1195,33 @@ struct NameInputView: View {
             }
         }
         
+        // Subtitle ("First things first")
+        withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
+            subtitleOpacity = 1.0
+        }
+        
         // Title
-        withAnimation(.easeOut(duration: 0.55).delay(0.6)) {
+        withAnimation(.easeOut(duration: 0.4).delay(0.15)) {
             titleOpacity = 1.0
             titleOffset = 0
         }
         
-        // Subtitle
-        withAnimation(.easeOut(duration: 0.55).delay(0.9)) {
-            subtitleOpacity = 1.0
-        }
-        
         // Input field slides up
-        withAnimation(.spring(response: 0.55, dampingFraction: 0.8).delay(1.15)) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8).delay(0.25)) {
             fieldOpacity = 1.0
             fieldOffset = 0
         }
         
-        // Auto-focus
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+        // Auto-focus keyboard immediately
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isNameFieldFocused = true
-            // Field glow when focused
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(.easeOut(duration: 0.3)) {
                 fieldGlowOpacity = 1.0
             }
         }
         
         // Button
-        withAnimation(.easeOut(duration: 0.5).delay(1.5)) {
+        withAnimation(.easeOut(duration: 0.4).delay(0.35)) {
             buttonOpacity = 1.0
             buttonOffset = 0
         }
@@ -1368,13 +1369,13 @@ struct PainPointView: View {
                             
                             // Main stat section
                             VStack(spacing: isCompact ? 16 : 24) {
-                                Text(quizState.displayName != nil ? "Did you know, \(quizState.displayName!), that" : "Did you know that the average person")
+                                Text(quizState.displayName != nil ? String(format: NSLocalizedString("Hey %@, did you know that", comment: ""), quizState.displayName!) : NSLocalizedString("Did you know that", comment: ""))
                                     .font(.system(size: isCompact ? 16 : 19, weight: .medium))
                                     .foregroundColor(.white.opacity(0.7))
                                     .multilineTextAlignment(.center)
                                     .opacity(text1Opacity)
                                 
-                                Text("unlocks their phone up to")
+                                Text("the average person unlocks their phone up to")
                                     .font(.system(size: isCompact ? 16 : 19, weight: .medium))
                                     .foregroundColor(.white.opacity(0.7))
                                     .multilineTextAlignment(.center)
@@ -1562,7 +1563,7 @@ struct PainPointView: View {
                         }
                     }) {
                         HStack(spacing: isCompact ? 8 : 10) {
-                            Text(internalStep == 0 ? "Tell Me More" : "Continue")
+                            Text(internalStep == 0 ? NSLocalizedString("Tell Me More", comment: "") : NSLocalizedString("Continue", comment: ""))
                                 .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
                             
                             Image(systemName: "arrow.right")
@@ -2536,7 +2537,7 @@ struct ResultsPreviewView: View {
                             )
                             .scaleEffect(checkmarkScale)
                             
-                            Text(quizState.displayName != nil ? "\(quizState.displayName!)'s Focus Profile" : "Your Focus Profile")
+                            Text(quizState.displayName != nil ? String(format: NSLocalizedString("Your Focus Profile, %@", comment: ""), quizState.displayName!) : NSLocalizedString("Your Focus Profile", comment: ""))
                                 .font(.system(size: isCompact ? 28 : 36, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
@@ -3024,7 +3025,7 @@ struct TrajectoryView: View {
                         Spacer(minLength: isCompact ? 30 : 50)
                         
                         // MARK: - Title
-                        Text(OnboardingQuizState.shared.displayName != nil ? "\(OnboardingQuizState.shared.displayName!)'s New Trajectory" : "Your New Trajectory")
+                        Text(OnboardingQuizState.shared.displayName != nil ? String(format: NSLocalizedString("Your New Trajectory,\n%@", comment: ""), OnboardingQuizState.shared.displayName!) : NSLocalizedString("Your New Trajectory", comment: ""))
                             .font(.system(size: isCompact ? 28 : 36, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -3760,7 +3761,7 @@ struct SetupCompleteView: View {
                 
                 // Success message
                 VStack(spacing: 16) {
-                    Text(quizState.displayName != nil ? "\(quizState.displayName!), Your Focus System Is Ready! 🎉" : "Your Focus System Is Ready! 🎉")
+                    Text(quizState.displayName != nil ? String(format: NSLocalizedString("%@, Your Focus System Is Ready! 🎉", comment: ""), quizState.displayName!) : NSLocalizedString("Your Focus System Is Ready! 🎉", comment: ""))
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)

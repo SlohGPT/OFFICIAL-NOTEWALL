@@ -79,8 +79,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             
             // 2. Create content
             let content = UNMutableNotificationContent()
-            content.title = "Trial Ending Soon"
-            content.body = "Your 3-day free trial will end soon. We hope you're enjoying NoteWall!"
+            content.title = NSLocalizedString("Trial Ending Soon", comment: "")
+            content.body = NSLocalizedString("Your 3-day free trial will end soon. We hope you're enjoying NoteWall!", comment: "")
             content.sound = .default
             
             // 3. Create trigger (24 hours from now)
@@ -142,8 +142,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             let hasName = !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             
             let content1hr = UNMutableNotificationContent()
-            content1hr.title = hasName ? "\(userName), still forgetting things? 🧠" : "Still forgetting things? 🧠"
-            content1hr.body = "Important thoughts shouldn't slip away. Finish your 2-min setup and never forget what matters again."
+            content1hr.title = hasName ? String(format: NSLocalizedString("🚨 %@, 3 things forgotten today", comment: ""), userName) : NSLocalizedString("🚨 3 things forgotten today", comment: "")
+            content1hr.body = NSLocalizedString("Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes.", comment: "")
             content1hr.sound = .default
             content1hr.badge = 1
             content1hr.userInfo = ["type": "abandoned_onboarding", "reminder": "1hr"]
@@ -161,8 +161,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             
             // --- 24 Hour Reminder ---
             let content24hr = UNMutableNotificationContent()
-            content24hr.title = hasName ? "\(userName), don't let your notes slip away 📝" : "Don't let your notes slip away 📝"
-            content24hr.body = "Complete your NoteWall setup and start capturing what matters most — right on your home screen."
+            content24hr.title = hasName ? String(format: NSLocalizedString("🚨 %@, what did you forget?", comment: ""), userName) : NSLocalizedString("🚨 What did you forget?", comment: "")
+            content24hr.body = NSLocalizedString("Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this.", comment: "")
             content24hr.sound = .default
             content24hr.badge = 1
             content24hr.userInfo = ["type": "abandoned_onboarding", "reminder": "24hr"]
@@ -224,8 +224,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             guard granted else { return }
             
             let content = UNMutableNotificationContent()
-            content.title = "Test Notification"
-            content.body = "This is how the trial reminder will look."
+            content.title = NSLocalizedString("Test Notification", comment: "")
+            content.body = NSLocalizedString("This is how the trial reminder will look.", comment: "")
             content.sound = .default
             
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)

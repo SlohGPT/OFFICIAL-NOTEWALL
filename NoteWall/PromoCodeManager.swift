@@ -131,7 +131,7 @@ final class PromoCodeManager {
     func validateCode(_ code: String) -> ValidationResult {
         // Rate limiting check
         if isValidationLockedOut() {
-            return .invalid("Too many validation attempts. Please try again later.")
+            return .invalid(NSLocalizedString("Too many validation attempts. Please try again later.", comment: ""))
         }
         
         // Normalize code (remove spaces, convert to uppercase, remove hyphens)
@@ -143,7 +143,7 @@ final class PromoCodeManager {
         // Check if code is empty
         guard !normalizedCode.isEmpty else {
             recordValidationAttempt()
-            return .invalid("Please enter a promo code")
+            return .invalid(NSLocalizedString("Please enter a promo code", comment: ""))
         }
         
         // Determine code type from prefix
@@ -178,14 +178,14 @@ final class PromoCodeManager {
         
         guard codeExists else {
             recordValidationAttempt()
-            return .invalid("Invalid promo code")
+            return .invalid(NSLocalizedString("Invalid promo code", comment: ""))
         }
         
         // Check if code has already been used (constant-time) - check only the specific type
         let usedCodes = getUsedCodes(type: codeType ?? .lifetime)
         if constantTimeContains(usedCodes, normalizedCode) {
             recordValidationAttempt()
-            return .alreadyUsed("This promo code has already been redeemed")
+            return .alreadyUsed(NSLocalizedString("This promo code has already been redeemed", comment: ""))
         }
         
         // Code is valid and unused - return with type
@@ -430,7 +430,7 @@ enum ValidationResult {
     var message: String {
         switch self {
         case .valid:
-            return "Valid promo code"
+            return NSLocalizedString("Valid promo code", comment: "")
         case .invalid(let message), .alreadyUsed(let message):
             return message
         }

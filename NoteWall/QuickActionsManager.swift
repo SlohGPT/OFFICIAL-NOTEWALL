@@ -19,11 +19,11 @@ final class QuickActionsManager: NSObject, ObservableObject {
         var title: String {
             switch self {
             case .claimDiscount:
-                return "🚨🚨 Claim Special Offer"
+                return NSLocalizedString("🚨🚨 Claim Special Offer", comment: "")
             case .giveFeedback:
-                return "Before you delete… Can we ask why?"
+                return NSLocalizedString("Before you delete… Can we ask why?", comment: "")
             case .autoFix:
-                return "Having issues? We'll fix it in 30 seconds"
+                return NSLocalizedString("Having issues? We'll fix it in 30 seconds", comment: "")
             }
         }
         

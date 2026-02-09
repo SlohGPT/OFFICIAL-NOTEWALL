@@ -8,7 +8,7 @@ class SocialSharingManager {
     
     /// Share wallpaper design (without personal notes) for viral growth
     func shareWallpaperDesign(image: UIImage, from viewController: UIViewController) {
-        let shareText = "Created my productivity wallpaper with NoteWall! 📱✨ #NoteWall #ProductivityHack #LockScreen"
+        let shareText = NSLocalizedString("social_share_wallpaper", comment: "Share text for wallpaper design sharing")
         guard let appURL = URL(string: "https://apps.apple.com/app/id6755601996") else {
             print("⚠️ Invalid app URL")
             return
@@ -38,13 +38,7 @@ class SocialSharingManager {
     
     /// Share app referral for growth
     func shareAppReferral(from viewController: UIViewController) {
-        let shareText = """
-        Just discovered NoteWall - it turns your lock screen into a productivity powerhouse! 🚀
-        
-        See your goals every time you unlock your phone. Game changer! 
-        
-        #ProductivityHack #NoteWall #LockScreen
-        """
+        let shareText = NSLocalizedString("social_share_long", comment: "Share text for app referral")
         
         guard let appURL = URL(string: "https://apps.apple.com/app/id6755601996") else {
             print("⚠️ Invalid app URL")
@@ -76,15 +70,7 @@ class SocialSharingManager {
             context.fill(CGRect(origin: .zero, size: size))
             
             // Sample motivational text (no personal data)
-            let sampleText = """
-            ✨ Daily Goals ✨
-            
-            • Focus on what matters
-            • Stay productive
-            • Build better habits
-            
-            Created with NoteWall
-            """
+            let sampleText = NSLocalizedString("social_share_goals", comment: "Sample text for shareable wallpaper template")
             
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.alignment = .left
