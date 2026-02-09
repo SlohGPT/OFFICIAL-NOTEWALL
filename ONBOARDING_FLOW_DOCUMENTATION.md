@@ -120,7 +120,7 @@ When users tap "Text version" button, they see a comprehensive written explanati
 
 **Purpose**: Guide users through installing the NoteWall shortcut from iCloud.
 
-**Shortcut URL**: `https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35`
+**Shortcut URL**: `https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3`
 
 #### Initial Installation Process
 
@@ -537,7 +537,7 @@ Before showing overview, there's a celebratory transition:
    - Can be changed to custom photo later
 
 3. **Shortcut Installation**: Must successfully install shortcut from iCloud URL
-   - URL: `https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35`
+   - URL: `https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3`
    - Must be able to select wallpaper from list during installation
    - If can't select, must complete fix process first
 

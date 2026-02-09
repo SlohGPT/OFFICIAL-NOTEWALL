@@ -1,0 +1,110 @@
+# ----------------------------------------
+# View user engagement & retention overview
+# Account: Default Account for Firebase
+# Property: notewall-ddf78
+# ----------------------------------------
+#  
+# Start date: 20260202
+# End date: 20260202
+Nth day,Active users
+0000,18
+
+# Start date: 20260202
+# End date: 20260202
+Nth day,New users
+0000,12
+
+# Where do your new users come from?
+# Start date: 20260202
+# End date: 20260202
+First user primary channel group (Default Channel Group),New users
+Direct,12
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Page title and screen class,Views
+OnboardingView,277
+onboarding_install_sheet,35
+PaywallView,20
+PlatformAlertController,19
+shortcuts_check_alert,18
+onboarding_pain_point_stats,17
+"onboarding_multi_quiz_But before we start,",16
+onboarding_multi_quiz_Last one: what's you,16
+onboarding_pain_point_question,16
+onboarding_personalization_loading,16
+onboarding_quiz_And how often do you,16
+onboarding_results_insight,16
+onboarding_results_preview,16
+onboarding_setup_intro,16
+onboarding_trajectory,16
+onboarding_setup_complete,12
+SettingsView,9
+troubleshooting_modal,8
+PHPickerViewController,1
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Platform,Active users
+"[""iOS""]",18
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Cohort,Day 1
+0,0
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Cohort,Day 1
+0,0
+
+#  
+# Start date: 20251223
+# End date: 20260202
+Cohort,Average engagement time per active user
+0000,224.70952896310033
+0001,140.95238095238096
+0002,40.58536585365854
+0003,35.0125
+0004,26.397435897435898
+0005,41.63157894736842
+0006,77.78378378378379
+0007,25.833333333333332
+0008,33.65714285714286
+0009,42.23529411764706
+0010,35.21212121212121
+0011,24.9375
+0012,26.516129032258064
+0013,66.26666666666667
+0014,28.75862068965517
+0015,23.821428571428573
+0016,17.11111111111111
+0017,0.4230769230769231
+0018,4.04
+0019,11.75
+0020,9.565217391304348
+0021,6.045454545454546
+0022,12.047619047619047
+0023,21.4
+0024,27.42105263157895
+0025,1
+0026,257.1764705882353
+0027,0
+0028,0
+0029,0
+0030,0
+0031,0
+0032,0
+0033,12.4
+0034,0
+0035,0
+0036,0
+0037,0
+0038,0
+0039,0
+0040,0
+0041,0

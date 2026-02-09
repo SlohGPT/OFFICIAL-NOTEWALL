@@ -170,8 +170,11 @@ struct CroppedVideoPlayerView: UIViewControllerRepresentable {
 }
 
 enum OnboardingPage: Int, CaseIterable, Hashable {
-    // Phase 1: Emotional Hook
+    // Phase 0: Pre-onboarding
     case preOnboardingHook
+    case nameInput
+    
+    // Phase 1: Emotional Hook
     case painPoint
     case quizForgetMost
     case quizPhoneChecks
@@ -183,10 +186,12 @@ enum OnboardingPage: Int, CaseIterable, Hashable {
     // Phase 2: Social Proof & Value Demo
     case socialProof
     
+    // Phase 2.5: Notification Permission (after user sees value)
+    case notificationPermission
+    
     // Phase 3: Technical Setup (wrapped in encouragement)
     case setupIntro
     case welcome  // Keep existing welcome (now becomes video intro step)
-    case videoIntroduction
     case installShortcut
     case shortcutSuccess
     case addNotes
@@ -210,26 +215,23 @@ struct OnboardingView: View {
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
 
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
-    @AppStorage("homeScreenUsesCustomPhoto") private var homeScreenUsesCustomPhoto = false
     @AppStorage("savedNotes") private var savedNotesData: Data = Data()
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("hasShownAutoUpdatePrompt") private var hasShownAutoUpdatePrompt = false
     @AppStorage("hasRequestedAppReview") private var hasRequestedAppReview = false
     @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
+    @AppStorage("onboarding_lastPageRawValue") private var savedOnboardingPageRaw: Int = 0
     @State private var didOpenShortcut = false
     @State private var shouldAdvanceToInstallStep = false
     @State private var advanceToInstallStepTimer: Timer?
     @State private var isInstallingShortcut = false
-    @State private var isSavingHomeScreenPhoto = false
-    @State private var homeScreenStatusMessage: String?
-    @State private var homeScreenStatusColor: Color = .gray
     @State private var isSavingLockScreenBackground = false
     @State private var lockScreenBackgroundStatusMessage: String?
     @State private var lockScreenBackgroundStatusColor: Color = .gray
 
     @State private var currentPage: OnboardingPage = .preOnboardingHook
+    // Resume from saved progress (set in .onAppear)
     @State private var isLaunchingShortcut = false
     @State private var shortcutLaunchFallback: DispatchWorkItem?
     @State private var wallpaperVerificationTask: Task<Void, Never>?
@@ -339,7 +341,7 @@ struct OnboardingView: View {
     @State private var overallOffset: CGFloat = 100 // Start lower on screen
     @State private var hasStartedPreOnboardingAnimation = false
 
-    private let shortcutURL = "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35"
+    private let shortcutURL = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
     private let whatsappNumber = "421907758852" // Replace with your actual WhatsApp number
     private let supportEmail = "iosnotewall@gmail.com" // Replace with your actual support email
 
@@ -369,10 +371,33 @@ struct OnboardingView: View {
             
             // Track onboarding start (fires only once per session)
             OnboardingAnalyticsTracker.shared.onboardingDidAppear()
+            
+            #if !DEBUG
+            // Restore onboarding progress - resume where user left off
+            // NOTE: This is disabled in DEBUG builds to allow testing the full onboarding flow
+            if savedOnboardingPageRaw > 0,
+               let savedPage = OnboardingPage(rawValue: savedOnboardingPageRaw) {
+                debugLog("📱 Onboarding: Resuming from saved page: \(savedPage.progressTitle)")
+                currentPage = savedPage
+                // Cancel abandoned onboarding notifications since user returned
+                NotificationManager.shared.cancelAbandonedOnboardingReminders()
+                // Re-schedule them (they'll be cancelled when onboarding completes)
+                NotificationManager.shared.scheduleAbandonedOnboardingReminders()
+            }
+            #endif
         }
         .onChange(of: currentPage) { _, newPage in
             // Track step view whenever page changes
             OnboardingAnalyticsTracker.shared.trackStepView(newPage)
+            #if !DEBUG
+            // Persist progress so user can resume if they quit
+            // NOTE: This is disabled in DEBUG builds to allow testing the full onboarding flow
+            savedOnboardingPageRaw = newPage.rawValue
+            #endif
+            // Reschedule abandoned notifications on each step (resets the timers)
+            if newPage != .preOnboardingHook {
+                NotificationManager.shared.scheduleAbandonedOnboardingReminders()
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
             completeShortcutLaunch()
@@ -399,8 +424,8 @@ struct OnboardingView: View {
                     }
                 }
                 
-                // Handle return from App Store during step 2 setup
-                if currentPage == .videoIntroduction && wentToAppStoreForShortcuts {
+                // Handle return from App Store during welcome step setup
+                if currentPage == .welcome && wentToAppStoreForShortcuts {
                     debugLog("📱 Onboarding: Returned from App Store (Shortcuts download)")
                     wentToAppStoreForShortcuts = false
                     
@@ -414,18 +439,6 @@ struct OnboardingView: View {
                         showShortcutsCheckAlert = true
                     }
                     isTransitioningBetweenPopups = false
-                }
-                
-                // Resume video if on step 2 and no popup is showing
-                if currentPage == .videoIntroduction {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        let noPopupShowing = !self.showShortcutsCheckAlert && !self.showInstallSheet
-                        if noPopupShowing && !self.isTransitioningBetweenPopups, let player = self.welcomeVideoPlayer, player.rate == 0 {
-                            player.play()
-                            self.isWelcomeVideoPaused = false
-                            debugLog("▶️ Welcome video resumed (no popup showing)")
-                        }
-                    }
                 }
                 
                 // Handle return from Shortcuts app after installing shortcut
@@ -487,25 +500,7 @@ struct OnboardingView: View {
                 HomeScreenImageManager.prepareStorageStructure()
             }
             
-            // Pause video when leaving video introduction step
-            if page != .videoIntroduction {
-                if let player = welcomeVideoPlayer, player.rate > 0 {
-                    player.pause()
-                    isWelcomeVideoPaused = true
-                    debugLog("⏸️ Welcome video paused (page changed away from step 2)")
-                }
-            }
-            
-            // Resume video when entering video introduction step
-            if page == .videoIntroduction {
-                if let player = welcomeVideoPlayer, player.rate == 0 {
-                    player.play()
-                    isWelcomeVideoPaused = false
-                    debugLog("▶️ Welcome video resumed (entering step 2)")
-                }
-                // Always restart progress tracking when entering step 2
-                startWelcomeVideoProgressTracking()
-            }
+
             
             // Auto-play notifications video when entering step 6
             if page == .allowPermissions {
@@ -565,39 +560,11 @@ struct OnboardingView: View {
             }
         }
         .onChange(of: showShortcutsCheckAlert) { _, isShowing in
-            if isShowing {
-                // Pause video when Requirements check appears
-                if let player = welcomeVideoPlayer {
-                    player.pause()
-                    isWelcomeVideoPaused = true
-                    debugLog("⏸️ Welcome video paused (Requirements check appearing)")
-                }
-            } else if currentPage == .videoIntroduction {
-                // Resume video when dismissed (if still on step 2 and no other popup showing AND not transitioning)
-                let noOtherPopup = !showInstallSheet
-                if noOtherPopup && !isTransitioningBetweenPopups, let player = welcomeVideoPlayer, player.rate == 0 {
-                    player.play()
-                    isWelcomeVideoPaused = false
-                    debugLog("▶️ Welcome video resumed (Requirements check dismissed)")
-                }
-            }
+            // No special handling needed - requirements check is a simple sheet
         }
         .onChange(of: showInstallSheet) { _, isShowing in
             if isShowing {
-                // Pause video when Install sheet appears
-                if let player = welcomeVideoPlayer {
-                    player.pause()
-                    isWelcomeVideoPaused = true
-                    debugLog("⏸️ Welcome video paused (Install sheet appearing)")
-                }
-            } else if currentPage == .videoIntroduction {
-                // Resume video when dismissed (if still on step 2 and no other popup showing AND not transitioning)
-                let noOtherPopup = !showShortcutsCheckAlert
-                if noOtherPopup && !isTransitioningBetweenPopups, let player = welcomeVideoPlayer, player.rate == 0 {
-                    player.play()
-                    isWelcomeVideoPaused = false
-                    debugLog("▶️ Welcome video resumed (Install sheet dismissed)")
-                }
+                // Install sheet is showing
             }
             // Reset flag after a short delay
             if !isShowing && isInstallingShortcut {
@@ -608,14 +575,30 @@ struct OnboardingView: View {
         }
         .sheet(isPresented: $showInstallSheet) {
             installSheetView()
+                .onAppear {
+                    AnalyticsService.shared.trackScreenView(screenName: "onboarding_install_sheet")
+                }
         }
         .sheet(isPresented: $showTroubleshooting) {
             troubleshootingModalView
+                .onAppear {
+                    AnalyticsService.shared.trackScreenView(screenName: "troubleshooting_modal")
+                }
         }
         .sheet(isPresented: $showPostOnboardingPaywall) {
-            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: true)
+            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: false)
+                .interactiveDismissDisabled(true)
                 .onDisappear {
-                    // When paywall is dismissed (user subscribed, restored, or Xed out)
+                    // When paywall is dismissed (user subscribed, or restored)
+                    
+                    // CRITICAL: Only complete onboarding if user is PREMIUM or LIFETIME
+                    // This enforces the hard paywall requirement
+                    guard PaywallManager.shared.isPremium else {
+                        // If they somehow dismissed it without paying (shouldn't happen with interactiveDismissDisabled),
+                        // do NOT complete setup. They will remain in onboarding.
+                        debugLog("⚠️ Paywall dismissed but user is NOT premium. Staying in onboarding.")
+                        return
+                    }
                     
                     // Track analytics
                     OnboardingQuizState.shared.paywallShown = true
@@ -804,7 +787,7 @@ struct OnboardingView: View {
             // These pages have their own dark backgrounds
             let needsDarkBackground = [
                 OnboardingPage.painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-                .personalizationLoading, .resultsPreview, .socialProof, .reviewPage, .setupIntro, .videoIntroduction,
+                .personalizationLoading, .resultsPreview, .socialProof, .notificationPermission, .reviewPage, .setupIntro,
                 .shortcutSuccess, .setupComplete
             ].contains(currentPage)
             
@@ -849,6 +832,19 @@ struct OnboardingView: View {
                         switch currentPage {
                         case .preOnboardingHook:
                             preOnboardingHookStep()
+                        case .nameInput:
+                            NameInputView {
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .nameInput)
+                                advanceStep()
+                            }
+                        case .notificationPermission:
+                            NotificationPermissionView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .notificationPermission)
+                                // Schedule abandoned onboarding notifications
+                                NotificationManager.shared.scheduleAbandonedOnboardingReminders()
+                                advanceStep()
+                            }
                         case .painPoint:
                             PainPointView {
                                 advanceStep()
@@ -860,6 +856,8 @@ struct OnboardingView: View {
                                 options: QuizData.forgetMostOptions
                             ) { answers in
                                 OnboardingQuizState.shared.forgetMostList = answers
+                                // Track action with answers
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .quizForgetMost, additionalParams: ["answers": answers.joined(separator: ",")])
                                 advanceStep()
                             }
                         case .quizPhoneChecks:
@@ -869,6 +867,8 @@ struct OnboardingView: View {
                                 options: QuizData.phoneChecksOptions
                             ) { answer in
                                 OnboardingQuizState.shared.phoneChecks = answer
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .quizPhoneChecks, additionalParams: ["answer": answer])
                                 advanceStep()
                             }
                         case .quizDistraction:
@@ -878,22 +878,32 @@ struct OnboardingView: View {
                                 options: QuizData.distractionOptions
                             ) { answers in
                                 OnboardingQuizState.shared.biggestDistractionList = answers
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .quizDistraction, additionalParams: ["answers": answers.joined(separator: ",")])
                                 advanceStep()
                             }
                         case .personalizationLoading:
                             PersonalizationLoadingView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .personalizationLoading)
                                 advanceStep()
                             }
                         case .resultsPreview:
                             ResultsPreviewView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .resultsPreview)
                                 advanceStep()
                             }
                         case .resultsInsight:
                             ResultsInsightView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .resultsInsight)
                                 advanceStep()
                             }
                         case .socialProof:
                             SocialProofView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .socialProof)
                                 advanceStep()
                             }
                         case .setupIntro:
@@ -905,12 +915,12 @@ struct OnboardingView: View {
                                 timeEstimate: "About 4 minutes",
                                 ctaText: "Let's Do This!"
                             ) {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .setupIntro)
                                 advanceStep()
                             }
                         case .welcome:
                             welcomeStep()
-                        case .videoIntroduction:
-                            videoIntroductionStep()
                         case .installShortcut:
                             installShortcutStep()
                         case .shortcutSuccess:
@@ -920,6 +930,8 @@ struct OnboardingView: View {
                                 encouragement: "You're crushing this setup!",
                                 nextStepPreview: "Add your first notes"
                             ) {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .shortcutSuccess)
                                 advanceStep()
                             }
                         case .addNotes:
@@ -930,11 +942,15 @@ struct OnboardingView: View {
                             allowPermissionsStep()
                         case .setupComplete:
                             SetupCompleteView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .setupComplete)
                                 // Trigger countdown transition after setup complete
                                 startTransitionCountdown()
                             }
                         case .reviewPage:
                             ReviewPageView {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .reviewPage)
                                 advanceStep()
                             }
                         case .overview:
@@ -1000,20 +1016,19 @@ struct OnboardingView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: showHelpSheet) { _, isShowing in
-            if !isShowing && currentPage == .videoIntroduction {
-                // Resume video if help sheet is dismissed and we're still on step 2
-                if let player = welcomeVideoPlayer, player.rate == 0 {
-                    player.play()
-                    isWelcomeVideoPaused = false
-                    debugLog("▶️ Welcome video resumed (help sheet dismissed)")
-                }
-            }
+            // Help sheet dismissed - no special handling needed
         }
         .sheet(isPresented: $showHelpSheet) {
             helpOptionsSheet
+                .onAppear {
+                    AnalyticsService.shared.trackScreenView(screenName: "onboarding_help_sheet")
+                }
         }
         .sheet(isPresented: $showImprovementForm) {
             improvementFormSheet
+                .onAppear {
+                    AnalyticsService.shared.trackScreenView(screenName: "onboarding_feedback_sheet")
+                }
         }
         .alert(isPresented: $showHelpAlert) {
             Alert(
@@ -1027,7 +1042,7 @@ struct OnboardingView: View {
     }
 
     private var onboardingProgressIndicatorCompact: some View {
-        let technicalSteps: [OnboardingPage] = [.welcome, .videoIntroduction, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions]
+        let technicalSteps: [OnboardingPage] = [.welcome, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions]
         
         return HStack(alignment: .center, spacing: 12) {
             ForEach(technicalSteps, id: \.self) { page in
@@ -1093,9 +1108,7 @@ struct OnboardingView: View {
         .padding(.top, topPadding)
         .padding(.bottom, bottomPadding)
         .background(
-            currentPage == .videoIntroduction 
-                ? Color.clear.ignoresSafeArea(edges: .bottom)
-                : Color(.systemBackground).ignoresSafeArea(edges: .bottom)
+            Color(.systemBackground).ignoresSafeArea(edges: .bottom)
         )
     }
 
@@ -1142,11 +1155,14 @@ struct OnboardingView: View {
                     
                     // Continue button with fade-in - matching Step 1 button position
                     Button(action: {
+                        // Track "Get Started" tap
+                        OnboardingAnalyticsTracker.shared.trackAction(.next, on: .preOnboardingHook)
+                        
                         // Start quiz state tracking
                         OnboardingQuizState.shared.startTime = Date()
                         
                         withAnimation(.easeInOut(duration: 0.4)) {
-                            currentPage = .painPoint
+                            currentPage = .nameInput
                         }
                     }) {
                         HStack(spacing: 12) {
@@ -1622,6 +1638,12 @@ struct OnboardingView: View {
                 generator.impactOccurred(intensity: 0.5)
             }
         }
+        .sheet(isPresented: $showShortcutsCheckAlert) {
+            requirementsCheckView
+                .onAppear {
+                    AnalyticsService.shared.trackScreenView(screenName: "shortcuts_check_alert")
+                }
+        }
     }
     
     private func welcomeHighlightCard(title: String, subtitle: String, icon: String) -> some View {
@@ -1709,498 +1731,6 @@ struct OnboardingView: View {
     @State private var welcomeCard3Scale: CGFloat = 0.9
     @State private var welcomeCard3Offset: CGFloat = 20
 
-    private func videoIntroductionStep() -> some View {
-        let isCompact = ScreenDimensions.isCompactDevice
-        let sectionSpacing: CGFloat = isCompact ? 16 : 24
-        let horizontalPadding: CGFloat = isCompact ? 16 : 24
-        let topPadding: CGFloat = isCompact ? 12 : 20
-        let videoWidthRatio: CGFloat = isCompact ? 0.65 : 0.7
-        let titleFontSize: CGFloat = isCompact ? 26 : 32
-        let cardTitleFontSize: CGFloat = isCompact ? 17 : 20
-        let cardBodyFontSize: CGFloat = isCompact ? 14 : 16
-        let cardIconSize: CGFloat = isCompact ? 20 : 24
-        let cardSpacing: CGFloat = isCompact ? 14 : 20
-        let heroHeight: CGFloat = isCompact ? 120 : 180
-        
-        return ZStack {
-            // Background is now handled by the parent container for continuous gradient
-            // No separate background needed here
-            
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: sectionSpacing) {
-                    // Text Version / Back Button - Improved Design
-                    HStack {
-                    if showTextVersion {
-                        Button(action: {
-                            withAnimation(.easeInOut(duration: 0.4)) {
-                                showTextVersion = false
-                            }
-                            // Resume video playback
-                            if let player = welcomeVideoPlayer, player.rate == 0 {
-                                player.play()
-                                isWelcomeVideoPaused = false
-                                debugLog("▶️ Welcome video resumed")
-                            }
-                        }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "arrow.left")
-                                        .font(.system(size: 16, weight: .semibold))
-                                    Text("Back to Video")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                }
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color.appAccent)
-                                )
-                                .shadow(color: Color.appAccent.opacity(0.3), radius: 8, x: 0, y: 4)
-                            }
-                        } else {
-                            Button(action: {
-                                withAnimation(.easeInOut(duration: 0.4)) {
-                                    showTextVersion = true
-                                }
-                                // Pause video playback
-                                if let player = welcomeVideoPlayer, player.rate > 0 {
-                                    player.pause()
-                                    isWelcomeVideoPaused = true
-                                    debugLog("⏸️ Welcome video paused")
-                                }
-                            }) {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "text.alignleft")
-                                        .font(.system(size: 14, weight: .semibold))
-                                    Text("Text version")
-                                        .font(.subheadline)
-                                        .fontWeight(.semibold)
-                                }
-                                .foregroundColor(.appAccent)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .fill(Color.appAccent.opacity(0.15))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                        .strokeBorder(Color.appAccent.opacity(0.3), lineWidth: 1)
-                                )
-                            }
-                        }
-                        Spacer()
-                    }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, topPadding)
-                    
-                    if showTextVersion {
-                        // Text Version Content - Brand Identity Design
-                        ScrollView(.vertical, showsIndicators: false) {
-                            VStack(spacing: isCompact ? 20 : 32) {
-                                // Hero Icon with floating animation
-                                Step3HeroIcon()
-                                    .frame(height: heroHeight)
-                                    .padding(.top, isCompact ? 12 : 20)
-                                
-                                // Title Section
-                                VStack(spacing: isCompact ? 8 : 12) {
-                                    Text("Important Setup Information")
-                                        .font(.system(size: titleFontSize, weight: .bold, design: .rounded))
-                                        .foregroundColor(.white)
-                                        .multilineTextAlignment(.center)
-                                    
-                                    Text("Before we install the shortcut")
-                                        .font(.system(size: isCompact ? 14 : 16))
-                                        .foregroundColor(.white.opacity(0.6))
-                                        .multilineTextAlignment(.center)
-                                }
-                                .padding(.horizontal, horizontalPadding)
-                                
-                                // Content Cards
-                                VStack(spacing: cardSpacing) {
-                                    // Introduction Card
-                                    BrandCard {
-                                        VStack(alignment: .leading, spacing: isCompact ? 12 : 16) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "sparkles")
-                                                    .font(.system(size: cardIconSize))
-                                                    .foregroundColor(.appAccent)
-                                                Text("Quick Heads Up")
-                                                    .font(.system(size: cardTitleFontSize, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                            
-                                            Text("Hey! Before we install the shortcut, there's something important you need to know.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                    }
-                                    
-                                    // Main Explanation Card
-                                    BrandCard {
-                                        VStack(alignment: .leading, spacing: isCompact ? 12 : 16) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "exclamationmark.triangle.fill")
-                                                    .font(.system(size: cardIconSize))
-                                                    .foregroundColor(.appAccent)
-                                                Text("Apple's Shortcut Limitation")
-                                                    .font(.system(size: cardTitleFontSize, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                            
-                                            Text("Apple's Shortcuts app has a quirk that affects how wallpapers work. The shortcut can only work with wallpapers that use photos or images from your library.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                            
-                                            Divider()
-                                                .background(Color.white.opacity(0.1))
-                                            
-                                            Text("Here's what that means:")
-                                                .font(.system(size: cardBodyFontSize, weight: .semibold))
-                                                .foregroundColor(.appAccent)
-                                            
-                                            Text("If your current lock screen wallpaper is one of Apple's built-in presets - like those colorful gradients, astronomy pictures, emoji wallpapers, or any of Apple's default designs - the shortcut won't be able to select it in the next step.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                            
-                                            // Highlight box
-                                            HStack(alignment: .top, spacing: isCompact ? 10 : 12) {
-                                                Image(systemName: "info.circle.fill")
-                                                    .font(.system(size: isCompact ? 16 : 18))
-                                                    .foregroundColor(.appAccent)
-                                                    .padding(.top, 2)
-                                                
-                                                Text("This isn't a bug with NoteWall. It's a limitation Apple built into the Shortcuts app. They only allow shortcuts to work with photo-based wallpapers, not their built-in preset designs.")
-                                                    .font(.system(size: isCompact ? 13 : 15, weight: .medium))
-                                                    .foregroundColor(.appAccent)
-                                                    .fixedSize(horizontal: false, vertical: true)
-                                            }
-                                            .padding(isCompact ? 12 : 16)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .fill(Color.appAccent.opacity(0.15))
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 12)
-                                                            .strokeBorder(Color.appAccent.opacity(0.3), lineWidth: 1)
-                                                    )
-                                            )
-                                        }
-                                    }
-                                    
-                                    // What Happens Card
-                                    BrandCard {
-                                        VStack(alignment: .leading, spacing: isCompact ? 12 : 16) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "questionmark.circle.fill")
-                                                    .font(.system(size: cardIconSize))
-                                                    .foregroundColor(.appAccent)
-                                                Text("What Happens If You Have an Apple Preset?")
-                                                    .font(.system(size: cardTitleFontSize, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                            
-                                            Text("When you try to install the shortcut, you'll see a list of wallpapers to choose from. If you're using an Apple preset, that list will be empty or all the options will be grayed out and you won't be able to tap any of them.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                    }
-                                    
-                                    // Solution Card
-                                    BrandCard {
-                                        VStack(alignment: .leading, spacing: isCompact ? 12 : 16) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "checkmark.seal.fill")
-                                                    .font(.system(size: cardIconSize))
-                                                    .foregroundColor(.appAccent)
-                                                Text("Don't Worry - Easy Fix!")
-                                                    .font(.system(size: cardTitleFontSize, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                            
-                                            Text("I'll show you exactly how to fix it. The solution is simple: we'll create a new wallpaper using a NoteWall image (which will be saved to your Photos). This takes about 2 minutes, and I'll guide you through every step.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                            
-                                            Divider()
-                                                .background(Color.white.opacity(0.1))
-                                            
-                                            Text("For most people, this setup works perfectly the first time. If you already have a photo-based wallpaper, you'll breeze through the next step in about 90 seconds.")
-                                                .font(.system(size: cardBodyFontSize))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .fixedSize(horizontal: false, vertical: true)
-                                        }
-                                    }
-                                    
-                                    // Call to Action Card
-                                    BrandCard {
-                                        VStack(spacing: isCompact ? 12 : 16) {
-                                            HStack(spacing: 12) {
-                                                Image(systemName: "arrow.right.circle.fill")
-                                                    .font(.system(size: cardIconSize))
-                                                    .foregroundColor(.appAccent)
-                                                Text("Ready? Let's Do This!")
-                                                    .font(.system(size: cardTitleFontSize, weight: .bold))
-                                                    .foregroundColor(.white)
-                                            }
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, horizontalPadding)
-                                .padding(.bottom, AdaptiveLayout.bottomScrollPadding)
-                            }
-                        }
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-                        .animation(.easeInOut(duration: 0.4), value: showTextVersion)
-                    } else {
-                        // Video Content
-                        // Welcome Video (Introduction) - Auto-playing, looping, with custom controls
-                        ZStack {
-                            // Original centered video layout
-                            VStack(spacing: 0) {
-                                if Bundle.main.url(forResource: "welcome-video", withExtension: "mp4") != nil {
-                                    if let player = welcomeVideoPlayer {
-                                        AutoPlayingLoopingVideoPlayer(player: player)
-                                            .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: ScreenDimensions.width * videoWidthRatio)
-                                            .cornerRadius(isCompact ? 12 : 16)
-                                            .shadow(color: Color.black.opacity(0.3), radius: 15, x: 0, y: 8)
-                                            .transition(.asymmetric(
-                                                insertion: .move(edge: .leading).combined(with: .opacity),
-                                                removal: .move(edge: .trailing).combined(with: .opacity)
-                                            ))
-                                    } else {
-                                        RoundedRectangle(cornerRadius: isCompact ? 12 : 16)
-                                            .fill(Color.gray.opacity(0.2))
-                                            .aspectRatio(9/16, contentMode: .fit)
-                                            .frame(width: ScreenDimensions.width * videoWidthRatio)
-                                            .overlay(
-                                                VStack(spacing: 8) {
-                                                    ProgressView()
-                                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                                    Text("Loading video...")
-                                                        .font(.caption)
-                                                        .foregroundColor(.white.opacity(0.6))
-                                                }
-                                            )
-                                    }
-                                } else {
-                                    RoundedRectangle(cornerRadius: isCompact ? 12 : 16)
-                                        .fill(Color.gray.opacity(0.2))
-                                        .aspectRatio(9/16, contentMode: .fit)
-                                        .frame(width: ScreenDimensions.width * videoWidthRatio)
-                                        .overlay(
-                                            VStack(spacing: 8) {
-                                                Image(systemName: "video.slash")
-                                                    .font(.largeTitle)
-                                                    .foregroundColor(.white.opacity(0.6))
-                                                Text("Video not found")
-                                                    .font(.caption)
-                                                    .foregroundColor(.white.opacity(0.6))
-                                            }
-                                        )
-                                }
-                            }
-                            
-                            // Overlay buttons (positioned in black space outside video)
-                            if welcomeVideoPlayer != nil {
-                                let videoWidth = ScreenDimensions.width * videoWidthRatio
-                                let leftEdge = (ScreenDimensions.width - videoWidth) / 2
-                                let rightEdge = leftEdge + videoWidth
-                                let leftSpace = leftEdge
-                                let rightSpace = ScreenDimensions.width - rightEdge
-                                
-                                VStack {
-                                    Spacer()
-                                    
-                                    HStack(spacing: 0) {
-                                        // Backward arrow button in left black space
-                                        HStack {
-                                            Spacer()
-                                            VStack {
-                                                Spacer()
-                                                Button(action: {
-                                                    seekVideo(by: -3.0)
-                                                }) {
-                                                    Image("skipBackward3s")
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fit)
-                                                        .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
-                                                }
-                                                .padding(.trailing, 8) // 8px from video edge
-                                                Spacer()
-                                            }
-                                        }
-                                        .frame(width: leftSpace)
-                                        
-                                        // Video area (spacer)
-                                        Spacer()
-                                            .frame(width: videoWidth)
-                                        
-                                        // Forward arrow button in right black space
-                                        HStack {
-                                            VStack {
-                                                Spacer()
-                                                Button(action: {
-                                                    seekVideo(by: 3.0)
-                                                }) {
-                                                    Image("skipForward3s")
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fit)
-                                                        .frame(width: isCompact ? 36 : 44, height: isCompact ? 36 : 44)
-                                                }
-                                                .padding(.leading, 8) // 8px from video edge
-                                                Spacer()
-                                            }
-                                            Spacer()
-                                        }
-                                        .frame(width: rightSpace)
-                                    }
-                                    .frame(width: ScreenDimensions.width)
-                                    
-                                    Spacer()
-                                }
-                                .frame(width: ScreenDimensions.width)
-                                
-                                // Progress bar (top of video, only spans video width, accounting for rounded corners)
-                                VStack {
-                                    HStack {
-                                        Spacer()
-                                            .frame(width: (ScreenDimensions.width - ScreenDimensions.width * videoWidthRatio) / 2)
-                                        
-                                        GeometryReader { geometry in
-                                            let availableWidth = geometry.size.width - 22 // Subtract padding (12 left + 10 right)
-                                            let progressWidth = availableWidth * CGFloat(welcomeVideoProgress)
-                                            
-                                            ZStack(alignment: .leading) {
-                                                // Background bar
-                                                Rectangle()
-                                                    .fill(Color.white.opacity(0.2))
-                                                    .frame(height: 3)
-                                                
-                                                // Progress bar (turquoise)
-                                                Rectangle()
-                                                    .fill(Color.appAccent)
-                                                    .frame(width: progressWidth, height: 3)
-                                            }
-                                            .padding(.leading, 12) // Offset to account for rounded corners on left
-                                            .padding(.trailing, 10) // Offset to account for rounded corners on right
-                                        }
-                                        .frame(width: ScreenDimensions.width * videoWidthRatio, height: 3)
-                                        
-                                        Spacer()
-                                            .frame(width: (ScreenDimensions.width - ScreenDimensions.width * videoWidthRatio) / 2)
-                                    }
-                                    .padding(.top, 0)
-                                    
-                                    Spacer()
-                                }
-                                
-                                // Mute button (top-left corner of video, higher z-index)
-                                VStack {
-                                    HStack {
-                                        Button(action: {
-                                            toggleMute()
-                                        }) {
-                                            Image(systemName: isWelcomeVideoMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
-                                                .foregroundColor(.white)
-                                                .frame(width: isCompact ? 32 : 36, height: isCompact ? 32 : 36)
-                                                .background(
-                                                    Circle()
-                                                        .fill(Color.black.opacity(0.6))
-                                                        .overlay(
-                                                            Circle()
-                                                                .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
-                                                        )
-                                                )
-                                        }
-                                        .padding(.leading, ScreenDimensions.width * ((1 - videoWidthRatio) / 2) + 12)
-                                        .padding(.top, 12)
-                                        Spacer()
-                                        
-                                        // Pause/Play button (top-right corner of video)
-                                        Button(action: {
-                                            if let player = welcomeVideoPlayer {
-                                                if player.rate > 0 {
-                                                    player.pause()
-                                                    isWelcomeVideoPaused = true
-                                                    debugLog("⏸️ Welcome video paused (pause button tapped)")
-                                                } else {
-                                                    player.play()
-                                                    isWelcomeVideoPaused = false
-                                                    startWelcomeVideoProgressTracking()
-                                                    debugLog("▶️ Welcome video resumed (play button tapped)")
-                                                }
-                                            }
-                                        }) {
-                                            Image(systemName: isWelcomeVideoPaused ? "play.fill" : "pause.fill")
-                                                .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
-                                                .foregroundColor(.white)
-                                                .frame(width: isCompact ? 32 : 36, height: isCompact ? 32 : 36)
-                                                .background(
-                                                    Circle()
-                                                        .fill(Color.black.opacity(0.6))
-                                                        .overlay(
-                                                            Circle()
-                                                                .strokeBorder(Color.white.opacity(0.3), lineWidth: 1)
-                                                        )
-                                                )
-                                        }
-                                        .padding(.trailing, ScreenDimensions.width * ((1 - videoWidthRatio) / 2) + 12)
-                                        .padding(.top, 12)
-                                    }
-                                    Spacer()
-                                }
-                            }
-                        }
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
-                        .animation(.easeInOut(duration: 0.4), value: showTextVersion)
-                        .onAppear {
-                            setupWelcomeVideoPlayer()
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, isCompact ? 12 : 16)
-                .padding(.bottom, AdaptiveLayout.bottomScrollPadding)
-            }
-        }
-        .onAppear {
-            // Ensure video is set up and playing when step appears
-            setupWelcomeVideoPlayer()
-            // Small delay to ensure view hierarchy is ready, then force play
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                if let player = self.welcomeVideoPlayer {
-                    if player.rate == 0 && !self.isWelcomeVideoPaused {
-                        player.play()
-                        self.startWelcomeVideoProgressTracking()
-                        debugLog("▶️ Welcome video force-started after appear delay")
-                    }
-                }
-            }
-        }
-        .onDisappear {
-            // Stop progress tracking when leaving the step
-            stopWelcomeVideoProgressTracking()
-        }
-        .sheet(isPresented: $showShortcutsCheckAlert) {
-            requirementsCheckView
-        }
-    }
-    
     private func stepRowImproved(number: Int, text: String) -> some View {
         HStack(alignment: .top, spacing: 16) {
             ZStack {
@@ -2263,7 +1793,7 @@ struct OnboardingView: View {
                             let generator = UIImpactFeedbackGenerator(style: .medium)
                             generator.impactOccurred()
                             
-                            // Close the combined sheet and show install sheet
+                            // Close the requirements sheet and show install shortcut sheet
                             isTransitioningBetweenPopups = true
                             showShortcutsCheckAlert = false
                             
@@ -3344,6 +2874,9 @@ struct OnboardingView: View {
                             
                             // Action Button
                             Button(action: {
+                                // Track action
+                                OnboardingAnalyticsTracker.shared.trackAction(.retrySetup, on: .installShortcut, additionalParams: ["subtype": "install_shortcut_retry"])
+                                
                                 // Medium haptic for important action
                                 let generator = UIImpactFeedbackGenerator(style: .medium)
                                 generator.impactOccurred()
@@ -3417,6 +2950,9 @@ struct OnboardingView: View {
                             // Action Buttons
                             VStack(spacing: buttonSpacing) {
                                 Button(action: {
+                                    // Track action
+                                    OnboardingAnalyticsTracker.shared.trackAction(.verifyShortcut, on: .installShortcut, additionalParams: ["subtype": "install_success_confirmed", "verification": "success"])
+                                    
                                     // Medium haptic for positive confirmation
                                     let generator = UIImpactFeedbackGenerator(style: .medium)
                                     generator.impactOccurred()
@@ -3442,6 +2978,9 @@ struct OnboardingView: View {
                                 }
                                 
                         Button(action: {
+                            // Track action
+                            OnboardingAnalyticsTracker.shared.trackAction(.verifyShortcut, on: .installShortcut, additionalParams: ["subtype": "install_stuck_troubleshoot", "verification": "stuck"])
+                            
                             // Medium haptic for important troubleshooting action
                             let generator = UIImpactFeedbackGenerator(style: .medium)
                             generator.impactOccurred()
@@ -3469,6 +3008,9 @@ struct OnboardingView: View {
                                 
                                 // Subtle CTA to replay video
                                 Button(action: {
+                                    // Track action
+                                    OnboardingAnalyticsTracker.shared.trackAction(.watchVideo, on: .installShortcut, additionalParams: ["subtype": "install_replay_video"])
+                                    
                                     // Light haptic for subtle action
                                     let generator = UIImpactFeedbackGenerator(style: .light)
                                     generator.impactOccurred()
@@ -3699,6 +3241,10 @@ struct OnboardingView: View {
     }
 
     @State private var hasConfirmedPermissions: Bool = false // Simple checkbox state
+    
+    // Permission detection via URL callback only
+    @State private var permissionGrantedViaURL = false
+    @State private var permissionPollTimer: Timer?
 
     private func allowPermissionsStep() -> some View {
         // Use adaptive layout values based on device size
@@ -3877,50 +3423,52 @@ struct OnboardingView: View {
                         .foregroundColor(.secondary)
                         .padding(.top, isCompact ? 6 : 12)
                     
-                    // CRITICAL: Confirmation button - MUST be visible on all devices
-                    // This is the primary fix - ensure this button is always reachable
-                    Button(action: {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            hasConfirmedPermissions.toggle()
-                        }
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-                    }) {
-                        HStack(alignment: .center, spacing: isCompact ? 10 : 12) {
-                            Image(systemName: hasConfirmedPermissions ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: isCompact ? 18 : 20, weight: .medium))
-                                .foregroundColor(hasConfirmedPermissions ? Color.appAccent : Color.white.opacity(0.4))
-                            
-                            // Single line on all devices
-                            Text("I've granted all Permissions")
+                    // Status text showing success
+                    if permissionGrantedViaURL {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: isCompact ? 16 : 18))
+                                .foregroundColor(.green)
+                            Text("Permissions granted!")
                                 .font(.system(size: isCompact ? 15 : 16, weight: .medium))
                                 .foregroundColor(.white)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.85)
-                            
-                            Spacer()
                         }
-                        .padding(.horizontal, isCompact ? 16 : 20)
-                        .padding(.vertical, isCompact ? 12 : 16)
-                        .background(
-                            RoundedRectangle(cornerRadius: AdaptiveLayout.cornerRadius, style: .continuous)
-                                .fill(hasConfirmedPermissions ? Color.appAccent.opacity(0.15) : Color.white.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AdaptiveLayout.cornerRadius, style: .continuous)
-                                        .strokeBorder(hasConfirmedPermissions ? Color.appAccent.opacity(0.4) : Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                        )
+                        .padding(.top, isCompact ? 12 : 16)
                     }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, isCompact ? 10 : 16)
+                    
                     // CRITICAL: Add generous bottom padding to ensure visibility above sticky Continue button
-                    .padding(.bottom, AdaptiveLayout.bottomScrollPadding)
+                    Color.clear
+                        .frame(height: AdaptiveLayout.bottomScrollPadding)
                 }
             }
         }
         .onAppear {
             debugLog("📱 Allow Permissions step appeared")
             hasConfirmedPermissions = false
+            permissionGrantedViaURL = false
+            
+            // Check if the shortcut already completed (URL callback fired before this view appeared)
+            if UserDefaults.standard.bool(forKey: "shortcut_wallpaper_applied") {
+                debugLog("✅ Shortcut already completed before view appeared - enabling button immediately")
+                permissionGrantedViaURL = true
+                hasConfirmedPermissions = true
+            } else {
+                // Poll UserDefaults for the flag set by SceneDelegate/NoteWallApp URL handler
+                // This handles the case where the URL fires after the view appears
+                permissionPollTimer?.invalidate()
+                permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+                    if UserDefaults.standard.bool(forKey: "shortcut_wallpaper_applied") {
+                        debugLog("✅ Detected wallpaper-updated via UserDefaults poll")
+                        permissionGrantedViaURL = true
+                        hasConfirmedPermissions = true
+                        permissionPollTimer?.invalidate()
+                        permissionPollTimer = nil
+                        
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
+                    }
+                }
+            }
             
             // CRITICAL: Configure audio session for notifications video playback
             // The PiP video player might have set it to a different mode
@@ -4002,18 +3550,24 @@ struct OnboardingView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 if let player = self.notificationsVideoPlayer, player.rate == 0 {
                     debugLog("⚠️ Video still not playing after 1.0s, final retry")
-                    // Force audio session reset
-                    do {
-                        try AVAudioSession.sharedInstance().setActive(false)
-                        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
-                        try AVAudioSession.sharedInstance().setActive(true)
-                    } catch {
-                        debugLog("⚠️ Failed to reset audio session: \(error)")
-                    }
-                    player.seek(to: .zero)
-                    player.play()
+                    startVideoPlayback()
                 }
             }
+        }
+        .onDisappear {
+            permissionPollTimer?.invalidate()
+            permissionPollTimer = nil
+            // Clear the flag so it's fresh if user returns to this step
+            UserDefaults.standard.set(false, forKey: "shortcut_wallpaper_applied")
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
+            debugLog("✅ Received wallpaper-updated URL callback - enabling button")
+            permissionGrantedViaURL = true
+            hasConfirmedPermissions = true
+            
+            // Success haptic
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
         }
     }
     
@@ -4074,54 +3628,7 @@ struct OnboardingView: View {
         debugLog("🔍 updatePermissionCount() called - checking all permissions...")
         var count = 0
         
-        // Check 1: Home Screen folder access via marker file
-        // The shortcut should create a marker file when it successfully runs with permission
-        let homeScreenFolderURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("NoteWall", isDirectory: true)
-            .appendingPathComponent("HomeScreen", isDirectory: true)
-        
-        var hasHomeScreenAccess = false
-        if let homeURL = homeScreenFolderURL {
-            // Check for marker files that indicate the shortcut successfully ran with permission
-            // Look for any recent files created by the shortcut (within last 5 minutes)
-            let markerFiles = [
-                ".permission-granted",
-                ".shortcut-success",
-                "homescreen.jpg", // The actual wallpaper file the shortcut creates
-                "home_preset_black.jpg",
-                "home_preset_gray.jpg"
-            ]
-            
-            for markerName in markerFiles {
-                let markerFile = homeURL.appendingPathComponent(markerName)
-                if FileManager.default.fileExists(atPath: markerFile.path) {
-                    // Check if file was created recently (within last 5 minutes)
-                    if let attributes = try? FileManager.default.attributesOfItem(atPath: markerFile.path),
-                       let creationDate = attributes[.creationDate] as? Date,
-                       Date().timeIntervalSince(creationDate) < 300 { // 5 minutes
-                        hasHomeScreenAccess = true
-                        debugLog("📁 Home Screen folder: ✅ accessible (found marker: \(markerName), created \(Int(Date().timeIntervalSince(creationDate)))s ago)")
-                        break
-                    } else if FileManager.default.fileExists(atPath: markerFile.path) {
-                        // File exists but might be old - still count it as permission was granted at some point
-                        hasHomeScreenAccess = true
-                        debugLog("📁 Home Screen folder: ✅ accessible (found marker: \(markerName), may be older)")
-                        break
-                    }
-                }
-            }
-            
-            if !hasHomeScreenAccess {
-                debugLog("📁 Home Screen folder: ❌ no marker files found")
-            }
-        }
-        
-        if hasHomeScreenAccess {
-            count += 1
-            debugLog("   ✅ Counting Home Screen folder (count now: \(count))")
-        }
-        
-        // Check 2: Lock Screen folder access via marker file
+        // Check 1: Lock Screen folder access via marker file
         let lockScreenFolderURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?
             .appendingPathComponent("NoteWall", isDirectory: true)
             .appendingPathComponent("LockScreen", isDirectory: true)
@@ -4240,6 +3747,9 @@ struct OnboardingView: View {
                         
                         // Edit Notes button
                         Button(action: {
+                            // Track action
+                            OnboardingAnalyticsTracker.shared.trackAction(.addNote, on: .chooseWallpapers, additionalParams: ["subtype": "edit_notes_tapped"])
+                            
                             // Light impact haptic for edit notes button
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
@@ -4276,37 +3786,6 @@ struct OnboardingView: View {
                             .transition(.opacity)
                         } else {
                             VStack(alignment: .leading, spacing: isCompact ? 12 : 16) {
-                                HomeScreenPhotoPickerView(
-                                    isSavingHomeScreenPhoto: $isSavingHomeScreenPhoto,
-                                    homeScreenStatusMessage: $homeScreenStatusMessage,
-                                    homeScreenStatusColor: $homeScreenStatusColor,
-                                    homeScreenImageAvailable: Binding(
-                                        get: { homeScreenUsesCustomPhoto },
-                                        set: { homeScreenUsesCustomPhoto = $0 }
-                                    ),
-                                    handlePickedHomeScreenData: handlePickedHomeScreenData
-                                )
-
-                                HomeScreenQuickPresetsView(
-                                    isSavingHomeScreenPhoto: $isSavingHomeScreenPhoto,
-                                    homeScreenStatusMessage: $homeScreenStatusMessage,
-                                    homeScreenStatusColor: $homeScreenStatusColor,
-                                    homeScreenImageAvailable: Binding(
-                                        get: { homeScreenUsesCustomPhoto },
-                                        set: { homeScreenUsesCustomPhoto = $0 }
-                                    ),
-                                    handlePickedHomeScreenData: handlePickedHomeScreenData
-                                )
-
-                                if let message = homeScreenStatusMessage {
-                                    Text(message)
-                                        .font(.caption)
-                                        .foregroundColor(homeScreenStatusColor)
-                                }
-                                
-                                Divider()
-                                    .padding(.vertical, isCompact ? 8 : 12)
-
                                 LockScreenBackgroundPickerView(
                                     isSavingBackground: $isSavingLockScreenBackground,
                                     statusMessage: $lockScreenBackgroundStatusMessage,
@@ -4340,7 +3819,7 @@ struct OnboardingView: View {
                         }
                     }
                 } else {
-                        Text("Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current home screen wallpaper.")
+                        Text("Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current lock screen wallpaper.")
                             .font(.caption)
                             .foregroundColor(.secondary)
                 }
@@ -4350,7 +3829,6 @@ struct OnboardingView: View {
             .padding(.top, topPadding)
             .padding(.bottom, AdaptiveLayout.bottomScrollPadding)
         }
-        .onAppear(perform: ensureCustomPhotoFlagIsAccurate)
         .scrollAlwaysBounceIfAvailable()
     }
     
@@ -4468,15 +3946,16 @@ struct OnboardingView: View {
                 Spacer()
                     .frame(height: mockupSpacing)
                 
-                // Subtitle
-                Text("See your notes every time you pick up your phone.")
-                    .font(.system(size: subtitleFontSize))
+                // Settings tip (only message shown)
+                Text("You can change the font, color, and size of your notes anytime in Settings.")
+                    .font(.system(size: subtitleFontSize * 0.9))
                     .foregroundColor(.white.opacity(0.5))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, horizontalPadding)
                     .opacity(showMockupPreview ? 1 : 0)
                 
                 Spacer()
+                    .frame(height: isCompact ? 16 : 24) // Minimal padding before button
                 
                 // Continue button
                 Button(action: {
@@ -5119,12 +4598,10 @@ struct OnboardingView: View {
 
     private var primaryButtonTitle: String {
         switch currentPage {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return "" // These pages have their own buttons
         case .welcome:
-            return "Next"
-        case .videoIntroduction:
             return "Continue"
         case .installShortcut:
             return didOpenShortcut ? "Next" : "Install"
@@ -5141,12 +4618,10 @@ struct OnboardingView: View {
 
     private var primaryButtonIconName: String? {
         switch currentPage {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return nil // These pages have their own buttons
         case .welcome:
-            return "arrow.right.circle.fill"
-        case .videoIntroduction:
             return "arrow.right.circle.fill"
         case .installShortcut:
             return "bolt.fill"
@@ -5163,19 +4638,16 @@ struct OnboardingView: View {
 
     private var primaryButtonEnabled: Bool {
         switch currentPage {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             return false // These pages have their own buttons
         case .welcome:
-            return true
-        case .videoIntroduction:
             return true
         case .installShortcut:
             return true
         case .addNotes:
             return !onboardingNotes.isEmpty
         case .chooseWallpapers:
-            let hasHomeSelection = homeScreenUsesCustomPhoto || !homeScreenPresetSelectionRaw.isEmpty
             let hasLockSelection: Bool
             if let mode = LockScreenBackgroundMode(rawValue: lockScreenBackgroundModeRaw) {
                 if mode == .photo {
@@ -5189,7 +4661,7 @@ struct OnboardingView: View {
                 hasLockSelection = false
             }
             let hasWidgetSelection = hasSelectedWidgetOption
-            return hasHomeSelection && hasLockSelection && hasWidgetSelection && !isSavingHomeScreenPhoto && !isSavingLockScreenBackground && !isLaunchingShortcut
+            return hasLockSelection && hasWidgetSelection && !isSavingLockScreenBackground && !isLaunchingShortcut
         case .allowPermissions:
             return hasConfirmedPermissions
         case .overview:
@@ -5211,21 +4683,13 @@ struct OnboardingView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         
         switch currentPage {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete:
             // These pages have their own buttons and handle navigation internally
             break
         case .welcome:
-            advanceStep()
-        case .videoIntroduction:
-             // Pause video when showing Shortcuts check (video will continue in background)
-             if let player = welcomeVideoPlayer, player.rate > 0 {
-                 player.pause()
-                 isWelcomeVideoPaused = true
-                 debugLog("⏸️ Welcome video paused (Shortcuts check appearing)")
-             }
-             // Show Shortcuts check first
-             showShortcutsCheckAlert = true
+            // Show Shortcuts/Safari requirements check before proceeding
+            showShortcutsCheckAlert = true
         case .installShortcut:
             // This is now handled by custom buttons in the view
              break
@@ -5272,15 +4736,6 @@ struct OnboardingView: View {
             return 
         }
         
-        // Pause video when leaving video introduction step
-        if currentPage == .videoIntroduction {
-            if let player = welcomeVideoPlayer, player.rate > 0 {
-                player.pause()
-                isWelcomeVideoPaused = true
-                debugLog("⏸️ Welcome video paused (leaving step 2)")
-            }
-        }
-        
         // Light impact haptic for page transition
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
@@ -5310,15 +4765,6 @@ struct OnboardingView: View {
         withAnimation(.easeInOut) {
             currentPage = previous
         }
-        
-        // Resume video when returning to video introduction step
-        if previous == .videoIntroduction {
-            if let player = welcomeVideoPlayer, player.rate == 0 {
-                player.play()
-                isWelcomeVideoPaused = false
-                debugLog("▶️ Welcome video resumed (returning to step 2)")
-            }
-        }
     }
     
     private func handleSwipeGesture(_ gesture: DragGesture.Value) {
@@ -5338,8 +4784,6 @@ struct OnboardingView: View {
         // Swipe left to go forward (optional, can be removed if not desired)
         else if horizontalAmount < -50 {
             if currentPage == .welcome {
-                advanceStep()
-            } else if currentPage == .videoIntroduction {
                 advanceStep()
             } else if currentPage == .installShortcut && didOpenShortcut {
                 advanceStep()
@@ -5573,6 +5017,11 @@ struct OnboardingView: View {
         // Save notes to AppStorage before completing
         saveOnboardingNotes()
         
+        // Cancel abandoned onboarding notifications - user completed!
+        NotificationManager.shared.cancelAbandonedOnboardingReminders()
+        // Clear saved onboarding progress
+        savedOnboardingPageRaw = 0
+        
         // Track onboarding completion
         OnboardingAnalyticsTracker.shared.trackOnboardingComplete()
         
@@ -5592,6 +5041,13 @@ struct OnboardingView: View {
         saveWallpapersToPhotos = false // Files only for clean experience
         
         NotificationCenter.default.post(name: .onboardingCompleted, object: nil)
+        
+        // MARK: - Hard Paywall Check
+        // CRITICAL: Ensure user is premium before completing setup
+        guard PaywallManager.shared.isPremium else {
+            debugLog("⚠️ completeOnboarding called but user is NOT premium. Aborting completion.")
+            return
+        }
         
         // Mark as complete immediately since paywall is now earlier
         hasCompletedSetup = true
@@ -6198,7 +5654,7 @@ struct OnboardingView: View {
         isLaunchingShortcut = false
         didTriggerShortcutRun = false
         if currentPage == .chooseWallpapers {
-            currentPage = .videoIntroduction
+            currentPage = .welcome
         }
     }
     
@@ -6282,12 +5738,11 @@ struct OnboardingView: View {
 
     private func areWallpaperFilesReady() -> Bool {
         guard
-            let homeURL = HomeScreenImageManager.homeScreenImageURL(),
             let lockURL = HomeScreenImageManager.lockScreenWallpaperURL()
         else {
             return false
         }
-        return isReadableNonZeroFile(at: homeURL) && isReadableNonZeroFile(at: lockURL)
+        return isReadableNonZeroFile(at: lockURL)
     }
 
     private func isReadableNonZeroFile(at url: URL) -> Bool {
@@ -6310,8 +5765,8 @@ struct OnboardingView: View {
         wallpaperVerificationTask = nil
         didTriggerShortcutRun = false
         isLaunchingShortcut = false
-        homeScreenStatusMessage = "We couldn’t prepare the wallpaper files. Tap “Save Lock Screen” again."
-        homeScreenStatusColor = .red
+        lockScreenBackgroundStatusMessage = "We couldn’t prepare the wallpaper files. Tap “Save Lock Screen” again."
+        lockScreenBackgroundStatusColor = .red
     }
 
     @MainActor
@@ -6325,7 +5780,7 @@ struct OnboardingView: View {
 
         debugLog("✅ Onboarding: Wallpaper files verified, opening shortcut")
 
-        let shortcutName = "Set NoteWall Wallpaper"
+        let shortcutName = "set wallpaper photo"
         let encodedName = shortcutName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "shortcuts://run-shortcut?name=\(encodedName)"
         guard let url = URL(string: urlString) else {
@@ -6348,7 +5803,7 @@ struct OnboardingView: View {
     private func runShortcutForPermissions() {
         debugLog("🚀 Onboarding: Running shortcut for permissions step")
         
-        let shortcutName = "Set NoteWall Wallpaper"
+        let shortcutName = "set wallpaper photo"
         let encodedName = shortcutName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlString = "shortcuts://run-shortcut?name=\(encodedName)"
         guard let url = URL(string: urlString) else {
@@ -6396,14 +5851,6 @@ struct OnboardingView: View {
     /// Floating help button with glowy outline (performance optimized)
     private var helpButton: some View {
         Button(action: {
-            // Pause video when showing help sheet (if on step 2)
-            if currentPage == .videoIntroduction {
-                if let player = welcomeVideoPlayer, player.rate > 0 {
-                    player.pause()
-                    isWelcomeVideoPaused = true
-                    debugLog("⏸️ Welcome video paused (help sheet appearing)")
-                }
-            }
             // Medium haptic feedback
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
@@ -7029,6 +6476,10 @@ struct OnboardingView: View {
         switch currentPage {
         case .preOnboardingHook:
             return "Pre-Onboarding Hook"
+        case .nameInput:
+            return "Name Input"
+        case .notificationPermission:
+            return "Notification Permission"
         case .painPoint:
             return "Why This Matters"
         case .quizForgetMost:
@@ -7052,8 +6503,6 @@ struct OnboardingView: View {
             return "Setup Introduction"
         case .welcome:
             return "Welcome"
-        case .videoIntroduction:
-            return "Video Introduction"
         case .installShortcut:
             return "Install Shortcut"
         case .shortcutSuccess:
@@ -7124,50 +6573,6 @@ struct OnboardingView: View {
         }
     }
 
-    @available(iOS 16.0, *)
-    private func handlePickedHomeScreenData(_ data: Data) {
-        debugLog("📸 Onboarding: Handling picked home screen data")
-        debugLog("   Data size: \(data.count) bytes")
-        isSavingHomeScreenPhoto = true
-        homeScreenStatusMessage = "Saving photo…"
-        homeScreenStatusColor = .gray
-
-        Task {
-            do {
-                guard let image = UIImage(data: data) else {
-                    throw HomeScreenImageManagerError.unableToEncodeImage
-                }
-                debugLog("   Image size: \(image.size)")
-                try HomeScreenImageManager.saveHomeScreenImage(image)
-                debugLog("✅ Onboarding: Saved custom home screen photo")
-                if let url = HomeScreenImageManager.homeScreenImageURL() {
-                    debugLog("   File path: \(url.path)")
-                    debugLog("   File exists: \(FileManager.default.fileExists(atPath: url.path))")
-                }
-
-                await MainActor.run {
-                    homeScreenUsesCustomPhoto = true
-                    homeScreenStatusMessage = nil
-                    homeScreenStatusColor = .gray
-                    homeScreenPresetSelectionRaw = ""
-                    debugLog("   homeScreenUsesCustomPhoto set to: true")
-                    debugLog("   homeScreenPresetSelectionRaw cleared")
-                }
-            } catch {
-                debugLog("❌ Onboarding: Failed to save home screen photo: \(error)")
-                await MainActor.run {
-                    homeScreenStatusMessage = error.localizedDescription
-                    homeScreenStatusColor = .red
-                }
-            }
-
-            await MainActor.run {
-                isSavingHomeScreenPhoto = false
-                isSavingLockScreenBackground = false
-            }
-        }
-    }
-    
     // MARK: - Step 2 Text Version Helper Components
     
     private struct Step3HeroIcon: View {
@@ -7542,6 +6947,10 @@ private extension OnboardingPage {
         switch self {
         case .preOnboardingHook:
             return ""
+        case .nameInput:
+            return ""
+        case .notificationPermission:
+            return ""
         case .painPoint:
             return ""
         case .quizForgetMost, .quizPhoneChecks, .quizDistraction:
@@ -7564,8 +6973,6 @@ private extension OnboardingPage {
             return "Add Notes"
         case .chooseWallpapers:
             return "Choose Wallpapers"
-        case .videoIntroduction:
-            return "Introduction"
         case .installShortcut:
             return "Install Shortcut"
         case .shortcutSuccess:
@@ -7583,6 +6990,10 @@ private extension OnboardingPage {
         switch self {
         case .preOnboardingHook:
             return "Pre-Onboarding Hook"
+        case .nameInput:
+            return "Your Name"
+        case .notificationPermission:
+            return "Notifications"
         case .painPoint:
             return "Understanding You"
         case .quizForgetMost, .quizPhoneChecks, .quizDistraction:
@@ -7605,8 +7016,6 @@ private extension OnboardingPage {
             return "Add Notes"
         case .chooseWallpapers:
             return "Choose Wallpapers"
-        case .videoIntroduction:
-            return "Introduction"
         case .installShortcut:
             return "Install Shortcut"
         case .shortcutSuccess:
@@ -7624,6 +7033,10 @@ private extension OnboardingPage {
         switch self {
         case .preOnboardingHook:
             return "Pre-Onboarding"
+        case .nameInput:
+            return "Enter your name"
+        case .notificationPermission:
+            return "Notification Permission"
         case .painPoint:
             return "Understanding your needs"
         case .quizForgetMost:
@@ -7646,18 +7059,16 @@ private extension OnboardingPage {
             return "Setup introduction"
         case .welcome:
             return "Step 1"
-        case .videoIntroduction:
-            return "Step 2"
         case .installShortcut:
-            return "Step 3"
+            return "Step 2"
         case .shortcutSuccess:
             return "Shortcut installed"
         case .addNotes:
-            return "Step 4"
+            return "Step 3"
         case .chooseWallpapers:
-            return "Step 5"
+            return "Step 4"
         case .allowPermissions:
-            return "Step 6"
+            return "Step 5"
         case .setupComplete:
             return "Setup complete"
         case .overview:
@@ -7669,32 +7080,30 @@ private extension OnboardingPage {
     // Only technical setup steps show step numbers
     var stepNumber: Int? {
         switch self {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return nil // These don't show step numbers
         case .welcome:
             return 1
-        case .videoIntroduction:
-            return 2
         case .installShortcut:
-            return 3
+            return 2
         case .addNotes:
-            return 4
+            return 3
         case .chooseWallpapers:
-            return 5
+            return 4
         case .allowPermissions:
-            return 6
+            return 5
         }
     }
     
     // Phase for progress indicator
     var phase: String {
         switch self {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview, .resultsInsight:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction, .personalizationLoading, .resultsPreview, .resultsInsight:
             return "Getting to Know You"
-        case .socialProof, .setupIntro:
+        case .socialProof, .notificationPermission, .setupIntro:
             return "Almost Ready"
-        case .welcome, .videoIntroduction, .installShortcut, .shortcutSuccess, .addNotes, .chooseWallpapers, .allowPermissions:
+        case .welcome, .installShortcut, .shortcutSuccess, .addNotes, .chooseWallpapers, .allowPermissions:
             return "Setup"
         case .setupComplete, .reviewPage, .overview:
             return "Complete"
@@ -7704,10 +7113,10 @@ private extension OnboardingPage {
     // Whether this page shows the compact progress indicator
     var showsProgressIndicator: Bool {
         switch self {
-        case .preOnboardingHook, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
-             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
+        case .preOnboardingHook, .nameInput, .painPoint, .quizForgetMost, .quizPhoneChecks, .quizDistraction,
+             .personalizationLoading, .resultsPreview, .resultsInsight, .socialProof, .notificationPermission, .reviewPage, .setupIntro, .shortcutSuccess, .setupComplete, .overview:
             return false
-        case .welcome, .videoIntroduction, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions:
+        case .welcome, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions:
             return true
         }
     }
@@ -8047,24 +7456,6 @@ private struct AnimatedCheckmarkView: View {
 }
 
 private extension OnboardingView {
-    func ensureCustomPhotoFlagIsAccurate() {
-        // During onboarding, don't auto-enable based on file existence
-        // Only sync the flag in Settings view where it makes sense
-        // This prevents pre-selection during first-time setup
-        
-        // If user hasn't completed setup yet, ensure flag starts as false
-        if !hasCompletedSetup {
-            homeScreenUsesCustomPhoto = false
-            return
-        }
-        
-        // After setup is complete, sync with actual file state
-        let shouldBeEnabled = homeScreenPresetSelectionRaw.isEmpty && HomeScreenImageManager.homeScreenImageExists()
-        if homeScreenUsesCustomPhoto != shouldBeEnabled {
-            homeScreenUsesCustomPhoto = shouldBeEnabled
-        }
-    }
-
     private func advanceAfterShortcutInstallIfNeeded() {
         // This method is no longer needed - navigation is handled directly in onChange
         // Keeping it for backwards compatibility but it shouldn't be called
@@ -8383,7 +7774,7 @@ struct ReviewPageView: View {
                                 }
                             }
                             
-                            Text("+\(formattedUserCount) believers")
+                            Text("+\(formattedUserCount) people")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(.white)
                         }

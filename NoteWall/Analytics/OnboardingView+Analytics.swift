@@ -15,6 +15,8 @@ extension OnboardingPage {
     var analyticsStepId: OnboardingStepId {
         switch self {
         case .preOnboardingHook: return .preOnboardingHook
+        case .nameInput: return .nameInput
+        case .notificationPermission: return .notificationPermission
         case .painPoint: return .painPoint
         case .quizForgetMost: return .quizForgetMost
         case .quizPhoneChecks: return .quizPhoneChecks
@@ -26,7 +28,6 @@ extension OnboardingPage {
         case .reviewPage: return .reviewPage
         case .setupIntro: return .setupIntro
         case .welcome: return .welcome
-        case .videoIntroduction: return .videoIntroduction
         case .installShortcut: return .installShortcut
         case .shortcutSuccess: return .shortcutSuccess
         case .addNotes: return .addNotes
@@ -90,6 +91,12 @@ final class OnboardingAnalyticsTracker {
             stepId: stepId.rawValue,
             stepIndex: stepId.index,
             stepName: stepId.displayName
+        )
+        
+        // Also track as a screen view so it appears in "Pages and screens" report
+        AnalyticsService.shared.trackScreenView(
+            screenName: "onboarding_" + stepId.rawValue,
+            screenClass: "OnboardingView"
         )
     }
     

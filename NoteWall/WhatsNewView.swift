@@ -43,25 +43,27 @@ struct WhatsNewView: View {
         let description: String
     }
     
+    // MARK: - Update Items
+    
     private var updateItems: [UpdateItem] {
         [
             UpdateItem(
-                icon: "wrench.and.screwdriver.fill",
+                icon: "textformat.size",
                 iconColor: Color("AppAccent"),
-                title: "Quick Troubleshooting Access",
-                description: "Troubleshooting banner now shows on every app launch for instant help when wallpaper isn't showing."
-            ),
-            UpdateItem(
-                icon: "sparkles",
-                iconColor: Color("AppAccent").opacity(0.8),
-                title: "Improved User Experience",
-                description: "Enhanced onboarding flow and better guidance for new users."
+                title: "Custom Text Styling",
+                description: "You can now change the font, color, size, and alignment of your notes directly in Settings!"
             ),
             UpdateItem(
                 icon: "paintbrush.fill",
+                iconColor: Color("AppAccent").opacity(0.8),
+                title: "Highlight Modes",
+                description: "Add emphasis with outline, white, or black highlight backgrounds to make your notes pop."
+            ),
+            UpdateItem(
+                icon: "heart.fill",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "Bug Fixes",
-                description: "Various stability improvements and minor bug fixes."
+                title: "Thank You!",
+                description: "Thanks for supporting independent development. More features coming soon!"
             )
         ]
     }
@@ -123,6 +125,12 @@ struct WhatsNewView: View {
                 .allowsHitTesting(false)
         }
         .onAppear {
+            // Track screen view
+            AnalyticsService.shared.trackScreenView(
+                screenName: "whats_new_popup",
+                screenClass: "WhatsNewView"
+            )
+            
             // Staggered animations matching onboarding style
             withAnimation(.easeOut(duration: 0.4).delay(0.1)) {
                 headerOpacity = 1
@@ -335,12 +343,32 @@ struct WhatsNewView: View {
             }
             .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
             
-            // Secondary: Maybe Later
-            Button(action: { closePopup() }) {
-                Text("Maybe Later")
-                    .font(.system(size: isCompact ? 14 : 16, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+            HStack(spacing: 12) {
+                // Secondary: Close
+                Button(action: { closePopup() }) {
+                    Text("Close")
+                        .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, isCompact ? 10 : 12)
+                        .background(Color.white.opacity(0.05))
+                        .cornerRadius(12)
+                }
+                
+                // Secondary: Contact Us
+                Button(action: { contactSupport() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 14))
+                        Text("Write Us")
+                            .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                    }
+                    .foregroundColor(Color("AppAccent"))
+                    .frame(maxWidth: .infinity)
                     .padding(.vertical, isCompact ? 10 : 12)
+                    .background(Color("AppAccent").opacity(0.1))
+                    .cornerRadius(12)
+                }
             }
         }
         .padding(.horizontal, isCompact ? 20 : 24)
@@ -358,6 +386,28 @@ struct WhatsNewView: View {
     }
     
     // MARK: - Actions
+    
+    private func contactSupport() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Direct email link
+        let email = "iosnotewall@gmail.com"
+        let subject = "NoteWall Feedback (v\(currentVersion))"
+        let body = "\n\n\n---\nApp Version: \(currentVersion)\nBuild: \(buildNumber)"
+        
+        let urlString = "mailto:\(email)?subject=\(subject)&body=\(body)"
+            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        
+        if let url = URL(string: urlString) {
+            if UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url)
+            } else {
+                // Feature request fallback alert if mail app not configured
+                showFeatureRequestAlert = true
+            }
+        }
+    }
     
     private func requestReview() {
         // Haptic feedback
@@ -401,8 +451,9 @@ struct WhatsNewView: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Show feature request popup after What's New is dismissed
-            showFeatureRequestAlert = true
+            // Show feature request popup after What's New is dismissed - optional
+            // showFeatureRequestAlert = true
+            finalDismiss()
         }
     }
     
@@ -446,7 +497,8 @@ class WhatsNewManager: ObservableObject {
     
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
-    private let whatsNewHasBeenShownKey = "WhatsNewHasBeenShownOnce"
+    // Using feature-specific key so new What's New shows for returning users
+    private let whatsNewHasBeenShownKey = "WhatsNewShown_TextStyling_Feb2026"
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!
@@ -476,12 +528,12 @@ class WhatsNewManager: ObservableObject {
     }
     
     /// Start date for showing the What's New popup
-    /// January 23, 2026 at 00:00:00
+    /// February 3, 2026 at 00:00:00
     private var startDate: Date {
         var components = DateComponents()
         components.year = 2026
-        components.month = 1
-        components.day = 23
+        components.month = 2
+        components.day = 3
         components.hour = 0
         components.minute = 0
         components.second = 0
@@ -489,12 +541,12 @@ class WhatsNewManager: ObservableObject {
     }
     
     /// End date for showing the What's New popup
-    /// January 27, 2026 at 23:59:59
+    /// February 10, 2026 at 23:59:59
     private var endDate: Date {
         var components = DateComponents()
         components.year = 2026
-        components.month = 1
-        components.day = 27
+        components.month = 2
+        components.day = 10
         components.hour = 23
         components.minute = 59
         components.second = 59

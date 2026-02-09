@@ -3,7 +3,7 @@ import UIKit
 
 /// Simple crash reporting manager
 /// Currently uses Apple's built-in crash reporting
-/// Can be extended to use Firebase Crashlytics or Sentry
+/// Can be extended to use Sentry or similar service
 enum CrashReporter {
     
     // MARK: - Configuration
@@ -28,18 +28,6 @@ enum CrashReporter {
         #else
         // In production, this would send to your crash reporting service
         // For now, we rely on Apple's built-in crash reporting
-        // To add Firebase Crashlytics, uncomment below:
-        /*
-        Crashlytics.crashlytics().log("\(message)")
-        if let error = error {
-            Crashlytics.crashlytics().record(error: error)
-        }
-        if let userInfo = userInfo {
-            for (key, value) in userInfo {
-                Crashlytics.crashlytics().setCustomValue(value, forKey: key)
-            }
-        }
-        */
         #endif
     }
     
@@ -51,8 +39,6 @@ enum CrashReporter {
         print("📝 CrashReporter [\(level.rawValue)]: \(message)")
         #else
         // In production, send to crash reporting service
-        // For Firebase Crashlytics:
-        // Crashlytics.crashlytics().log("\(level.rawValue): \(message)")
         #endif
     }
     
@@ -64,9 +50,6 @@ enum CrashReporter {
         
         #if DEBUG
         print("👤 CrashReporter User Property: \(key) = \(value ?? "nil")")
-        #else
-        // For Firebase Crashlytics:
-        // Crashlytics.crashlytics().setCustomValue(value ?? "", forKey: key)
         #endif
     }
     
@@ -76,9 +59,6 @@ enum CrashReporter {
         
         #if DEBUG
         print("🆔 CrashReporter User ID: \(userID ?? "nil")")
-        #else
-        // For Firebase Crashlytics:
-        // Crashlytics.crashlytics().setUserID(userID)
         #endif
     }
     
@@ -90,9 +70,6 @@ enum CrashReporter {
         
         #if DEBUG
         print("🔑 CrashReporter Custom Key: \(key) = \(value)")
-        #else
-        // For Firebase Crashlytics:
-        // Crashlytics.crashlytics().setCustomValue(value, forKey: key)
         #endif
     }
     
@@ -104,9 +81,6 @@ enum CrashReporter {
         
         #if DEBUG
         print("🍞 CrashReporter Breadcrumb [\(category)]: \(message)")
-        #else
-        // For Firebase Crashlytics:
-        // Crashlytics.crashlytics().log("\(category): \(message)")
         #endif
     }
     

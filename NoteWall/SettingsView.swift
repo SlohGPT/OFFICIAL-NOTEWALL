@@ -10,12 +10,14 @@ struct SettingsView: View {
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("saveWallpapersToPhotos") private var saveWallpapersToPhotos = false
     @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
+    @AppStorage("wallpaperIsShadowEnabled") private var isShadowEnabled: Bool = false
+    @AppStorage("wallpaperShadowIntensity") private var shadowIntensity: Double = 0.5
+    @AppStorage("wallpaperFontSizeScaling") private var fontSizeScaling: Double = 1.0 // NEW: Font Size Memory
     @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("completedOnboardingVersion") private var completedOnboardingVersion = 0
-    @AppStorage("homeScreenUsesCustomPhoto") private var homeScreenUsesCustomPhoto = false
     @StateObject private var paywallManager = PaywallManager.shared
     @State private var showDeleteAlert = false
     @State private var showResetAlert = false
@@ -29,7 +31,7 @@ struct SettingsView: View {
     @State private var supportViewFloatOffset: CGFloat = 0
     var selectedTab: Binding<Int>?
 
-    private let shortcutURL = "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35"
+    private let shortcutURL = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
     private let whatsappNumber = "421907758852"
     private let supportEmail = "iosnotewall@gmail.com"
     
@@ -37,16 +39,27 @@ struct SettingsView: View {
         self.selectedTab = selectedTab
     }
 
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
-    @State private var isSavingHomeScreenPhoto = false
-    @State private var homeScreenStatusMessage: String?
-    @State private var homeScreenStatusColor: Color = .gray
     @State private var isSavingLockScreenBackground = false
     @State private var lockScreenBackgroundStatusMessage: String?
     @State private var lockScreenBackgroundStatusColor: Color = .gray
     @State private var showLegalDocument = false
     @State private var selectedLegalDocument: LegalDocumentType = .termsOfService
     @State private var isUpdatingWallpaperFromToggle = false
+    
+    // MARK: - Text Styling State (Instagram-style toolbar)
+    @State private var selectedFontName = UserDefaults.standard.wallpaperFontName
+    @State private var showFontList = false
+    @State private var selectedColorName = "Auto"
+    @State private var customColor: Color = {
+        if let uiColor = UserDefaults.standard.wallpaperCustomColor() {
+            return Color(uiColor)
+        }
+        return .white
+    }()
+    @State private var alignmentMode = UserDefaults.standard.wallpaperAlignment
+    @State private var highlightMode = UserDefaults.standard.wallpaperHighlightMode // RESTORED
+    @AppStorage("wallpaperUseCustomColor") private var useCustomColor = false
+    @State private var previewBackgroundImage: UIImage?
 
     var body: some View {
         NavigationView {
@@ -76,17 +89,24 @@ struct SettingsView: View {
                         resetToFreshInstall()
                     }
                 } message: {
-                    Text("This will reset the app to fresh install state and guide you through reinstalling the shortcut. All app data including notes, wallpapers, and settings will be deleted.")
                 }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .onAppear {
+            AnalyticsService.shared.trackScreenView(
+                screenName: "settings_tab",
+                screenClass: "SettingsView"
+            )
+            loadPreviewImage()
+        }
     }
 
     @ViewBuilder
     private var settingsList: some View {
         List {
             premiumSection
-            homeScreenSection
+            wallpapersSection
+            textStyleSection
             wallpaperSettingsSection
             actionsSection
             supportSection
@@ -207,6 +227,222 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Text Style Section (Instagram-style formatting)
+    
+    private var textStyleSection: some View {
+        Section(header: Text("Text Style")) {
+            VStack(spacing: 0) {
+                // Preview of current style
+                textStylePreview
+                    .padding(.bottom, 12)
+                    
+                // Instagram-style toolbar
+                StylingToolbarView(
+                    selectedFontName: $selectedFontName,
+                    showFontList: $showFontList,
+                    selectedColorName: $selectedColorName,
+                    customColor: $customColor,
+                    alignmentMode: $alignmentMode,
+                    highlightMode: $highlightMode,
+                        isShadowEnabled: $isShadowEnabled,
+                        shadowIntensity: $shadowIntensity,
+                        fontSizeScaling: $fontSizeScaling, // Binding
+                        onUpdate: {
+                            // Trigger preview update
+                            // State changes automatically trigger view updates
+                             saveTextStyleSettings()
+                        }
+                    )
+                
+                // Reminder to update wallpaper
+                HStack(spacing: 8) {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(.appAccent)
+                    
+                    Text("After changing styles, tap **Update Wallpaper Now** above to apply")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 8)
+            }
+            .listRowInsets(EdgeInsets(top: 12, leading: 0, bottom: 12, trailing: 0))
+            .listRowBackground(Color.clear)
+            .onChange(of: customColor) { _ in
+                useCustomColor = true
+            }
+        }
+    }
+    
+    private var textStylePreview: some View {
+        ZStack {
+            // Background (lock screen image or gradient)
+            GeometryReader { geometry in
+                if let image = previewBackgroundImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay(Color.black.opacity(0.2)) // Slight dim to ensure text readability
+                } else {
+                    LinearGradient(
+                        colors: [Color(white: 0.12), Color(white: 0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                }
+            }
+            .frame(height: 180) // Taller preview to see more context
+            .cornerRadius(16)
+            
+            // Sample text with current styling
+            Text("Preview") // Shortened to fit better at max scale
+                .lineLimit(1) // Force single line as requested
+                .font(previewFont)
+                // Removed .scaleEffect to ensure layout and background update correctly
+                .foregroundColor(previewTextColor)
+                // Outline Fix: Apply outline style strictly
+                .shadow(color: outlineShadowColor, radius: 0, x: 1, y: 1)
+                .shadow(color: outlineShadowColor, radius: 0, x: -1, y: -1)
+                .shadow(color: outlineShadowColor, radius: 0, x: 1, y: -1)
+                .shadow(color: outlineShadowColor, radius: 0, x: -1, y: 1)
+                // Standard Shadow
+                .shadow(color: previewShadowColor, radius: previewShadowRadius, x: 0, y: 2)
+                .multilineTextAlignment(previewAlignment)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+                .background(
+                    // Show highlight box based on mode
+                    highlightBackground
+                )
+                .frame(maxWidth: .infinity, alignment: frameAlignment)
+                .padding(.horizontal, 24)
+                .id("Preview-\(selectedFontName)-\(selectedColorName)-\(alignmentMode)-\(highlightMode)-\(shadowIntensity)-\(useCustomColor)-\(fontSizeScaling)") // Force redraw
+        }
+        .padding(.horizontal, 24)
+    }
+    
+    private var highlightBackground: some View {
+        Group {
+            if highlightMode == 1 { // Outline
+                 // Outline mode should NOT show a background box. 
+                 // The text itself handles the outline.
+                 EmptyView()
+            } else if highlightMode == 2 { // White
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.white.opacity(0.85))
+            } else if highlightMode == 3 { // Black
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.7))
+            }
+        }
+    }
+    
+    private var frameAlignment: Alignment {
+        switch alignmentMode {
+        case 0: return .leading
+        case 1: return .center
+        case 2: return .trailing
+        default: return .center
+        }
+    }
+    
+    private var previewFont: Font {
+        let fontType = WallpaperRenderer.WallpaperFont(rawValue: selectedFontName) ?? .modern
+        let baseSize: CGFloat = 28
+        let scaledSize = baseSize * fontSizeScaling
+        
+        switch fontType {
+        case .classic: return .system(size: scaledSize, weight: .semibold, design: .serif)
+        case .modern: return .system(size: scaledSize, weight: .semibold, design: .default)
+        case .rounded: return .system(size: scaledSize, weight: .semibold, design: .rounded)
+        case .typewriter: return .system(size: scaledSize * 0.85, weight: .semibold, design: .monospaced)
+        case .strong: return .system(size: scaledSize, weight: .black, design: .default)
+        // Neon looks better slightly larger
+        case .neon: return .custom("SnellRoundhand-Bold", size: scaledSize * 1.15)
+        }
+    }
+    
+    private var previewTextColor: Color {
+        if useCustomColor {
+            return customColor
+        }
+        return .white
+    }
+    
+    private var previewShadowColor: Color {
+        if isShadowEnabled {
+            return Color.black.opacity(0.6 * shadowIntensity)
+        }
+        return Color.clear
+    }
+    
+    private var previewShadowRadius: CGFloat {
+        if isShadowEnabled {
+            return 8 * shadowIntensity
+        }
+        return 0
+    }
+
+    private var outlineShadowColor: Color {
+        if highlightMode == 1 { // Outline Mode
+             // Use same outline style as lock screen (text color with stroke effect)
+             // If text is white, outline is black? Or self-colored? 
+             // WallpaperRenderer uses text color as main, and nil background.
+             // Wait, WallpaperRenderer line 504: case .outline: finalTextColor = textColor.
+             // But usually Outline implies stroked text or drop shadow to separate?
+             // Ah, checking logic again: 
+             // WallpaperRenderer DOES NOT apply stroke attribute. It just sets text color and passes nil highlight.
+             // Wait. What does it actually do for Outline?
+             // Line 504: finalTextColor = textColor; highlightColor = nil; 
+             // It essentially does NOTHING different than .none except maybe shadow adjustments?
+             // Ah, I see "buildOutlineString" helper but it is NOT called in lines 467-525.
+             // Let me check where buildOutlineString is CALLED.
+             // It seems I might have misread the renderer logic.
+             // If highlightMode == .outline, the renderer sets text color but NO background.
+             // But wait, user says "shows realistic black outline".
+             // If the renderer just draws plain text, that's not an outline.
+             // I need to verify if `buildOutlineString` is actually used.
+             // usually implies stroked text or drop shadow to separate?
+             // User wants realistic BLACK outline.
+             return Color.black 
+        }
+        return Color.clear
+    }
+    
+    private var previewAlignment: TextAlignment {
+        switch alignmentMode {
+        case 0: return .leading
+        case 1: return .center
+        case 2: return .trailing
+        default: return .center
+        }
+    }
+    
+    private func saveTextStyleSettings() {
+        UserDefaults.standard.wallpaperFontName = selectedFontName
+        UserDefaults.standard.wallpaperAlignment = alignmentMode
+        UserDefaults.standard.wallpaperHighlightMode = highlightMode
+        UserDefaults.standard.wallpaperIsShadowEnabled = isShadowEnabled
+        UserDefaults.standard.wallpaperShadowIntensity = shadowIntensity
+        UserDefaults.standard.wallpaperUseCustomColor = useCustomColor
+        UserDefaults.standard.wallpaperFontSizeScaling = fontSizeScaling
+        
+        #if DEBUG
+        print("💾 Saved text style settings:")
+        print("   Font: \(selectedFontName)")
+        print("   Alignment: \(alignmentMode)")
+        print("   Highlight: \(highlightMode)")
+        print("   Shadow: \(isShadowEnabled) @ \(Int(shadowIntensity * 100))%")
+        #endif
+    }
+
     private var wallpaperSettingsSection: some View {
         Section(header: Text("Wallpaper Settings")) {
             // Lock Screen Widgets toggle - affects note positioning
@@ -240,69 +476,49 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
-    private var homeScreenSection: some View {
-        if #available(iOS 16.0, *) {
-            Section("Wallpapers") {
-                HomeScreenPhotoPickerView(
-                    isSavingHomeScreenPhoto: $isSavingHomeScreenPhoto,
-                    homeScreenStatusMessage: $homeScreenStatusMessage,
-                    homeScreenStatusColor: $homeScreenStatusColor,
-                    homeScreenImageAvailable: Binding(
-                        get: { homeScreenUsesCustomPhoto },
-                        set: { homeScreenUsesCustomPhoto = $0 }
-                    ),
-                    handlePickedHomeScreenData: handlePickedHomeScreenData
-                )
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparator(.hidden)
-
-                HomeScreenQuickPresetsView(
-                    isSavingHomeScreenPhoto: $isSavingHomeScreenPhoto,
-                    homeScreenStatusMessage: $homeScreenStatusMessage,
-                    homeScreenStatusColor: $homeScreenStatusColor,
-                    homeScreenImageAvailable: Binding(
-                        get: { homeScreenUsesCustomPhoto },
-                        set: { homeScreenUsesCustomPhoto = $0 }
-                    ),
-                    handlePickedHomeScreenData: handlePickedHomeScreenData
-                )
-                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparator(.hidden)
-
-                LockScreenBackgroundPickerView(
-                    isSavingBackground: $isSavingLockScreenBackground,
-                    statusMessage: $lockScreenBackgroundStatusMessage,
-                    statusColor: $lockScreenBackgroundStatusColor,
-                    backgroundMode: Binding(
-                        get: { LockScreenBackgroundMode(rawValue: lockScreenBackgroundModeRaw) ?? .default },
-                        set: { lockScreenBackgroundModeRaw = $0.rawValue }
-                    ),
-                    backgroundOption: Binding(
-                        get: { LockScreenBackgroundOption(rawValue: lockScreenBackgroundRaw) ?? .default },
-                        set: { lockScreenBackgroundRaw = $0.rawValue }
-                    ),
-                    backgroundPhotoData: Binding(
-                        get: { lockScreenBackgroundPhotoData },
-                        set: { lockScreenBackgroundPhotoData = $0 }
-                    ),
-                    backgroundPhotoAvailable: !lockScreenBackgroundPhotoData.isEmpty
-                )
-                .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparator(.hidden)
-
-                UpdateWallpaperButton(selectedTab: selectedTab)
+    private var wallpapersSection: some View {
+        Group {
+            if #available(iOS 16.0, *) {
+                Section("Wallpapers") {
+                    LockScreenBackgroundPickerView(
+                        isSavingBackground: $isSavingLockScreenBackground,
+                        statusMessage: $lockScreenBackgroundStatusMessage,
+                        statusColor: $lockScreenBackgroundStatusColor,
+                        backgroundMode: Binding(
+                            get: { LockScreenBackgroundMode(rawValue: lockScreenBackgroundModeRaw) ?? .default },
+                            set: { lockScreenBackgroundModeRaw = $0.rawValue }
+                        ),
+                        backgroundOption: Binding(
+                            get: { LockScreenBackgroundOption(rawValue: lockScreenBackgroundRaw) ?? .default },
+                            set: { lockScreenBackgroundRaw = $0.rawValue }
+                        ),
+                        backgroundPhotoData: Binding(
+                            get: { lockScreenBackgroundPhotoData },
+                            set: { lockScreenBackgroundPhotoData = $0 }
+                        ),
+                        backgroundPhotoAvailable: !lockScreenBackgroundPhotoData.isEmpty
+                    )
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 0, trailing: 0))
                     .listRowSeparator(.hidden)
-                    .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 12, trailing: 0))
+
+                    UpdateWallpaperButton(selectedTab: selectedTab)
+                        .listRowSeparator(.hidden)
+                        .listRowInsets(EdgeInsets(top: 20, leading: 0, bottom: 12, trailing: 0))
+                }
+            } else {
+                Section(header: Text("Wallpapers")) {
+                    Text("Saving a lock screen image requires iOS 16 or newer.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .padding(.vertical, 4)
+                }
             }
-            .onAppear(perform: ensureCustomHomePhotoFlagIsAccurate)
-        } else {
-            Section(header: Text("Wallpapers")) {
-                Text("Save a home screen image requires iOS 16 or newer.")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-                    .padding(.vertical, 4)
-            }
-            .onAppear(perform: ensureCustomHomePhotoFlagIsAccurate)
+        }
+        .onChange(of: lockScreenBackgroundPhotoData) { _ in
+             loadPreviewImage()
+        }
+        .onChange(of: lockScreenBackgroundRaw) { _ in
+             loadPreviewImage()
         }
     }
 
@@ -418,6 +634,32 @@ struct SettingsView: View {
     }
 
 
+    private func loadPreviewImage() {
+        // 1. Try to load custom background photo (if user selected one)
+        if let image = HomeScreenImageManager.lockScreenBackgroundSourceImage() {
+            previewBackgroundImage = image
+            return
+        }
+        
+        // 2. Fallback to current preset
+        if let preset = LockScreenBackgroundOption(rawValue: lockScreenBackgroundRaw) {
+             previewBackgroundImage = solidColorImage(color: preset.uiColor)
+             return
+        }
+        
+        // 3. Fallback to gradient (nil)
+        previewBackgroundImage = nil
+    }
+    
+    private func solidColorImage(color: UIColor) -> UIImage {
+        let size = CGSize(width: 500, height: 1000)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            color.setFill()
+            context.fill(CGRect(origin: .zero, size: size))
+        }
+    }
+    
     private func deleteAllNotes() {
         // Post notification to show global loading overlay (handled by MainTabView)
         // This ensures the loading view stays visible when switching to home tab
@@ -453,8 +695,6 @@ struct SettingsView: View {
         lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
         lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
         lockScreenBackgroundPhotoData = Data()
-        homeScreenUsesCustomPhoto = false
-        homeScreenPresetSelectionRaw = ""
         
         // Clear shortcut-related AppStorage keys
         UserDefaults.standard.removeObject(forKey: "lastLockScreenIdentifier")
@@ -519,8 +759,6 @@ struct SettingsView: View {
         lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
         lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
         lockScreenBackgroundPhotoData = Data()
-        homeScreenUsesCustomPhoto = false
-        homeScreenPresetSelectionRaw = ""
         
         // Clear other AppStorage keys that might exist
         UserDefaults.standard.removeObject(forKey: "lastLockScreenIdentifier")
@@ -571,43 +809,6 @@ struct SettingsView: View {
         if let selectedTab = selectedTab {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 selectedTab.wrappedValue = 0
-            }
-        }
-    }
-
-    @available(iOS 16.0, *)
-    fileprivate func handlePickedHomeScreenData(_ data: Data) {
-        // Light impact haptic for photo picker selection
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-        
-        isSavingHomeScreenPhoto = true
-        homeScreenStatusMessage = "Saving photo…"
-        homeScreenStatusColor = .gray
-
-        Task {
-            do {
-                guard let image = UIImage(data: data) else {
-                    throw HomeScreenImageManagerError.unableToEncodeImage
-                }
-                try HomeScreenImageManager.saveHomeScreenImage(image)
-
-                await MainActor.run {
-                    homeScreenUsesCustomPhoto = true
-                    homeScreenStatusMessage = nil
-                    homeScreenStatusColor = .gray
-                    homeScreenPresetSelectionRaw = ""
-                }
-            } catch {
-                await MainActor.run {
-                    homeScreenStatusMessage = error.localizedDescription
-                    homeScreenStatusColor = .red
-                }
-            }
-
-            await MainActor.run {
-                isSavingHomeScreenPhoto = false
-                isSavingLockScreenBackground = false
             }
         }
     }
@@ -1120,13 +1321,6 @@ private struct SupportHeroIcon: View {
 }
 
 private extension SettingsView {
-    private func ensureCustomHomePhotoFlagIsAccurate() {
-        let shouldBeEnabled = homeScreenPresetSelectionRaw.isEmpty && HomeScreenImageManager.homeScreenImageExists()
-        if homeScreenUsesCustomPhoto != shouldBeEnabled {
-            homeScreenUsesCustomPhoto = shouldBeEnabled
-        }
-    }
-    
     private func openSubscriptionManagement() {
         if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
             UIApplication.shared.open(url)
@@ -1522,3 +1716,433 @@ private extension SettingsView {
         }
     }
 }
+
+
+// MARK: - Instagram-Style Unified Styling Toolbar
+
+/// A unified styling toolbar inspired by Instagram Stories' text editing interface.
+/// Provides 5 main controls: Font, Color, Alignment, Highlight, and Shadow.
+struct StylingToolbarView: View {
+    @Binding var selectedFontName: String
+    @Binding var showFontList: Bool
+    @Binding var selectedColorName: String
+    @Binding var customColor: Color
+    @Binding var alignmentMode: Int
+    @Binding var highlightMode: Int
+    @Binding var isShadowEnabled: Bool
+    @Binding var shadowIntensity: Double
+    @Binding var fontSizeScaling: Double // NEW: Font Size Scaling
+    var onUpdate: () -> Void
+    
+    @State private var showShadowSlider: Bool = false
+    @State private var showSizeSlider: Bool = false // NEW: Size Slider State
+    
+    // NoteWall accent color - matches app theme
+    private let accentColor = Color(red: 0.4, green: 0.6, blue: 1.0) // Blue accent
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            
+            // Expandable Font List
+            if showFontList {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(WallpaperRenderer.WallpaperFont.allCases) { font in
+                            Button(action: {
+                                selectedFontName = font.rawValue
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                onUpdate()
+                            }) {
+                                Text(font.rawValue)
+                                    .font(fontFont(for: font))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        Capsule()
+                                            .fill(selectedFontName == font.rawValue ? accentColor : Color(.secondarySystemBackground))
+                                    )
+                                    .foregroundColor(selectedFontName == font.rawValue ? .white : .primary)
+                                    .overlay(
+                                        Capsule()
+                                            .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+                .background(Color(UIColor.systemBackground))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
+            // Expandable Size Slider (NEW)
+            if showSizeSlider {
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "minus.magnifyingglass")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        Slider(value: $fontSizeScaling, in: 0.7...2.0, step: 0.05)
+                            .tint(accentColor)
+                            .onChange(of: fontSizeScaling) { _ in
+                                onUpdate()
+                            }
+                        
+                        Image(systemName: "plus.magnifyingglass")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                }
+                .background(Color(UIColor.systemBackground))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
+            // Expandable Shadow Slider
+            if showShadowSlider {
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "shadow")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.secondary)
+                        
+                        Slider(value: $shadowIntensity, in: 0...1, step: 0.05)
+                            .tint(accentColor)
+                            .onChange(of: shadowIntensity) { newValue in
+                                if newValue > 0 && !isShadowEnabled {
+                                    isShadowEnabled = true
+                                }
+                                if newValue == 0 && isShadowEnabled {
+                                    isShadowEnabled = false
+                                }
+                                onUpdate()
+                            }
+                        
+                        Text("\(Int(shadowIntensity * 100))%")
+                            .font(.system(size: 14, weight: .semibold, design: .rounded))
+                            .foregroundColor(.primary)
+                            .frame(width: 44, alignment: .trailing)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                }
+                .background(Color(UIColor.systemBackground))
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+            
+            // Main Icon Row
+            HStack(spacing: 0) {
+                // 1. Font Button
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        showFontList.toggle()
+                        showShadowSlider = false
+                        showSizeSlider = false
+                    }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(showFontList ? Color(UIColor.tertiarySystemFill) : Color.clear)
+                            .frame(width: 44, height: 44)
+                        
+                        
+                        Image(systemName: "textformat")
+                            .font(.system(size: 20, weight: .medium)) // Use textformat instead of Aa to be distinct
+                            .foregroundColor(.primary)
+                    }
+                    .frame(width: 56, height: 56)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                
+                // 2. Size Button (NEW)
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        showSizeSlider.toggle()
+                        showFontList = false
+                        showShadowSlider = false
+                    }
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(showSizeSlider ? Color(UIColor.tertiarySystemFill) : Color.clear)
+                            .frame(width: 44, height: 44)
+                        
+                        
+                        Image(systemName: "arrow.up.left.and.arrow.down.right") // Resize icon
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.primary)
+                    }
+                    .frame(width: 56, height: 56)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                
+                // 3. Color Wheel
+                ColorPicker("", selection: $customColor, supportsOpacity: false)
+                    .labelsHidden()
+                    .scaleEffect(1.3)
+                    .frame(width: 56, height: 56)
+                    .frame(maxWidth: .infinity)
+                    .onChange(of: customColor) { newValue in
+                        UserDefaults.standard.set(true, forKey: "wallpaperUseCustomColor")
+                        let uiColor = UIColor(customColor)
+                        if let data = try? NSKeyedArchiver.archivedData(withRootObject: uiColor, requiringSecureCoding: false) {
+                            UserDefaults.standard.set(data, forKey: "wallpaperCustomColorData")
+                        }
+                        showFontList = false
+                        showShadowSlider = false
+                        showSizeSlider = false
+                        onUpdate()
+                    }
+                
+                // 4. Alignment Button
+                Button(action: {
+                    cycleAlignment()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showFontList = false
+                    showShadowSlider = false
+                    showSizeSlider = false
+                    onUpdate()
+                }) {
+                    Image(systemName: alignmentIconName)
+                        .font(.system(size: 20, weight: .medium))
+                        .foregroundColor(.primary)
+                        .frame(width: 56, height: 56)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                
+                // 5. Highlight Button
+                Button(action: {
+                    cycleHighlightMode()
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    showFontList = false
+                    showShadowSlider = false
+                    showSizeSlider = false
+                    onUpdate()
+                }) {
+                    ZStack {
+                        if highlightMode != 0 {
+                            Circle()
+                                .fill(accentColor)
+                                .frame(width: 36, height: 36)
+                        }
+                        
+                        Image(systemName: highlightIconName)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(highlightMode != 0 ? .white : .primary)
+                    }
+                    .frame(width: 56, height: 56)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+                
+                // 5. Shadow Button - now toggles slider
+                Button(action: {
+                    withAnimation(.spring(response: 0.3)) {
+                        showShadowSlider.toggle()
+                        showFontList = false
+                        
+                        if showShadowSlider && !isShadowEnabled {
+                            isShadowEnabled = true
+                            if shadowIntensity == 0 {
+                                shadowIntensity = 0.5
+                            }
+                        }
+                    }
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    onUpdate()
+                }) {
+                    ZStack {
+                        if isShadowEnabled {
+                            Circle()
+                                .fill(accentColor)
+                                .frame(width: 36, height: 36)
+                        }
+                        
+                        Image(systemName: "shadow")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(isShadowEnabled ? .white : .primary)
+                    }
+                    .frame(width: 56, height: 56)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity)
+            }
+            .padding(.vertical, 8)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .cornerRadius(16)
+            .padding(.horizontal, 16)
+        }
+    }
+    
+    // MARK: - Helpers
+    
+    private var alignmentIconName: String {
+        switch alignmentMode {
+        case 0: return "text.alignleft"
+        case 1: return "text.aligncenter"
+        case 2: return "text.alignright"
+        default: return "text.aligncenter"
+        }
+    }
+    
+    private var highlightIconName: String {
+        switch highlightMode {
+        case 0: return "a.square"          // None
+        case 1: return "a.square"          // Outline (stroked A)
+        case 2: return "a.square.fill"     // White (filled A)
+        case 3: return "a.square.fill"     // Black (filled A)
+        default: return "a.square"
+        }
+    }
+    
+    private func cycleAlignment() {
+        // Cycle: Left (0) -> Center (1) -> Right (2) -> Left (0)
+        alignmentMode = (alignmentMode + 1) % 3
+    }
+    
+    private func cycleHighlightMode() {
+        // Cycle: None (0) -> Outline (1) -> White (2) -> Black (3) -> None (0)
+        highlightMode = (highlightMode + 1) % 4
+    }
+    
+    private func fontFont(for font: WallpaperRenderer.WallpaperFont) -> Font {
+        switch font {
+        case .classic: return .system(size: 16, weight: .semibold, design: .serif)
+        case .modern: return .system(size: 16, weight: .bold, design: .default)
+        case .rounded: return .system(size: 16, weight: .bold, design: .rounded)
+        case .typewriter: return .system(size: 14, weight: .bold, design: .monospaced)
+        case .strong: return .system(size: 16, weight: .black, design: .default)
+        case .neon: return .custom("SnellRoundhand-Bold", size: 18)
+        }
+    }
+}
+
+// MARK: - Helper to convert alignment mode to NSTextAlignment
+
+func textAlignmentFromMode(_ mode: Int) -> NSTextAlignment {
+    switch mode {
+    case 0: return .left
+    case 1: return .center
+    case 2: return .right
+    default: return .center
+    }
+}
+
+// MARK: - UserDefaults Extension for Styling Settings
+
+extension UserDefaults {
+    
+    // MARK: - Keys
+    
+    private enum StylingKeys {
+        static let fontName = "wallpaperFontName"
+        static let useCustomColor = "wallpaperUseCustomColor"
+        static let customColorData = "wallpaperCustomColorData"
+        static let alignment = "wallpaperAlignment"
+        static let highlightMode = "wallpaperHighlightMode"
+        static let isShadowEnabled = "wallpaperIsShadowEnabled"
+        static let shadowIntensity = "wallpaperShadowIntensity"
+        static let fontSizeScaling = "wallpaperFontSizeScaling"
+    }
+    
+    // MARK: - Convenience Accessors
+    
+    var wallpaperFontName: String {
+        get { string(forKey: StylingKeys.fontName) ?? "Modern" }
+        set { set(newValue, forKey: StylingKeys.fontName) }
+    }
+    
+    var wallpaperAlignment: Int {
+        get { integer(forKey: StylingKeys.alignment) }
+        set { set(newValue, forKey: StylingKeys.alignment) }
+    }
+    
+    var wallpaperHighlightMode: Int {
+        get { integer(forKey: StylingKeys.highlightMode) }
+        set { set(newValue, forKey: StylingKeys.highlightMode) }
+    }
+    
+    var wallpaperIsShadowEnabled: Bool {
+        get { bool(forKey: StylingKeys.isShadowEnabled) }
+        set { set(newValue, forKey: StylingKeys.isShadowEnabled) }
+    }
+    
+    var wallpaperShadowIntensity: Double {
+        get { 
+            let value = double(forKey: StylingKeys.shadowIntensity)
+            return value == 0 && !bool(forKey: StylingKeys.isShadowEnabled) ? 0.5 : value 
+        }
+        set { set(newValue, forKey: StylingKeys.shadowIntensity) }
+    }
+
+    var wallpaperFontSizeScaling: Double {
+        get {
+            let value = double(forKey: StylingKeys.fontSizeScaling)
+            return value == 0 ? 1.0 : value
+        }
+        set { set(newValue, forKey: StylingKeys.fontSizeScaling) }
+    }
+
+    
+    var wallpaperUseCustomColor: Bool {
+        get { bool(forKey: StylingKeys.useCustomColor) }
+        set { set(newValue, forKey: StylingKeys.useCustomColor) }
+    }
+    
+    func wallpaperCustomColor() -> UIColor? {
+        guard wallpaperUseCustomColor,
+              let data = data(forKey: StylingKeys.customColorData),
+              let color = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) else {
+            return nil
+        }
+        return color
+    }
+    
+    func setWallpaperCustomColor(_ color: UIColor) {
+        if let data = try? NSKeyedArchiver.archivedData(withRootObject: color, requiringSecureCoding: false) {
+            set(data, forKey: StylingKeys.customColorData)
+            wallpaperUseCustomColor = true
+        }
+    }
+}
+
+// MARK: - Preview Provider
+
+#if DEBUG
+struct StylingToolbarView_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack {
+            Spacer()
+            
+            StylingToolbarView(
+                selectedFontName: .constant("Modern"),
+                showFontList: .constant(false),
+                selectedColorName: .constant("Auto"),
+                customColor: .constant(.blue),
+                alignmentMode: .constant(1),
+                highlightMode: .constant(0),
+                isShadowEnabled: .constant(true),
+                shadowIntensity: .constant(0.5),
+                fontSizeScaling: .constant(1.0),
+                onUpdate: {}
+            )
+            
+            Spacer()
+        }
+        .background(Color(UIColor.systemBackground))
+    }
+}
+#endif

@@ -1,0 +1,21 @@
+# ----------------------------------------
+# Demographic details: Country
+# Account: Default Account for Firebase
+# Property: notewall-ddf78
+# ----------------------------------------
+# 
+# All Users
+# Start date: 20260202
+# End date: 20260202
+Country,Active users,New users,Engaged sessions,Engagement rate,Engaged sessions per active user,Average engagement time per active user,Event count,Key events,User key event rate,Total revenue
+United Kingdom,5,2,11,1,2.2,458.6,969,3,0.4,8.19818
+United States,4,4,3,0.75,0.75,101.75,351,4,1,0
+Australia,2,0,2,1,1,138,47,0,0,0
+Colombia,1,1,1,1,1,1430,183,1,1,0
+Philippines,1,1,2,1,2,541,252,1,1,0
+Poland,1,1,1,1,1,65,86,1,1,0
+South Africa,1,0,2,1,2,205,24,0,0,0
+Spain,1,1,1,1,1,159,144,1,1,0
+Türkiye,1,1,1,1,1,172,134,1,1,0
+Vietnam,1,1,1,1,1,151,132,1,1,0
+Iceland,0,0,0,0,0,0,6,0,0,0

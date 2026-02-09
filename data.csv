@@ -1,0 +1,22 @@
+# ----------------------------------------
+# Pages and screens: Page path and screen class
+# Account: Default Account for Firebase
+# Property: notewall-ddf78
+# ----------------------------------------
+# 
+# All Users
+# Start date: 20260202
+# End date: 20260202
+Page path and screen class,Views,Active users,Views per active user,Average engagement time per active user,Event count,Key events,Total revenue
+onboarding_install_sheet,35,10,3.5,14.1,119,0,0
+onboarding_pain_point_stats,17,12,1.4166666666666667,7.916666666666667,50,0,0
+"onboarding_multi_quiz_But before we start,",16,11,1.4545454545454546,12.818181818181818,135,0,0
+onboarding_multi_quiz_Last one: what's you,16,11,1.4545454545454546,9.181818181818182,120,0,0
+onboarding_pain_point_question,16,11,1.4545454545454546,11.909090909090908,85,0,0
+onboarding_personalization_loading,16,11,1.4545454545454546,5.454545454545454,80,0,0
+onboarding_quiz_And how often do you,16,11,1.4545454545454546,13.727272727272727,97,0,0
+onboarding_results_insight,16,11,1.4545454545454546,15.909090909090908,97,0,0
+onboarding_results_preview,16,11,1.4545454545454546,7.909090909090909,80,0,0
+onboarding_setup_intro,16,11,1.4545454545454546,14.818181818181818,98,0,0
+onboarding_trajectory,16,11,1.4545454545454546,8.272727272727273,97,0,0
+onboarding_setup_complete,12,8,1.5,17.875,86,0,0

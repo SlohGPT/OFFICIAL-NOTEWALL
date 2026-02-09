@@ -2,280 +2,7 @@ import SwiftUI
 import PhotosUI
 import UniformTypeIdentifiers
 import UIKit
-
-@available(iOS 16.0, *)
-struct HomeScreenPhotoPickerView: View {
-    @Binding var isSavingHomeScreenPhoto: Bool
-    @Binding var homeScreenStatusMessage: String?
-    @Binding var homeScreenStatusColor: Color
-    @Binding var homeScreenImageAvailable: Bool
-
-    let handlePickedHomeScreenData: (Data) -> Void
-
-    @State private var showSourceOptions = false
-    @State private var activePicker: PickerType?
-    @State private var isPhotoLibraryPickerPresented = false
-    @State private var photoLibrarySelection: PhotosPickerItem?
-    @State private var isHomeIconActive = false
-    @State private var hasActivatedHomeThisSession = false
-
-    private enum PickerType: Identifiable {
-        case camera
-        case files
-
-        var id: String {
-            switch self {
-            case .camera: return "camera"
-            case .files: return "files"
-            }
-        }
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Button(action: { showSourceOptions = true }) {
-                HStack(spacing: 12) {
-                    Image(systemName: homeScreenImageAvailable ? "photo.fill" : "photo")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(isHomeIconActive ? .appAccent : .gray)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Add Home Screen Photo")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.primary)
-
-                        Text(isSavingHomeScreenPhoto ? "Saving…" : "Choose your own photo")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(Color(.tertiaryLabel))
-                }
-            }
-            .buttonStyle(.plain)
-            .disabled(isSavingHomeScreenPhoto)
-            .contentShape(Rectangle())
-
-            if let message = homeScreenStatusMessage {
-                Text(message)
-                    .font(.caption)
-                    .foregroundColor(homeScreenStatusColor)
-            }
-        }
-        .padding(.horizontal, 16)
-        .animation(.spring(response: 0.25, dampingFraction: 0.85), value: homeScreenImageAvailable)
-        .confirmationDialog(
-            "",
-            isPresented: $showSourceOptions,
-            titleVisibility: .hidden
-        ) {
-            Button(role: .none) {
-                isPhotoLibraryPickerPresented = true
-                showSourceOptions = false
-            } label: {
-                Label("Photo Library", systemImage: "photo.on.rectangle")
-                    .labelStyle(LeadingMenuLabelStyle())
-            }
-
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button(role: .none) {
-                    showSourceOptions = false
-                    activePicker = .camera
-                } label: {
-                    Label("Take Photo", systemImage: "camera")
-                        .labelStyle(LeadingMenuLabelStyle())
-                }
-            }
-
-            Button(role: .none) {
-                showSourceOptions = false
-                activePicker = .files
-            } label: {
-                Label("Choose File", systemImage: "folder")
-                    .labelStyle(LeadingMenuLabelStyle())
-            }
-
-            Button("Cancel", role: .cancel) { }
-        }
-        .photosPicker(
-            isPresented: $isPhotoLibraryPickerPresented,
-            selection: $photoLibrarySelection,
-            matching: .images
-        )
-        .onChange(of: photoLibrarySelection) { _, newValue in
-            guard let item = newValue else { return }
-            Task {
-                do {
-                    if let data = try await item.loadTransferable(type: Data.self) {
-                        await MainActor.run {
-                            processPickedData(data)
-                        }
-                    } else {
-                        await MainActor.run {
-                            reportLoadFailure("Unable to load selected photo.")
-                        }
-                    }
-                } catch {
-                    await MainActor.run {
-                        reportLoadFailure("Unable to load selected photo.")
-                    }
-                }
-
-                await MainActor.run {
-                    photoLibrarySelection = nil
-                    isPhotoLibraryPickerPresented = false
-                }
-            }
-        }
-        .onChange(of: homeScreenImageAvailable) { _, _ in
-            syncHomeIconState()
-        }
-        .sheet(item: $activePicker) { picker in
-            switch picker {
-            case .camera:
-                CameraPickerView { image in
-                    guard let data = image.jpegData(compressionQuality: 0.95) ?? image.pngData() else {
-                        reportLoadFailure("Unable to process captured photo.")
-                        return
-                    }
-                    processPickedData(data)
-                } onCancel: {
-                    activePicker = nil
-                } onDismiss: {
-                    activePicker = nil
-                }
-
-            case .files:
-                DocumentPickerView { data in
-                    processPickedData(data)
-                } onError: { message in
-                    reportLoadFailure(message)
-                } onCancel: {
-                    activePicker = nil
-                } onDismiss: {
-                    activePicker = nil
-                }
-            }
-        }
-        .onAppear {
-            syncHomeIconState()
-        }
-    }
-
-    private func reportLoadFailure(_ message: String) {
-        DispatchQueue.main.async {
-            homeScreenStatusMessage = message
-            homeScreenStatusColor = .red
-            isSavingHomeScreenPhoto = false
-            isHomeIconActive = false
-            hasActivatedHomeThisSession = false
-        }
-    }
-
-    private func processPickedData(_ data: Data) {
-        print("📸 HomeScreenPhotoPickerView: Processing picked photo data")
-        DispatchQueue.main.async {
-            handlePickedHomeScreenData(data)
-            hasActivatedHomeThisSession = true
-            print("✅ HomeScreenPhotoPickerView: Photo data processed successfully")
-        }
-    }
-
-    private func syncHomeIconState() {
-        if homeScreenImageAvailable {
-            isHomeIconActive = true
-            hasActivatedHomeThisSession = true
-        } else {
-            isHomeIconActive = false
-            hasActivatedHomeThisSession = false
-        }
-    }
-}
-
-@available(iOS 16.0, *)
-struct HomeScreenQuickPresetsView: View {
-    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
-
-    @Binding var isSavingHomeScreenPhoto: Bool
-    @Binding var homeScreenStatusMessage: String?
-    @Binding var homeScreenStatusColor: Color
-    @Binding var homeScreenImageAvailable: Bool
-
-    let handlePickedHomeScreenData: (Data) -> Void
-
-    private var selectedPreset: PresetOption? {
-        PresetOption(rawValue: homeScreenPresetSelectionRaw)
-    }
-
-    var body: some View {
-        PresetOptionsRow(
-            title: "Presets",
-            isDisabled: isSavingHomeScreenPhoto,
-            selectedPreset: selectedPreset,
-            selectionAction: applyPreset
-        )
-        .padding(.horizontal, 16)
-    }
-
-    private func applyPreset(_ preset: PresetOption) {
-        guard preset != selectedPreset else { return }
-
-        // Light impact haptic for preset selection
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
-
-        isSavingHomeScreenPhoto = true
-        homeScreenStatusMessage = "Applying \(preset.title.lowercased()) preset…"
-        homeScreenStatusColor = .secondary
-
-        applyPresetLocally(preset)
-    }
-
-    private func reportLoadFailure(_ message: String) {
-        homeScreenStatusMessage = message
-        homeScreenStatusColor = .red
-        isSavingHomeScreenPhoto = false
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
-            homeScreenPresetSelectionRaw = selectedPreset?.rawValue ?? homeScreenPresetSelectionRaw
-        }
-    }
-
-    private func applyPresetLocally(_ preset: PresetOption) {
-        let image = solidColorImage(color: preset.lockScreenOption.uiColor)
-
-        do {
-            // SIMPLE: Just save to HomeScreen folder
-            // This is what the shortcut will read, whether it's a preset or custom photo
-            try HomeScreenImageManager.saveHomeScreenImage(image)
-            
-            print("✅ Saved \(preset.title) preset to HomeScreen folder")
-            print("   Path: HomeScreen/homescreen.jpg")
-
-            homeScreenPresetSelectionRaw = preset.rawValue
-            homeScreenImageAvailable = false
-            homeScreenStatusMessage = nil
-            homeScreenStatusColor = .gray
-            isSavingHomeScreenPhoto = false
-        } catch {
-            print("❌ Failed to save preset: \(error)")
-            reportLoadFailure("Failed to save \(preset.title.lowercased()) preset.")
-        }
-    }
-
-    private func solidColorImage(color: UIColor) -> UIImage {
-        let size = CGSize(width: 1290, height: 2796)
-        let renderer = UIGraphicsImageRenderer(size: size)
-        return renderer.image { context in
-            color.setFill()
-            context.fill(CGRect(origin: .zero, size: size))
-        }
-    }
-}
+import Photos
 
 @available(iOS 16.0, *)
 private struct LeadingMenuLabelStyle: LabelStyle {
@@ -285,49 +12,6 @@ private struct LeadingMenuLabelStyle: LabelStyle {
             configuration.title
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-@available(iOS 16.0, *)
-private struct PresetOptionsRow: View {
-    let title: String
-    let isDisabled: Bool
-    let selectedPreset: PresetOption?
-    let selectionAction: (PresetOption) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
-
-            HStack(spacing: 8) {
-                ForEach(PresetOption.allCases) { preset in
-                    Button {
-                        selectionAction(preset)
-                    } label: {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(preset.previewColor)
-                            
-                            Text(preset.title)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(preset.textColor)
-                            
-                            if selectedPreset == preset {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .strokeBorder(Color.appAccent, lineWidth: 2.5)
-                            }
-                        }
-                        .frame(height: 50)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(isDisabled)
-                    .opacity(isDisabled ? 0.6 : 1.0)
-                }
-            }
-        }
     }
 }
 
@@ -348,6 +32,8 @@ struct LockScreenBackgroundPickerView: View {
     @State private var hasActivatedLockThisSession = false
     @State private var isPhotoLibraryPickerPresented = false
     @State private var photoLibrarySelection: PhotosPickerItem?
+    @State private var showPermissionAlert = false
+    @State private var showPresetsSheet = false
 
     private enum PickerType: Identifiable {
         case camera
@@ -406,13 +92,6 @@ struct LockScreenBackgroundPickerView: View {
                     .foregroundColor(statusColor)
                     .padding(.top, 4)
             }
-            
-            PresetOptionsRow(
-                title: "Presets",
-                isDisabled: isSavingBackground,
-                selectedPreset: selectedPreset,
-                selectionAction: selectPreset
-            )
         }
         .padding(.horizontal, 16)
         .animation(.spring(response: 0.25, dampingFraction: 0.85), value: backgroundMode)
@@ -423,28 +102,22 @@ struct LockScreenBackgroundPickerView: View {
             titleVisibility: .hidden
         ) {
             Button(role: .none) {
-                isPhotoLibraryPickerPresented = true
+                checkPhotoLibraryPermission {
+                    isPhotoLibraryPickerPresented = true
+                }
                 showSourceOptions = false
             } label: {
                 Label("Photo Library", systemImage: "photo.on.rectangle")
                     .labelStyle(LeadingMenuLabelStyle())
             }
 
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button(role: .none) {
-                    showSourceOptions = false
-                    activePicker = .camera
-                } label: {
-                    Label("Take Photo", systemImage: "camera")
-                        .labelStyle(LeadingMenuLabelStyle())
-                }
-            }
 
+            
             Button(role: .none) {
                 showSourceOptions = false
-                activePicker = .files
+                showPresetsSheet = true
             } label: {
-                Label("Choose File", systemImage: "folder")
+                Label("Presets", systemImage: "paintpalette")
                     .labelStyle(LeadingMenuLabelStyle())
             }
 
@@ -515,6 +188,31 @@ struct LockScreenBackgroundPickerView: View {
         }
         .onAppear {
             syncLockIconState()
+        }
+        .alert(isPresented: $showPermissionAlert) {
+            Alert(
+                title: Text("Access Required"),
+                message: Text("Please allow access to your photo library to select a wallpaper."),
+                primaryButton: .default(Text("Settings"), action: {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }),
+                secondaryButton: .cancel()
+            )
+        }
+        .sheet(isPresented: $showPresetsSheet) {
+            PresetSelectorSheet(
+                title: "Lock Screen Preset",
+                selectedPreset: selectedPreset,
+                onSelect: { preset in
+                    selectPreset(preset)
+                    showPresetsSheet = false
+                },
+                onCancel: {
+                    showPresetsSheet = false
+                }
+            )
         }
     }
 
@@ -728,7 +426,28 @@ struct LockScreenBackgroundPickerView: View {
         case .downMirrored: return 4
         case .leftMirrored: return 5
         case .rightMirrored: return 7
+        case .left: return 8
         @unknown default: return 1
+        }
+    }
+
+    private func checkPhotoLibraryPermission(completion: @escaping () -> Void) {
+        let status = PHPhotoLibrary.authorizationStatus(for: .readWrite)
+        switch status {
+        case .authorized, .limited:
+            completion()
+        case .notDetermined:
+            PHPhotoLibrary.requestAuthorization(for: .readWrite) { newStatus in
+                if newStatus == .authorized || newStatus == .limited {
+                    DispatchQueue.main.async {
+                        completion()
+                    }
+                }
+            }
+        case .denied, .restricted:
+            showPermissionAlert = true
+        @unknown default:
+            showPermissionAlert = true
         }
     }
 }
@@ -860,5 +579,139 @@ private struct DocumentPickerView: UIViewControllerRepresentable {
                 self.onDismiss()
             }
         }
+    }
+}
+
+// MARK: - Branded Preset Selector Sheet
+
+@available(iOS 16.0, *)
+struct PresetSelectorSheet: View {
+    let title: String
+    let selectedPreset: PresetOption?
+    let onSelect: (PresetOption) -> Void
+    let onCancel: () -> Void
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    private let accentColor = Color.appAccent
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                // Background gradient
+                LinearGradient(
+                    colors: [Color(UIColor.systemBackground), Color(UIColor.secondarySystemBackground)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+                
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 8) {
+                        Image(systemName: "paintpalette.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [accentColor, accentColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                        
+                        Text("Choose a Preset")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        
+                        Text("Select a solid color background")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 20)
+                    
+                    // Preset cards
+                    HStack(spacing: 20) {
+                        ForEach(PresetOption.allCases) { preset in
+                            PresetCard(
+                                preset: preset,
+                                isSelected: selectedPreset == preset,
+                                accentColor: accentColor,
+                                onTap: {
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                    onSelect(preset)
+                                }
+                            )
+                        }
+                    }
+                    .padding(.horizontal, 32)
+                    
+                    Spacer()
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                    .foregroundColor(.secondary)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+}
+
+@available(iOS 16.0, *)
+private struct PresetCard: View {
+    let preset: PresetOption
+    let isSelected: Bool
+    let accentColor: Color
+    let onTap: () -> Void
+    
+    var body: some View {
+        Button(action: onTap) {
+            VStack(spacing: 12) {
+                // Color preview circle
+                ZStack {
+                    Circle()
+                        .fill(preset.previewColor)
+                        .frame(width: 80, height: 80)
+                        .shadow(color: Color.black.opacity(0.15), radius: 8, x: 0, y: 4)
+                    
+                    if isSelected {
+                        Circle()
+                            .strokeBorder(accentColor, lineWidth: 4)
+                            .frame(width: 88, height: 88)
+                        
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(accentColor)
+                            .background(Circle().fill(Color.white).padding(4))
+                            .offset(x: 28, y: 28)
+                    }
+                }
+                
+                // Label
+                Text(preset.title)
+                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .foregroundColor(isSelected ? accentColor : .primary)
+            }
+            .padding(.vertical, 16)
+            .padding(.horizontal, 20)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(Color(UIColor.tertiarySystemBackground))
+                    .shadow(color: isSelected ? accentColor.opacity(0.3) : Color.black.opacity(0.08), radius: isSelected ? 12 : 6, x: 0, y: 4)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .strokeBorder(isSelected ? accentColor : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        }
+        .buttonStyle(.plain)
     }
 }

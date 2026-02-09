@@ -198,7 +198,7 @@ final class QuickActionsManager: NSObject, ObservableObject {
         CrashReporter.setCustomKey("last_quick_action", value: actionType.rawValue)
         CrashReporter.setCustomKey("quick_action_timestamp", value: ISO8601DateFormatter().string(from: Date()))
         
-        // You can add additional analytics here (e.g., Firebase, Mixpanel, etc.)
+        // You can add additional analytics here (e.g., Sentry, etc.)
         print("📊 QuickActionsManager: Tracked usage - \(actionType.rawValue)")
     }
     

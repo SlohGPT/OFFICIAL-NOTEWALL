@@ -1,0 +1,30 @@
+# ----------------------------------------
+# Events: Event name
+# Account: Default Account for Firebase
+# Property: notewall-ddf78
+# ----------------------------------------
+# 
+# All Users
+# Start date: 20260202
+# End date: 20260202
+Event name,Event count,Total users,Event count per active user,Total revenue
+screen_view,560,17,32.94117647058823,0
+user_engagement,547,18,30.38888888888889,0
+onboarding_action,434,11,39.45454545454545,0
+onboarding_step_view,278,12,23.166666666666668,0
+onboarding_step_complete,264,11,24,0
+quiz_answer,78,11,7.090909090909091,0
+paywall_impression,43,10,4.777777777777778,0
+session_start,26,18,1.4444444444444444,0
+restore_completed,21,13,1.6153846153846154,0
+purchase_success,18,3,6,0
+onboarding_start,17,13,1.3076923076923077,0
+first_open,12,12,1,0
+plan_selected,9,2,4.5,0
+purchase_start,9,3,3,0
+restore_success,4,2,2,0
+app_update,2,2,1,0
+restore_fail,2,1,2,0
+restore_tap,2,1,2,0
+in_app_purchase,1,1,1,8.19818
+os_update,1,1,1,0

@@ -6,6 +6,11 @@ struct Config {
     /// 8-digit developer PIN for promo code admin access
     static let developerPIN = "84739261"
     
+    // MARK: - Analytics
+    /// Mixpanel project token
+    /// Get this from https://mixpanel.com → Project Settings → Access Keys
+    static let mixpanelToken = "a0f5926f3be4140e68aade0f83541c5e"
+    
     // MARK: - User Count API
     /// Vercel API endpoint for real-time user count
     /// After deploying vercel-email-api, update this with your Vercel URL

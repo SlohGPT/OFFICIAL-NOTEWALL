@@ -276,12 +276,18 @@ struct PaywallView: View {
         .onAppear {
             paywallManager.trackPaywallView()
             
-            // Track paywall impression with Firebase Analytics
+            // Track paywall impression with Mixpanel Analytics
             let paywallId: PaywallId = discountApplied ? .exitIntercept : triggerReasonToPaywallId(triggerReason)
             AnalyticsService.shared.trackPaywallImpression(
                 paywallId: paywallId.rawValue,
                 trigger: triggerReason.rawValue,
                 placement: discountApplied ? "exit_intercept" : nil
+            )
+            
+            // Also track as a screen view for funnel analysis
+            AnalyticsService.shared.trackScreenView(
+                screenName: "paywall_onboarding",
+                screenClass: "PaywallView"
             )
             
             // Track exit-intercept discount view

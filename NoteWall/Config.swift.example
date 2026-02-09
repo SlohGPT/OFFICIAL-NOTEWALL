@@ -12,5 +12,10 @@ struct Config {
     /// 8-digit developer PIN for promo code admin access
     /// Replace with your actual secure 8-digit PIN
     static let developerPIN = "00000000" // ⚠️ REPLACE THIS WITH YOUR ACTUAL PIN
+    
+    // MARK: - Analytics
+    /// Mixpanel project token
+    /// Get this from https://mixpanel.com → Project Settings → Access Keys
+    static let mixpanelToken = "YOUR_MIXPANEL_PROJECT_TOKEN" // ⚠️ REPLACE THIS
 }
 

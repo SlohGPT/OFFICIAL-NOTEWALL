@@ -1,0 +1,56 @@
+# ----------------------------------------
+# Drive sales overview
+# Account: Default Account for Firebase
+# Property: notewall-ddf78
+# ----------------------------------------
+#  
+# Start date: 20260202
+# End date: 20260202
+Nth day,Total revenue
+0000,8.19818
+
+# Start date: 20260202
+# End date: 20260202
+Nth day,Ecommerce revenue
+0000,0
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Nth day,Total purchasers
+0000,1
+
+# Start date: 20260202
+# End date: 20260202
+Nth day,First time purchasers
+0000,1
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Nth day,Average purchase revenue per active user
+0000,0.45545444444444444
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Item name,Items purchased
+
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Order coupon,Items purchased
+
+
+#  
+# Start date: 20260202
+# End date: 20260202
+Item list name,Items purchased
+
+
+# What is your revenue from in-app purchases?
+# Start date: 20260202
+# End date: 20260202
+Product ID,Product revenue
+lifetime,8.19818

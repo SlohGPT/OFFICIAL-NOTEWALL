@@ -78,8 +78,12 @@ enum AnalyticsProperty {
 /// Consistent step IDs for onboarding tracking
 /// These map to the OnboardingPage enum in OnboardingView.swift
 enum OnboardingStepId: String, CaseIterable {
-    // Phase 1: Emotional Hook
+    // Phase 0: Notification Permission
     case preOnboardingHook = "pre_onboarding_hook"
+    case nameInput = "name_input"
+    case notificationPermission = "notification_permission"
+    
+    // Phase 1: Emotional Hook
     case painPoint = "pain_point"
     case quizForgetMost = "quiz_forget_most"
     case quizPhoneChecks = "quiz_phone_checks"
@@ -115,13 +119,15 @@ enum OnboardingStepId: String, CaseIterable {
     var displayName: String {
         switch self {
         case .preOnboardingHook: return "Welcome Hook"
+        case .nameInput: return "Name Input"
+        case .notificationPermission: return "Notification Permission"
         case .painPoint: return "Pain Point"
         case .quizForgetMost: return "Quiz: Forget Most"
         case .quizPhoneChecks: return "Quiz: Phone Checks"
         case .quizDistraction: return "Quiz: Distraction"
         case .personalizationLoading: return "Personalization"
         case .resultsPreview: return "Results Preview"
-        case .resultsInsight: return "Insights"
+        case .resultsInsight: return "Results Insight"
         case .socialProof: return "Social Proof"
         case .reviewPage: return "Review Page"
         case .setupIntro: return "Setup Intro"

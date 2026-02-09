@@ -17,6 +17,25 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         completionHandler([.banner, .sound, .badge])
     }
     
+    // Handle notification taps
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let userInfo = response.notification.request.content.userInfo
+        
+        if let type = userInfo["type"] as? String, type == "abandoned_onboarding" {
+            #if DEBUG
+            print("🔔 User tapped abandoned onboarding notification")
+            #endif
+            // The app will automatically show onboarding (it checks hasCompletedSetup on launch)
+            // and will resume from the saved page via onboarding_lastPageRawValue
+            // Clear badge
+            DispatchQueue.main.async {
+                UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+            }
+        }
+        
+        completionHandler()
+    }
+    
     /// Requests notification permissions
     func requestPermission(completion: @escaping (Bool) -> Void) {
         // Track permission prompt shown
@@ -87,6 +106,113 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 #endif
             }
         }
+    }
+    
+    // MARK: - Abandoned Onboarding Notifications
+    
+    /// Schedules reminders for users who quit the onboarding flow without completing it.
+    /// - 1 hour after quitting: First gentle nudge
+    /// - 24 hours after quitting: Second reminder if still not completed
+    /// Each call cancels previously scheduled abandoned onboarding notifications before rescheduling.
+    func scheduleAbandonedOnboardingReminders() {
+        // Don't schedule if user already completed onboarding
+        guard !UserDefaults.standard.bool(forKey: "hasCompletedSetup") else {
+            #if DEBUG
+            print("🔔 Skipping abandoned onboarding reminders: User already completed setup")
+            #endif
+            return
+        }
+        
+        // Check if we have permission
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            guard settings.authorizationStatus == .authorized else {
+                #if DEBUG
+                print("⚠️ Cannot schedule abandoned onboarding reminders: Notifications not authorized")
+                #endif
+                return
+            }
+            
+            // Cancel any existing abandoned onboarding notifications first
+            UNUserNotificationCenter.current().removePendingNotificationRequests(
+                withIdentifiers: ["abandoned_onboarding_1hr", "abandoned_onboarding_24hr"]
+            )
+            
+            // --- 1 Hour Reminder ---
+            let userName = UserDefaults.standard.string(forKey: "onboarding_userName") ?? ""
+            let hasName = !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            
+            let content1hr = UNMutableNotificationContent()
+            content1hr.title = hasName ? "\(userName), still forgetting things? 🧠" : "Still forgetting things? 🧠"
+            content1hr.body = "Important thoughts shouldn't slip away. Finish your 2-min setup and never forget what matters again."
+            content1hr.sound = .default
+            content1hr.badge = 1
+            content1hr.userInfo = ["type": "abandoned_onboarding", "reminder": "1hr"]
+            
+            let trigger1hr = UNTimeIntervalNotificationTrigger(
+                timeInterval: 3600, // 1 hour
+                repeats: false
+            )
+            
+            let request1hr = UNNotificationRequest(
+                identifier: "abandoned_onboarding_1hr",
+                content: content1hr,
+                trigger: trigger1hr
+            )
+            
+            // --- 24 Hour Reminder ---
+            let content24hr = UNMutableNotificationContent()
+            content24hr.title = hasName ? "\(userName), don't let your notes slip away 📝" : "Don't let your notes slip away 📝"
+            content24hr.body = "Complete your NoteWall setup and start capturing what matters most — right on your home screen."
+            content24hr.sound = .default
+            content24hr.badge = 1
+            content24hr.userInfo = ["type": "abandoned_onboarding", "reminder": "24hr"]
+            
+            let trigger24hr = UNTimeIntervalNotificationTrigger(
+                timeInterval: 86400, // 24 hours
+                repeats: false
+            )
+            
+            let request24hr = UNNotificationRequest(
+                identifier: "abandoned_onboarding_24hr",
+                content: content24hr,
+                trigger: trigger24hr
+            )
+            
+            // Add both requests
+            UNUserNotificationCenter.current().add(request1hr) { error in
+                #if DEBUG
+                if let error = error {
+                    print("❌ Failed to schedule 1hr abandoned onboarding reminder: \(error)")
+                } else {
+                    print("✅ 1hr abandoned onboarding reminder scheduled")
+                }
+                #endif
+            }
+            
+            UNUserNotificationCenter.current().add(request24hr) { error in
+                #if DEBUG
+                if let error = error {
+                    print("❌ Failed to schedule 24hr abandoned onboarding reminder: \(error)")
+                } else {
+                    print("✅ 24hr abandoned onboarding reminder scheduled")
+                }
+                #endif
+            }
+        }
+    }
+    
+    /// Cancels all abandoned onboarding reminders (call when user completes onboarding)
+    func cancelAbandonedOnboardingReminders() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["abandoned_onboarding_1hr", "abandoned_onboarding_24hr"]
+        )
+        // Also clear badge
+        DispatchQueue.main.async {
+            UNUserNotificationCenter.current().setBadgeCount(0) { _ in }
+        }
+        #if DEBUG
+        print("🔔 Cancelled abandoned onboarding reminders")
+        #endif
     }
     
     // MARK: - Debug / Testing Methods

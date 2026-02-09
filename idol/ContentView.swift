@@ -12,6 +12,7 @@ struct ContentView: View {
     @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
     @AppStorage("lockScreenBackgroundPhotoData") private var lockScreenBackgroundPhotoData: Data = Data()
+    @AppStorage("homeScreenPresetSelection") private var homeScreenPresetSelectionRaw = ""
     @AppStorage("hasCompletedInitialWallpaperSetup") private var hasCompletedInitialWallpaperSetup = false
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("shouldShowTroubleshootingBanner") private var shouldShowTroubleshootingBanner = false
@@ -32,6 +33,7 @@ struct ContentView: View {
     @State private var shouldRestartOnboarding = false
     @State private var showWallpaperUpdateLoading = false
     @AppStorage("hasShownFirstNoteHint") private var hasShownFirstNoteHint = false
+    @AppStorage("selectedOnboardingPipeline") private var selectedOnboardingPipeline = ""
     @State private var showFirstNoteHint = false
     @FocusState private var isTextFieldFocused: Bool
 
@@ -70,9 +72,10 @@ struct ContentView: View {
         // Determine background color based on the current mode
         switch lockScreenBackgroundMode {
         case .photo:
-            // When using a photo background, use black as the base color
-            // This ensures proper text color calculation and fallback behavior
-            return UIColor(red: 2 / 255, green: 2 / 255, blue: 2 / 255, alpha: 1)
+            // When using a photo background, use pure RGB black
+            // This forces the graphics context to use RGB color space instead of grayscale
+            // which prevents the user's photo from being desaturated
+            return UIColor(red: 0, green: 0, blue: 0, alpha: 1)
         case .presetBlack:
             return LockScreenBackgroundOption.black.uiColor
         case .presetGray:
@@ -135,39 +138,52 @@ struct ContentView: View {
         return dataImage
     }
 
+    // Unified Styling System State
+    @AppStorage("wallpaperFontName") private var selectedFontName: String = "Classic"
+    @AppStorage("wallpaperColorName") private var selectedColorName: String = "Auto"
+    @AppStorage("wallpaperHighlightMode") private var highlightMode: Int = 0 // 0: None, 1: Outline, 2: White, 3: Black
+    @AppStorage("wallpaperIsShadowEnabled") private var isShadowEnabled: Bool = false
+    @AppStorage("wallpaperShadowIntensity") private var shadowIntensity: Double = 0.5 // 0.0 to 1.0
+    @AppStorage("wallpaperAlignment") private var alignmentMode: Int = 1 // 0: Left, 1: Center, 2: Right
+    
+    // Custom Color State
+    @State private var customColor: Color = .white
+    @State private var useCustomColor: Bool = false
+    @State private var showFontList: Bool = false
+    
     init() {
         _notes = State(initialValue: Self.initialNotes())
+    }
+    
+    // MARK: - Styling Helpers
+    
+    private func loadCustomColor() {
+        if let data = UserDefaults.standard.data(forKey: "wallpaperCustomColorData"),
+           let uiColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) {
+            customColor = Color(uiColor)
+            useCustomColor = UserDefaults.standard.bool(forKey: "wallpaperUseCustomColor")
+        }
+    }
+    
+    private func saveCustomColor() {
+        let uiColor = UIColor(customColor).resolvedColor(with: .current)
+        if let data = try? NSKeyedArchiver.archivedData(withRootObject: uiColor, requiringSecureCoding: false) {
+            UserDefaults.standard.set(data, forKey: "wallpaperCustomColorData")
+            UserDefaults.standard.set(true, forKey: "wallpaperUseCustomColor")
+        }
     }
 
     var body: some View {
         ZStack {
             AnyView(ContentViewRoot(context: viewContext))
-                .onChange(of: shouldRestartOnboarding) { _, shouldRestart in
+                .onChange(of: shouldRestartOnboarding) { shouldRestart in
                     if shouldRestart {
                         // Reset hasCompletedSetup to force onboarding to show
                         hasCompletedSetup = false
                         shouldRestartOnboarding = false
                     }
                 }
-                .onChange(of: showWallpaperUpdateLoading) { _, isShowing in
-                    // Reset generating state when overlay is dismissed
-                    if !isShowing {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            isGeneratingWallpaper = false
-                            isUserInitiatedUpdate = false
-                        }
-                    }
-                }
             
-            // Wallpaper update loading overlay
-            if showWallpaperUpdateLoading {
-                WallpaperUpdateLoadingView(
-                    isPresented: $showWallpaperUpdateLoading,
-                    showTroubleshooting: $showTroubleshooting
-                )
-                .id("wallpaperUpdateLoading")
-                .zIndex(1000)
-            }
         }
     }
 
@@ -189,6 +205,7 @@ struct ContentView: View {
             shouldRestartOnboarding: $shouldRestartOnboarding,
             showWallpaperUpdateLoading: $showWallpaperUpdateLoading,
             showFirstNoteHint: $showFirstNoteHint,
+            selectedOnboardingPipeline: selectedOnboardingPipeline,
             isTextFieldFocused: $isTextFieldFocused,
             addNote: addNote,
             moveNotes: moveNotes,
@@ -204,7 +221,16 @@ struct ContentView: View {
             finalizePendingDeletion: finalizePendingDeletion,
             deleteSelectedNotes: deleteSelectedNotes,
             loadNotes: loadNotes,
-            handleNotesChangedAfterDeletion: handleNotesChangedAfterDeletion
+
+            handleNotesChangedAfterDeletion: handleNotesChangedAfterDeletion,
+            selectedFontName: $selectedFontName,
+            showFontList: $showFontList,
+            selectedColorName: $selectedColorName,
+            customColor: $customColor,
+            alignmentMode: $alignmentMode,
+            highlightMode: $highlightMode,
+            isShadowEnabled: $isShadowEnabled,
+            shadowIntensity: $shadowIntensity
         )
     }
 
@@ -232,9 +258,10 @@ struct ContentView: View {
 
     private func saveNotes() {
         do {
-            savedNotesData = try JSONEncoder().encode(notes)
-            // Update Superwall attributes when notes change
-            SuperwallUserAttributesManager.shared.updateNotesAttributes()
+            let data = try JSONEncoder().encode(notes)
+            savedNotesData = data
+            // Sync to widget via App Group
+            WidgetDataSync.syncNotesToWidget(data)
         } catch {
             #if DEBUG
             print("Failed to encode notes: \(error)")
@@ -381,7 +408,32 @@ struct ContentView: View {
         hideKeyboard()
     }
 
-    private func resolveLockBackgroundImage() -> UIImage? {
+    private func resolveHomeWallpaperBaseImage() -> UIImage {
+        if let storedImage = HomeScreenImageManager.loadHomeScreenImage() {
+            return storedImage
+        }
+
+        if let presetImage = presetImageForCurrentSelection() {
+            return presetImage
+        }
+
+        if let lockPhoto = lockScreenBackgroundImage {
+            return lockPhoto
+        }
+
+        return solidColorWallpaperImage(color: lockScreenBackgroundColor)
+    }
+
+    private func presetImageForCurrentSelection() -> UIImage? {
+        guard let preset = PresetOption(rawValue: homeScreenPresetSelectionRaw) else {
+            return nil
+        }
+
+        // Generate the gradient image for the selected preset
+        return preset.generateGradientImage()
+    }
+
+    private func resolveLockBackgroundImage(using homeImage: UIImage) -> UIImage? {
         // Check the mode first to respect user's preset selection
         #if DEBUG
         print("🎯 resolveLockBackgroundImage - mode: \(lockScreenBackgroundMode)")
@@ -400,9 +452,10 @@ struct ContentView: View {
                 return photo
             }
             #if DEBUG
-            print("   ⚠️ No lock screen photo found, returning nil (solid color fallback)")
+            print("   ⚠️ No lock screen photo found, using home screen image as fallback")
+            print("      Home image size: \(homeImage.size)")
             #endif
-            return nil
+            return homeImage
         case .presetBlack, .presetGray:
             // Presets should have no background image (solid color only)
             print("   🎨 Preset mode detected: \(lockScreenBackgroundMode)")
@@ -485,6 +538,16 @@ struct ContentView: View {
         // Users can always change wallpaper images/settings
         // Credits are only tracked when explicitly updating from homepage
         isGeneratingWallpaper = true
+        
+        // Show loading container for shortcut pipeline
+        // Show loading container for shortcut pipeline
+        if selectedOnboardingPipeline == "fullscreen" {
+            // Post notification to show global loading overlay in MainTabView
+            NotificationCenter.default.post(name: .showGlobalLoadingOverlay, object: nil)
+            withAnimation {
+                showWallpaperUpdateLoading = true
+            }
+        }
 
         #if DEBUG
         // Debug logging
@@ -496,28 +559,80 @@ struct ContentView: View {
         print("lockScreenBackgroundPhotoData isEmpty: \(lockScreenBackgroundPhotoData.isEmpty)")
         #endif
 
-        let lockBackgroundImage = resolveLockBackgroundImage()
+        let homeWallpaperImage = resolveHomeWallpaperBaseImage()
+        do {
+            try HomeScreenImageManager.saveHomeScreenImage(homeWallpaperImage)
+            #if DEBUG
+            print("✅ Saved home screen image to file system")
+            if let url = HomeScreenImageManager.homeScreenImageURL() {
+                print("   File path: \(url.path)")
+                print("   File exists: \(FileManager.default.fileExists(atPath: url.path))")
+            }
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ Failed to save home screen wallpaper image: \(error)")
+            #endif
+        }
+
+        let lockBackgroundImage = resolveLockBackgroundImage(using: homeWallpaperImage)
         #if DEBUG
         print("lockBackgroundImage is nil: \(lockBackgroundImage == nil)")
         #endif
 
-        // Generate the wallpaper with notes and text styling
-        let customTextColor: UIColor? = UserDefaults.standard.wallpaperCustomColor()
-        let highlightMode = WallpaperRenderer.WallpaperTextHighlight(rawValue: UserDefaults.standard.wallpaperHighlightMode) ?? .none
-        let textAlignment = textAlignmentFromMode(UserDefaults.standard.wallpaperAlignment)
-        let fontSizeScaling = UserDefaults.standard.wallpaperFontSizeScaling
+        // Generate the wallpaper with notes
+        // Read saved customization settings
+        let savedFontName = UserDefaults.standard.string(forKey: "wallpaperFontName") ?? "Classic"
+        let savedColorName = UserDefaults.standard.string(forKey: "wallpaperColorName") ?? "Auto"
+        let highlightModeInt = UserDefaults.standard.integer(forKey: "wallpaperHighlightMode")
+        let highlightMode = WallpaperRenderer.WallpaperTextHighlight(rawValue: highlightModeInt) ?? .none
+        let isShadowEnabled = UserDefaults.standard.bool(forKey: "wallpaperIsShadowEnabled")
+        let alignmentInt = UserDefaults.standard.integer(forKey: "wallpaperAlignment")
+        let textAlignment: NSTextAlignment = {
+            switch alignmentInt {
+            case 0: return .left
+            case 1: return .center
+            case 2: return .right
+            default: return .center
+            }
+        }()
+        
+        // Determine text color (Custom Color Picker first, then presets)
+        let customTextColor: UIColor? = {
+            // Check for custom color picker first
+            if UserDefaults.standard.bool(forKey: "wallpaperUseCustomColor"),
+               let data = UserDefaults.standard.data(forKey: "wallpaperCustomColorData"),
+               let uiColor = try? NSKeyedUnarchiver.unarchivedObject(ofClass: UIColor.self, from: data) {
+                print("🎨 ContentView: Using custom color from color picker")
+                print("   Loaded UIColor: \(uiColor)")
+                return uiColor
+            }
+            
+            // Fallback to presets
+            switch savedColorName {
+            case "White": return .white
+            case "Black": return UIColor(white: 0.1, alpha: 1.0)
+            case "Gold": return UIColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 1.0)
+            case "Sky": return UIColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)
+            case "Rose": return UIColor(red: 1.0, green: 0.6, blue: 0.7, alpha: 1.0)
+            default: return nil // Auto
+            }
+        }()
+        
+        // Get shadow intensity from UserDefaults
+        let shadowIntensity = UserDefaults.standard.double(forKey: "wallpaperShadowIntensity")
+        let effectiveShadowIntensity = shadowIntensity > 0 ? shadowIntensity : 0.5 // Default to 0.5 if not set
         
         let lockScreenImage = WallpaperRenderer.generateWallpaper(
             from: notes,
             backgroundColor: lockScreenBackgroundColor,
             backgroundImage: lockBackgroundImage,
             hasLockScreenWidgets: hasLockScreenWidgets,
-            customFontName: UserDefaults.standard.wallpaperFontName,
+            customFontName: savedFontName,
             customTextColor: customTextColor,
             highlightMode: highlightMode,
-            isShadowEnabled: UserDefaults.standard.wallpaperIsShadowEnabled,
-            shadowIntensity: UserDefaults.standard.wallpaperShadowIntensity,
-            fontSizeScaling: fontSizeScaling,
+            isShadowEnabled: isShadowEnabled,
+            shadowIntensity: effectiveShadowIntensity,
             textAlignment: textAlignment
         )
         #if DEBUG
@@ -638,9 +753,10 @@ struct ContentView: View {
                 NotificationCenter.default.post(name: .wallpaperGenerationFinished, object: nil)
                 
                 // Auto-open shortcut after a delay to ensure wallpaper is fully saved
-                // CRITICAL: Only auto-open shortcut if user has completed setup
+                // CRITICAL: Only auto-open shortcut if user has completed setup AND not in widget pipeline
                 // During onboarding, the OnboardingView handles shortcut opening at the right time
-                if self.hasCompletedSetup {
+                // Widget pipeline should never launch shortcuts - it only saves to widget
+                if self.hasCompletedSetup && self.selectedOnboardingPipeline != "widget" {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         #if DEBUG
                         print("🚀 Opening shortcut to apply wallpaper...")
@@ -649,7 +765,11 @@ struct ContentView: View {
                     }
                 } else {
                     #if DEBUG
-                    print("ℹ️ Skipping auto-open shortcut (setup not completed, onboarding will handle)")
+                    if self.selectedOnboardingPipeline == "widget" {
+                        print("ℹ️ Skipping auto-open shortcut (widget pipeline - no shortcut needed)")
+                    } else {
+                        print("ℹ️ Skipping auto-open shortcut (setup not completed, onboarding will handle)")
+                    }
                     #endif
                 }
             }
@@ -682,8 +802,15 @@ struct ContentView: View {
 
     private func setBlankWallpaper() {
         print("=== SETTING BLANK WALLPAPER ===")
+        let homeWallpaperImage = resolveHomeWallpaperBaseImage()
+        do {
+            try HomeScreenImageManager.saveHomeScreenImage(homeWallpaperImage)
+            print("✅ Saved blank home screen image")
+        } catch {
+            print("❌ Failed to save home screen wallpaper image: \(error)")
+        }
 
-        let lockBackgroundImage = resolveLockBackgroundImage()
+        let lockBackgroundImage = resolveLockBackgroundImage(using: homeWallpaperImage)
 
         let lockScreenImage = WallpaperRenderer.generateBlankWallpaper(
             backgroundColor: lockScreenBackgroundColor,
@@ -697,17 +824,15 @@ struct ContentView: View {
             print("❌ Failed to save lock screen wallpaper image: \(error)")
         }
         print("==============================")
-
         saveNewLockScreenWallpaper(lockScreenImage)
     }
 
     private func openShortcut() {
-        let shortcutName = "set wallpaper photo"
-        let encodedName = shortcutName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-        let urlString = "shortcuts://run-shortcut?name=\(encodedName)"
-
-        guard let url = URL(string: urlString) else { return }
-        UIApplication.shared.open(url)
+        // Run the shortcut using the manager to ensure consistent naming
+        // Use the centralized manager to run the shortcut
+        ShortcutIntegrationManager.shared.runShortcutWithCallback { _ in
+            // Reset state is handled by scene phase
+        }
     }
 }
 
@@ -728,6 +853,7 @@ private struct ContentViewContext {
     let shouldRestartOnboarding: Binding<Bool>
     let showWallpaperUpdateLoading: Binding<Bool>
     let showFirstNoteHint: Binding<Bool>
+    let selectedOnboardingPipeline: String
     let isTextFieldFocused: FocusState<Bool>.Binding
     let addNote: () -> Void
     let moveNotes: (IndexSet, Int) -> Void
@@ -744,6 +870,16 @@ private struct ContentViewContext {
     let deleteSelectedNotes: () -> Void
     let loadNotes: () -> Void
     let handleNotesChangedAfterDeletion: () -> Void
+    
+    // Styling Bindings
+    var selectedFontName: Binding<String>
+    var showFontList: Binding<Bool>
+    var selectedColorName: Binding<String>
+    var customColor: Binding<Color>
+    var alignmentMode: Binding<Int>
+    var highlightMode: Binding<Int>
+    var isShadowEnabled: Binding<Bool>
+    var shadowIntensity: Binding<Double>
 }
 
 private enum ActiveAlert: String, Identifiable {
@@ -767,7 +903,14 @@ private struct ContentViewRoot: View {
             if #available(iOS 15.0, *) {
                 PaywallView(
                     triggerReason: paywallManager.paywallTriggerReason,
-                    allowDismiss: paywallManager.paywallTriggerReason != .limitReached
+                    allowDismiss: paywallManager.paywallTriggerReason != .limitReached &&
+                                  context.selectedOnboardingPipeline != "widget" &&
+                                  context.selectedOnboardingPipeline != "fullscreen"
+                )
+                .interactiveDismissDisabled(
+                    paywallManager.paywallTriggerReason == .limitReached ||
+                    context.selectedOnboardingPipeline == "widget" ||
+                    context.selectedOnboardingPipeline == "fullscreen"
                 )
             }
         }
@@ -847,7 +990,7 @@ private struct RootConfiguredModifier: ViewModifier {
                     context.pendingLockScreenImage.wrappedValue = nil
                 }
             }
-            .onChange(of: context.savedNotesData.wrappedValue) { _, _ in
+            .onChange(of: context.savedNotesData.wrappedValue) { _ in
                 let previousNotesCount = context.notes.wrappedValue.count
                 context.loadNotes()
                 
@@ -870,7 +1013,7 @@ private struct RootConfiguredModifier: ViewModifier {
         case .deletePreviousWallpaper:
             return Alert(
                 title: Text("Delete Previous Wallpaper?"),
-                message: Text("To avoid filling your Photos library, NoteWall can delete the previous wallpaper. If you continue, iOS will ask for permission to delete the photo."),
+                message: Text("To avoid filling your Photos library, FaithWall can delete the previous wallpaper."),
                 primaryButton: .cancel(Text("Skip")) {
                     // Light impact haptic for alert dismissal
                     let generator = UIImpactFeedbackGenerator(style: .light)
@@ -889,9 +1032,14 @@ private struct RootConfiguredModifier: ViewModifier {
                 }
             )
         case .deleteNote:
+            // Use "Delete Verse?" for widget pipeline, "Delete Note?" for shortcut pipeline
+            let title = context.selectedOnboardingPipeline == "widget" ? "Delete Verse?" : "Delete Note?"
+            let message = context.selectedOnboardingPipeline == "widget" 
+                ? "Are you sure you want to delete this verse? This action cannot be undone."
+                : "Are you sure you want to delete this note? This action cannot be undone."
             return Alert(
-                title: Text("Delete Note?"),
-                message: Text("Are you sure you want to delete this note? This action cannot be undone."),
+                title: Text(title),
+                message: Text(message),
                 primaryButton: .destructive(Text("Delete")) {
                     context.finalizePendingDeletion()
                 },
@@ -931,6 +1079,7 @@ private struct RootConfiguredModifier: ViewModifier {
 
 private struct MainContentView: View {
     let context: ContentViewContext
+    @State private var showBibleMenu = false
 
     var body: some View {
         NavigationView {
@@ -938,18 +1087,28 @@ private struct MainContentView: View {
                 VStack(spacing: 0) {
                     NotesSectionView(context: context)
 
-                    if !context.isEditMode.wrappedValue {
+                    if !context.isEditMode.wrappedValue && context.selectedOnboardingPipeline != "fullscreen" && context.selectedOnboardingPipeline != "widget" {
                         AddNoteSectionView(context: context)
                     }
-
-                    UpdateWallpaperButtonView(context: context)
+                    
+                    // Open Bible Button (OR Add Your Bible Verse Button for Shortcut Pipeline)
+                    if !context.isEditMode.wrappedValue {
+                        OpenBibleButtonView(showBibleMenu: $showBibleMenu, context: context)
+                            // Remove bottom padding for shortcut pipeline since it's the main action
+                            .padding(.bottom, (context.selectedOnboardingPipeline == "fullscreen" || context.selectedOnboardingPipeline == "widget") ? 0 : 8)
+                    }
+                    
+                    // Styling toolbar and Update button removed - users now style wallpapers
+                    // through the Open Bible → Verse Review flow
                 }
             }
-            .navigationTitle("NoteWall")
+            .navigationTitle("FaithWall")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    EditModeMenuButton(context: context)
+                    if context.selectedOnboardingPipeline != "fullscreen" && context.selectedOnboardingPipeline != "widget" {
+                        EditModeMenuButton(context: context)
+                    }
                 }
             }
         }
@@ -963,6 +1122,152 @@ private struct MainContentView: View {
                 shouldRestartOnboarding: context.shouldRestartOnboarding
             )
         }
+        .sheet(isPresented: $showBibleMenu) {
+            // Both pipelines use the unified verse selection interface
+            // Shortcut pipeline: uses wallpaper preview and launches shortcut
+            // Widget pipeline: uses widget preview and saves to widget
+            if context.selectedOnboardingPipeline == "fullscreen" {
+                ShortcutVerseSelectionView(
+                    onComplete: {
+                        showBibleMenu = false
+                        // Trigger wallpaper generation and shortcut launch after verse is saved
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            context.updateWallpaper()
+                        }
+                    },
+                    onCancel: {
+                        // Just close the sheet without triggering wallpaper generation
+                        showBibleMenu = false
+                    }
+                )
+            } else {
+                // Widget pipeline: use UnifiedVerseSelectionView with widget preview/capacity
+                NavigationView {
+                    UnifiedVerseSelectionView(
+                        onVerseSelected: { text, reference in
+                            // Save the verse as a note for the widget
+                            let noteText = reference.isEmpty ? text : "\(text)\n— \(reference)"
+                            let newNote = Note(text: noteText, isCompleted: false)
+                            
+                            // Replace existing notes with the new one
+                            context.notes.wrappedValue = [newNote]
+                            
+                            // Save to UserDefaults
+                            if let encoded = try? JSONEncoder().encode([newNote]) {
+                                context.savedNotesData.wrappedValue = encoded
+                                WidgetDataSync.syncNotesToWidget(encoded)
+                            }
+                            
+                            // Haptic feedback
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
+                            
+                            showBibleMenu = false
+                        },
+                        showInternalReviewSheet: true // Show widget preview and capacity
+                    )
+                    .navigationTitle("Choose Your Verse")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("Close") {
+                                showBibleMenu = false
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Adds a Bible verse as a new note
+    private func addVerseAsNote(_ verse: BibleVerse) {
+        // Format the verse for lock screen display
+        let noteText = verse.lockScreenFormat
+        
+        // Create a new note
+        let newNote = Note(text: noteText)
+        
+        // Add to notes array - replacing existing notes
+        // User requested: "automatically remove the old one and set this as the new one"
+        var currentNotes: [Note] = []
+        currentNotes.append(newNote)
+        context.notes.wrappedValue = currentNotes
+        
+        // Save notes
+        if let encoded = try? JSONEncoder().encode(currentNotes) {
+            context.savedNotesData.wrappedValue = encoded
+            // Sync to widget
+            WidgetDataSync.syncNotesToWidget(encoded)
+        }
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+        
+        #if DEBUG
+        print("📖 Added verse as note: \(verse.reference)")
+        #endif
+    }
+}
+
+
+
+
+
+// MARK: - Open Bible Button
+private struct OpenBibleButtonView: View {
+    @Binding var showBibleMenu: Bool
+    let context: ContentViewContext
+    @StateObject private var languageManager = BibleLanguageManager.shared
+    
+    var body: some View {
+        Button(action: {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            
+            showBibleMenu = true
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "book.fill")
+                    .font(.system(size: 16))
+                
+                Text("Add your Bible verse")
+                    .fontWeight(.medium)
+                
+                Spacer()
+                
+                // Show current language
+                HStack(spacing: 4) {
+                    Text(languageManager.selectedTranslation.flagEmoji)
+                    Text(languageManager.selectedTranslation.shortName)
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.9))
+                }
+                
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(Color.appAccent)
+            .foregroundColor(.white)
+            .cornerRadius(12)
+        }
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
+}
+
+// Deprecated - kept for compatibility
+private struct ExploreBibleButtonView: View {
+    @Binding var showBibleExplorer: Bool
+    let context: ContentViewContext
+    
+    var body: some View {
+        OpenBibleButtonView(showBibleMenu: $showBibleExplorer, context: context)
     }
 }
 
@@ -990,10 +1295,10 @@ private struct EmptyStateView: View {
             
             // Text always visible, arrow only when not focused
             VStack(spacing: 8) {
-                Text("No notes yet")
+                Text("No Verses Yet")
                     .foregroundColor(.gray)
                     .font(.title3)
-                Text("Add a note below to get started")
+                Text("Add a Bible verse below to get started")
                     .foregroundColor(.gray)
                     .font(.caption)
                 
@@ -1027,6 +1332,8 @@ private struct EmptyStateView: View {
 
 private struct NotesListView: View {
     let context: ContentViewContext
+    
+    @State private var noteToEdit: Note?
 
     private var notes: [Note] {
         context.notes.wrappedValue
@@ -1036,6 +1343,19 @@ private struct NotesListView: View {
         List {
             ForEach(notes) { note in
                 NoteRowContainer(note: note, context: context)
+                    .onTapGesture {
+                        if context.isEditMode.wrappedValue {
+                            // Toggle selection in edit mode
+                            if context.selectedNotes.wrappedValue.contains(note.id) {
+                                context.selectedNotes.wrappedValue.remove(note.id)
+                            } else {
+                                context.selectedNotes.wrappedValue.insert(note.id)
+                            }
+                        } else {
+                            // Open edit sheet in normal mode
+                            noteToEdit = note
+                        }
+                    }
             }
             .onMove { source, destination in
                 context.moveNotes(source, destination)
@@ -1051,8 +1371,8 @@ private struct NotesListView: View {
                 FirstNoteHintBannerView(context: context)
             }
             
-            // Troubleshooting banner appears after notes - always show on every boot
-            if !context.isEditMode.wrappedValue {
+            // Troubleshooting banner appears after notes (Shortcut pipeline only)
+            if context.shouldShowTroubleshootingBanner.wrappedValue && !context.isEditMode.wrappedValue && context.selectedOnboardingPipeline != "widget" {
                 TroubleshootingBannerView(context: context)
             }
 
@@ -1063,6 +1383,64 @@ private struct NotesListView: View {
         .listStyle(.plain)
         .animation(.easeInOut(duration: 0.3), value: notes.map { $0.id })
         .environment(\.editMode, .constant(context.isEditMode.wrappedValue ? .active : .inactive))
+        .sheet(item: $noteToEdit) { note in
+            // Parse the note text to extract verse and reference
+            let components = note.text.components(separatedBy: "\n— ")
+            let verseText = components.first ?? note.text
+            let reference = components.count > 1 ? components[1] : ""
+            
+            // Create a placeholder BibleVerse for editing
+            let verse = BibleVerse(
+                bookName: reference.isEmpty ? "My Note" : reference.components(separatedBy: " ").first ?? "My Note",
+                chapter: 1,
+                verse: 1,
+                text: verseText,
+                translation: BibleLanguageManager.shared.selectedTranslation
+            )
+            
+            if context.selectedOnboardingPipeline == "widget" {
+                // Widget pipeline: Use VerseReviewView
+                VerseReviewView(verse: verse, isEditing: true) { editedText, editedReference in
+                    //  Save the edited verse
+                    let updatedNoteText = editedReference.isEmpty ? editedText : "\(editedText)\n— \(editedReference)"
+                    if let index = context.notes.wrappedValue.firstIndex(where: { $0.id == note.id }) {
+                        context.notes.wrappedValue[index].text = updatedNoteText
+                        
+                        // Save to UserDefaults
+                        if let encoded = try? JSONEncoder().encode(context.notes.wrappedValue) {
+                            context.savedNotesData.wrappedValue = encoded
+                            WidgetDataSync.syncNotesToWidget(encoded)
+                        }
+                    }
+                    
+                    noteToEdit = nil
+                }
+            } else {
+                // Shortcut pipeline: Use ShortcutVerseReviewView with styling options
+                ShortcutVerseReviewView(verse: verse, isEditing: true) { editedText in
+                    // Save the edited verse
+                    let updatedNoteText = "\(editedText)\n— \(reference)"
+                    if let index = context.notes.wrappedValue.firstIndex(where: { $0.id == note.id }) {
+                        context.notes.wrappedValue[index].text = updatedNoteText
+                        
+                        // Save to UserDefaults
+                        if let encoded = try? JSONEncoder().encode(context.notes.wrappedValue) {
+                            context.savedNotesData.wrappedValue = encoded
+                        }
+                    }
+                    
+                    // Trigger wallpaper update
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        // Ensure loading overlay shows for landscape/portrait edits too
+                        NotificationCenter.default.post(name: .showGlobalLoadingOverlay, object: nil)
+                        context.showWallpaperUpdateLoading.wrappedValue = true
+                        context.updateWallpaper()
+                    }
+                    
+                    noteToEdit = nil
+                }
+            }
+        }
     }
 }
 
@@ -1078,11 +1456,11 @@ private struct EditModeMenuButton: View {
             }) {
                 Image(systemName: context.isEditMode.wrappedValue ? "xmark" : "ellipsis")
                     .font(.system(size: 20, weight: .bold)) // Slightly larger for better visibility without circle
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 44, height: 44) // Ensure good touch target
                     .contentShape(Rectangle()) // Ensure entire 44x44 area is tappable
             }
-            .accessibilityLabel(context.isEditMode.wrappedValue ? "Close editing" : "Edit notes")
+            .accessibilityLabel(context.isEditMode.wrappedValue ? "Close Editing" : "Edit Notes")
             .highPriorityGesture(
                 TapGesture()
                     .onEnded { _ in
@@ -1229,36 +1607,68 @@ private struct EditModeSupplementView: View {
     }
 }
 
+// MARK: - Widget Character Limit
+private let widgetCharacterLimit = 120
+
 private struct AddNoteSectionView: View {
     let context: ContentViewContext
+    
+    private var characterCount: Int {
+        context.newNoteText.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).count
+    }
+    
+    private var isOverLimit: Bool {
+        characterCount > widgetCharacterLimit
+    }
 
     var body: some View {
-        HStack(spacing: 12) {
-            TextField("Add a note...", text: context.newNoteText)
-                .focused(context.isTextFieldFocused)
-                .submitLabel(.done)
-                .font(.system(size: 16))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(Color(.systemGray6))
-                .cornerRadius(12)
-                .onSubmit {
-                    context.addNote()
+        VStack(spacing: 0) {
+            // Warning banner when over character limit
+            if isOverLimit {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.orange)
+                    Text("Lock screen widget supports max \(widgetCharacterLimit) characters. Current: \(characterCount)")
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                    Spacer()
                 }
-
-            Button(action: { context.addNote() }) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(isAddDisabled ? .gray : .appAccent)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color.orange.opacity(0.1))
             }
-            .disabled(isAddDisabled)
+            
+            HStack(spacing: 12) {
+                TextField("Add a note...", text: context.newNoteText)
+                    .focused(context.isTextFieldFocused)
+                    .submitLabel(.done)
+                    .font(.system(size: 16))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isOverLimit ? Color.orange : Color.clear, lineWidth: 2)
+                    )
+                    .onSubmit {
+                        context.addNote()
+                    }
+
+                Button(action: { context.addNote() }) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(isAddDisabled ? .gray : .appAccent)
+                }
+                .disabled(isAddDisabled)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                Color(.systemBackground)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: -1)
+            )
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(
-            Color(.systemBackground)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: -1)
-        )
     }
 
     private var isAddDisabled: Bool {
@@ -1289,6 +1699,7 @@ private struct UpdateWallpaperButtonView: View {
             context.isUserInitiatedUpdate.wrappedValue = true
             
             // Show loading overlay for user-initiated updates
+            NotificationCenter.default.post(name: .showGlobalLoadingOverlay, object: nil)
             context.showWallpaperUpdateLoading.wrappedValue = true
             
             context.updateWallpaper()
@@ -1358,14 +1769,20 @@ struct NoteRowView: View {
                 }
 
                 ZStack(alignment: .center) {
-                    AutoScrollingTextField(
-                        text: $note.text,
-                        placeholder: "Note",
-                        textColor: note.isCompleted ? UIColor.systemGray : UIColor.label,
-                        font: UIFont.preferredFont(forTextStyle: .body),
-                        isDisabled: isEditMode,
-                        onCommit: onCommit
-                    )
+                    if #available(iOS 16.0, *) {
+                        TextField("Note", text: $note.text, axis: .vertical)
+                            .font(.system(.body, design: .default))
+                            .foregroundColor(note.isCompleted ? .secondary : .primary)
+                            .disabled(!isEditMode)
+                            .padding(.vertical, 8)
+                    } else {
+                        // Fallback for earlier versions
+                        TextField("Note", text: $note.text)
+                            .font(.system(.body, design: .default))
+                            .foregroundColor(note.isCompleted ? .secondary : .primary)
+                            .disabled(!isEditMode)
+                            .padding(.vertical, 8)
+                    }
 
                     if note.isCompleted {
                         Rectangle()
@@ -1384,8 +1801,8 @@ struct NoteRowView: View {
                         .foregroundColor(.appAccent)
                 }
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
+            .padding(.horizontal, DS.Spacing.l)
+            .padding(.vertical, DS.Spacing.m)
 
             Divider()
                 .background(Color(.separator))
@@ -1395,34 +1812,16 @@ struct NoteRowView: View {
         .background(Color(.systemBackground))
         .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
-        .onTapGesture {
-            if isEditMode {
-                toggleSelection()
-            }
-        }
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if !isEditMode {
-                Button {
-                    onToggleCompletion()
-                } label: {
-                    Label(
-                        note.isCompleted ? "Unmark" : "Done",
-                        systemImage: note.isCompleted ? "arrow.uturn.backward.circle.fill" : "checkmark.circle.fill"
-                    )
-                }
-                .tint(.appAccent)
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            if !isEditMode {
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            }
-        }
+        // .onTapGesture removed to allow parent to handle taps
+
         .animation(.easeInOut(duration: 0.25), value: isEditMode)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 }
 
@@ -1595,10 +1994,6 @@ private struct TroubleshootingBannerView: View {
                 ))
             }
         }
-        .onAppear {
-            // Reset visibility on every app launch so banner reappears
-            isTemporarilyHidden = false
-        }
     }
 }
 
@@ -1663,6 +2058,7 @@ private struct TrialReminderBannerView: View {
 
 private struct FirstNoteHintBannerView: View {
     let context: ContentViewContext
+    @AppStorage("selectedOnboardingPipeline") private var selectedOnboardingPipeline = ""
     @State private var isDismissed = false
     
     var body: some View {
@@ -1680,10 +2076,17 @@ private struct FirstNoteHintBannerView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.primary)
                             
-                            Text("Add more notes using the + button, then tap \"Update Wallpaper\" to apply them to your lock screen.")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
+                            if selectedOnboardingPipeline == "widget" {
+                                Text("Add more notes using the + button. They will automatically appear on your widget.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            } else {
+                                Text("Add more notes using the + button, then tap \"Update Wallpaper\" to apply them to your lock screen.")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                         
                         Spacer()

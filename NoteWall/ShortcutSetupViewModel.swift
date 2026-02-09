@@ -85,7 +85,7 @@ final class ShortcutSetupViewModel: ObservableObject {
             self.shortcutURL = URL(string: urlString)
         } else {
             // Default shortcut URL
-            self.shortcutURL = URL(string: "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35")
+            self.shortcutURL = URL(string: "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3")
         }
         
         // Check if setup is already complete
@@ -323,7 +323,7 @@ extension ShortcutSetupViewModel {
         static let allSteps: [SetupStep] = [
             SetupStep(id: 1, description: "Download the NoteWall Shortcut"),
             SetupStep(id: 2, description: "Shortcuts will open automatically"),
-            SetupStep(id: 3, description: "When prompted, select the folders: Navigate to Files → On My iPhone → NoteWall → HomeScreen (and LockScreen)"),
+            SetupStep(id: 3, description: "When prompted, select the folder: Navigate to Files → On My iPhone → NoteWall → LockScreen"),
             SetupStep(id: 4, description: "Tap 'Always Allow' for each folder permission")
         ]
     }

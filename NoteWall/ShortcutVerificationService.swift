@@ -8,7 +8,7 @@ enum ShortcutVerificationService {
     // MARK: - Configuration
     
     /// The name of the shortcut as it appears in the Shortcuts app
-    static let shortcutName = "NoteWall"
+    static let shortcutName = "set wallpaper photo"
     
     /// The shortcut file path in the user's Shortcuts folder
     private static var shortcutFilePath: String {
@@ -46,7 +46,6 @@ enum ShortcutVerificationService {
     /// Individual verification checks that must pass
     enum VerificationCheck: String, CaseIterable, Equatable {
         case shortcutFileExists = "shortcut_file"
-        case homeScreenFolderAccess = "home_screen_folder"
         case lockScreenFolderAccess = "lock_screen_folder"
         case shortcutExecutable = "shortcut_executable"
         
@@ -54,8 +53,6 @@ enum ShortcutVerificationService {
             switch self {
             case .shortcutFileExists:
                 return "Shortcut file not found"
-            case .homeScreenFolderAccess:
-                return "Home Screen folder access denied"
             case .lockScreenFolderAccess:
                 return "Lock Screen folder access denied"
             case .shortcutExecutable:
@@ -67,8 +64,6 @@ enum ShortcutVerificationService {
             switch self {
             case .shortcutFileExists:
                 return "The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app."
-            case .homeScreenFolderAccess:
-                return "The shortcut cannot access the Home Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access."
             case .lockScreenFolderAccess:
                 return "The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access."
             case .shortcutExecutable:
@@ -90,17 +85,12 @@ enum ShortcutVerificationService {
             missingChecks.append(.shortcutFileExists)
         }
         
-        // Check 2: Verify Home Screen folder access
-        if !checkFolderAccess(folder: .homeScreen) {
-            missingChecks.append(.homeScreenFolderAccess)
-        }
-        
-        // Check 3: Verify Lock Screen folder access
+        // Check 2: Verify Lock Screen folder access
         if !checkFolderAccess(folder: .lockScreen) {
             missingChecks.append(.lockScreenFolderAccess)
         }
         
-        // Check 4: Verify shortcut can be executed
+        // Check 3: Verify shortcut can be executed
         if !checkShortcutExecutable() {
             missingChecks.append(.shortcutExecutable)
         }
@@ -289,13 +279,10 @@ enum ShortcutVerificationService {
     
     /// Test folder enumeration for verification checks
     private enum TestFolder {
-        case homeScreen
         case lockScreen
         
         var name: String {
             switch self {
-            case .homeScreen:
-                return "HomeScreen"
             case .lockScreen:
                 return "LockScreen"
             }
@@ -308,8 +295,6 @@ enum ShortcutVerificationService {
             }
             
             switch self {
-            case .homeScreen:
-                return baseURL.appendingPathComponent("HomeScreen", isDirectory: true)
             case .lockScreen:
                 return baseURL.appendingPathComponent("LockScreen", isDirectory: true)
             }

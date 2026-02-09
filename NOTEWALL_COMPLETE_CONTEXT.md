@@ -74,7 +74,7 @@ NoteWall uses **Superwall** for paywall UI and experimentation.
 ### Stack
 - **Platform**: iOS 15.0+ (Native Swift/SwiftUI).
 - **Backend**: None (Local storage).
-- **Analytics**: Firebase Analytics (GA4) + TelemetryDeck.
+- **Analytics**: Mixpanel.
 - **Paywall/Revenue**: Superwall + RevenueCat.
 - **Automation**: Apple Shortcuts (Critical dependency).
 
@@ -136,7 +136,7 @@ A dedicated Next.js web dashboard has been built to track business health.
 
 **Tech Stack**:
 - **Frontend**: Next.js 14, Tailwind CSS, Recharts.
-- **Backend**: Firebase Admin SDK (fetching data from Google Analytics 4).
+- **Backend**: Mixpanel (analytics dashboard).
 - **Deployment**: Vercel.
 
 ---

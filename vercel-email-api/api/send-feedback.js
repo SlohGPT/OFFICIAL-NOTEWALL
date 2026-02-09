@@ -1,11 +1,14 @@
 /**
  * Vercel Serverless Function for NoteWall Feedback Emails
+ * Using Resend API for reliable email delivery
  * 
  * Deploy: vercel
- * Set env vars: GMAIL_USER, GMAIL_APP_PASSWORD
+ * Set env var: RESEND_API_KEY=re_SMhC7U6f_Lew2A9Ku5w3VuMxZDtyx3u3i
  */
 
-const nodemailer = require('nodemailer');
+import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export default async function handler(req, res) {
   // CORS headers (allow requests from your app)
@@ -24,59 +27,68 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { to, subject, body, reason, details, isPremium, timestamp } = req.body;
+    const { to, subject, body, reason, details, isPremium, timestamp, platform, appVersion, deviceModel, osVersion } = req.body;
 
     // Validate
     if (!to || !subject || !body) {
       return res.status(400).json({ error: 'Missing required fields: to, subject, body' });
     }
 
-    // Create email transporter
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-      }
-    });
-
-    // Convert plain text to HTML
+    // Convert plain text to HTML for better email formatting
     const htmlBody = body
       .replace(/\n/g, '<br>')
-      .replace(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/g, '<hr>')
-      .replace(/📋/g, '📋')
-      .replace(/👤/g, '👤')
-      .replace(/📅/g, '📅')
-      .replace(/💬/g, '💬');
+      .replace(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/g, '<hr style="border: 1px solid #ddd; margin: 20px 0;">')
+      .replace(/📋 REASON:/g, '<strong>📋 REASON:</strong>')
+      .replace(/👤 USER TYPE:/g, '<strong>👤 USER TYPE:</strong>')
+      .replace(/📅 TIMESTAMP:/g, '<strong>📅 TIMESTAMP:</strong>')
+      .replace(/💬 ADDITIONAL DETAILS:/g, '<strong>💬 ADDITIONAL DETAILS:</strong>');
 
-    // Send email
-    const info = await transporter.sendMail({
-      from: `"NoteWall Feedback" <${process.env.GMAIL_USER}>`,
+    // Add device info if available
+    let deviceInfo = '';
+    if (platform || appVersion || deviceModel || osVersion) {
+      deviceInfo = `
+        <hr style="border: 1px solid #ddd; margin: 20px 0;">
+        <strong>📱 DEVICE INFO:</strong><br>
+        ${platform ? `Platform: ${platform}<br>` : ''}
+        ${appVersion ? `App Version: ${appVersion}<br>` : ''}
+        ${deviceModel ? `Device: ${deviceModel}<br>` : ''}
+        ${osVersion ? `OS: ${osVersion}<br>` : ''}
+      `;
+    }
+
+    // Send email using Resend
+    const data = await resend.emails.send({
+      from: 'NoteWall Feedback <onboarding@resend.dev>',
       to: to,
       subject: subject,
-      text: body,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto;">
-          ${htmlBody}
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
+          <div style="background-color: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            ${htmlBody}
+            ${deviceInfo}
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #888; font-size: 12px;">
+            Sent via NoteWall Feedback System
+          </div>
         </div>
-      `
+      `,
+      text: body // Plain text fallback
     });
 
-    console.log('✅ Email sent:', info.messageId);
+    console.log('✅ Email sent via Resend:', data.id);
 
-    return res.status(200).json({ 
-      success: true, 
-      messageId: info.messageId,
-      message: 'Feedback email sent successfully' 
+    return res.status(200).json({
+      success: true,
+      messageId: data.id,
+      message: 'Feedback email sent successfully via Resend'
     });
 
   } catch (error) {
     console.error('❌ Error sending email:', error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       success: false,
       error: 'Failed to send email',
-      details: error.message 
+      details: error.message
     });
   }
 }
-

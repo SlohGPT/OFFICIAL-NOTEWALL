@@ -781,7 +781,10 @@ struct AutoFixWorkflowView: View {
     
     private func regenerateWallpaper() async -> FixResult {
         // Check if wallpaper exists before regeneration
-        let existedBefore = HomeScreenImageManager.homeScreenImageExists()
+        let existedBefore: Bool = {
+            guard let url = HomeScreenImageManager.lockScreenWallpaperURL() else { return false }
+            return FileManager.default.fileExists(atPath: url.path)
+        }()
         
         // Trigger wallpaper regeneration
         await MainActor.run {
@@ -802,7 +805,9 @@ struct AutoFixWorkflowView: View {
         var wallpaperExists = false
         
         while attempts < maxAttempts {
-            wallpaperExists = HomeScreenImageManager.homeScreenImageExists()
+            if let url = HomeScreenImageManager.lockScreenWallpaperURL() {
+                wallpaperExists = FileManager.default.fileExists(atPath: url.path)
+            }
             if wallpaperExists {
                 break
             }
@@ -827,17 +832,17 @@ struct AutoFixWorkflowView: View {
     }
     
     private func checkPermissions() async -> FixResult {
-        // Check if home screen directory is accessible
-        guard let homeScreenURL = HomeScreenImageManager.homeScreenImageURL() else {
+        // Check if lock screen directory is accessible
+        guard let lockScreenURL = HomeScreenImageManager.lockScreenWallpaperURL() else {
             return FixResult(
                 success: false,
-                issue: "❌ Cannot access home screen directory",
+                issue: "❌ Cannot access lock screen directory",
                 fixed: nil
             )
         }
         
         let fileManager = FileManager.default
-        let directoryURL = homeScreenURL.deletingLastPathComponent()
+        let directoryURL = lockScreenURL.deletingLastPathComponent()
         
         // Check if directory exists
         var isDirectory: ObjCBool = false
@@ -871,7 +876,7 @@ struct AutoFixWorkflowView: View {
         } else {
             return FixResult(
                 success: false,
-                issue: "❌ No write permission for home screen folder",
+                issue: "❌ No write permission for lock screen folder",
                 fixed: nil
             )
         }

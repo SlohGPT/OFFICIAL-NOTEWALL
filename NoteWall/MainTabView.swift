@@ -90,6 +90,7 @@ struct MainTabView: View {
         .sheet(isPresented: $paywallManager.shouldShowSuperwallPaywall) {
             if !paywallManager.superwallPlacement.isEmpty {
                 SuperwallPaywallView(placement: paywallManager.superwallPlacement)
+                    .interactiveDismissDisabled(true)
             }
         }
         // What's New popup for app updates

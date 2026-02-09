@@ -16,10 +16,13 @@ struct AnalyticsEvent {
     let parameters: [String: Any]
     
     private init(name: String, parameters: [String: Any] = [:]) {
-        // Validate event name length (Firebase limit: 40 chars)
-        assert(name.count <= 40, "Event name '\(name)' exceeds 40 character limit")
         self.name = name
         self.parameters = parameters
+    }
+    
+    /// Generic custom event for ad-hoc tracking
+    static func custom(name: String, parameters: [String: Any] = [:]) -> AnalyticsEvent {
+        AnalyticsEvent(name: name, parameters: parameters)
     }
 }
 

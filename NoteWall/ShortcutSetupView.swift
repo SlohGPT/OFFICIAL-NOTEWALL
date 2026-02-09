@@ -137,7 +137,7 @@ struct ShortcutSetupView: View {
                                 .fontWeight(.semibold)
                                 .foregroundColor(.appAccent)
                         }
-                        Text("When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → HomeScreen\n(and LockScreen)")
+                        Text("When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen")
                             .font(.system(.caption))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.leading)

@@ -2,15 +2,15 @@
 //  AnalyticsService.swift
 //  NoteWall
 //
-//  Firebase Analytics wrapper with type-safe events and properties
+//  Mixpanel Analytics wrapper with type-safe events and properties
 //
 
 import Foundation
-import FirebaseAnalytics
+import Mixpanel
 
 // MARK: - Analytics Service (Singleton)
 
-/// Central analytics service wrapping Firebase Analytics
+/// Central analytics service wrapping Mixpanel Analytics
 /// Use this as the single entry point for all analytics tracking
 final class AnalyticsService {
     
@@ -19,7 +19,7 @@ final class AnalyticsService {
     
     // MARK: - Configuration
     
-    /// Controls whether analytics are actually sent to Firebase
+    /// Controls whether analytics are actually sent to Mixpanel
     /// In DEBUG builds, events are logged locally but optionally not sent
     private var isEnabled: Bool = true
     
@@ -55,7 +55,7 @@ final class AnalyticsService {
     private init() {
         // Configure analytics based on build configuration
         #if DEBUG
-        // In DEBUG, we can optionally disable sending to Firebase
+        // In DEBUG, we can optionally disable sending to Mixpanel
         // Set to false to only log locally during development
         isEnabled = true
         
@@ -72,7 +72,11 @@ final class AnalyticsService {
     /// Enable or disable analytics sending (useful for user privacy preferences)
     func setAnalyticsEnabled(_ enabled: Bool) {
         isEnabled = enabled
-        Analytics.setAnalyticsCollectionEnabled(enabled)
+        if enabled {
+            Mixpanel.mainInstance().optInTracking()
+        } else {
+            Mixpanel.mainInstance().optOutTracking()
+        }
         logDebug("Analytics collection \(enabled ? "enabled" : "disabled")")
     }
     
@@ -92,7 +96,7 @@ final class AnalyticsService {
     
     // MARK: - Core Logging
     
-    /// Log an analytics event to Firebase
+    /// Log an analytics event to Mixpanel
     /// - Parameters:
     ///   - event: The event to log
     ///   - additionalParams: Any extra parameters to merge
@@ -112,9 +116,10 @@ final class AnalyticsService {
         // Log to console in debug mode
         logDebug("📊 Event: \(event.name) | Params: \(sanitizedParams)")
         
-        // Send to Firebase if enabled
+        // Send to Mixpanel if enabled
         guard isEnabled else { return }
-        Analytics.logEvent(event.name, parameters: sanitizedParams.isEmpty ? nil : sanitizedParams)
+        let mixpanelProps = sanitizedParams.isEmpty ? Properties() : sanitizedParams.asMixpanelProperties()
+        Mixpanel.mainInstance().track(event: event.name, properties: mixpanelProps)
     }
     
     /// Log a screen view event
@@ -137,7 +142,12 @@ final class AnalyticsService {
         logDebug("📊 User Property: \(sanitizedName) = \(sanitizedValue ?? "nil")")
         
         guard isEnabled else { return }
-        Analytics.setUserProperty(sanitizedValue, forName: sanitizedName)
+        if let val = sanitizedValue {
+            Mixpanel.mainInstance().people.set(properties: [sanitizedName: val])
+            Mixpanel.mainInstance().registerSuperProperties([sanitizedName: val])
+        } else {
+            Mixpanel.mainInstance().people.unset(properties: [sanitizedName])
+        }
     }
     
     /// Set the user ID for analytics
@@ -145,7 +155,11 @@ final class AnalyticsService {
         logDebug("📊 User ID: \(userId ?? "nil")")
         
         guard isEnabled else { return }
-        Analytics.setUserID(userId)
+        if let userId = userId {
+            Mixpanel.mainInstance().identify(distinctId: userId)
+        } else {
+            Mixpanel.mainInstance().reset()
+        }
     }
     
     // MARK: - Screen View Tracking (Fire-Once Mechanism)
@@ -817,16 +831,12 @@ final class AnalyticsService {
         return Int(duration * 1000) // Convert to milliseconds
     }
     
-    /// Sanitize parameters to comply with Firebase limits
-    /// - Event name: max 40 chars, alphanumeric + underscore
-    /// - Parameter name: max 40 chars
-    /// - Parameter value (string): max 100 chars
-    /// - Max 25 parameters per event
+    /// Sanitize parameters for Mixpanel
+    /// Mixpanel is more lenient so we sanitize for consistency
     private func sanitizeParameters(_ params: [String: Any]) -> [String: Any] {
         var sanitized: [String: Any] = [:]
         
-        // Limit to 25 parameters
-        let limitedParams = Array(params.prefix(25))
+        let limitedParams = Array(params.prefix(100))
         
         for (key, value) in limitedParams {
             let sanitizedKey = sanitizePropertyName(key)
@@ -841,18 +851,18 @@ final class AnalyticsService {
         return sanitized
     }
     
-    /// Sanitize property names (max 40 chars, alphanumeric + underscore)
+    /// Sanitize property names
     private func sanitizePropertyName(_ name: String) -> String {
         let allowedCharacters = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "_"))
         let sanitized = name
             .components(separatedBy: allowedCharacters.inverted)
             .joined(separator: "_")
-        return String(sanitized.prefix(40))
+        return String(sanitized.prefix(255))
     }
     
-    /// Sanitize property values (max 100 chars)
+    /// Sanitize property values (max 255 chars for Mixpanel)
     private func sanitizePropertyValue(_ value: String) -> String {
-        return String(value.prefix(100))
+        return String(value.prefix(255))
     }
     
     /// Sanitize error messages to prevent PII leakage
@@ -934,4 +944,29 @@ enum AbandonReason: String {
     case userClosed = "user_closed"
     case timeout = "timeout"
     case unknown = "unknown"
+}
+
+// MARK: - Mixpanel Properties Conversion
+
+extension Dictionary where Key == String, Value == Any {
+    /// Convert [String: Any] to Mixpanel-compatible Properties
+    func asMixpanelProperties() -> Properties {
+        var props = Properties()
+        for (key, value) in self {
+            if let stringValue = value as? String {
+                props[key] = stringValue
+            } else if let intValue = value as? Int {
+                props[key] = intValue
+            } else if let doubleValue = value as? Double {
+                props[key] = doubleValue
+            } else if let boolValue = value as? Bool {
+                props[key] = boolValue
+            } else if let floatValue = value as? Float {
+                props[key] = Double(floatValue)
+            } else {
+                props[key] = "\(value)"
+            }
+        }
+        return props
+    }
 }

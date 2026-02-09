@@ -23,7 +23,7 @@ NoteWall is a mobile application (iOS only) that allows users to:
 - **Core Technology**: Native Swift/SwiftUI application
 - **Integration**: Apple Shortcuts app (required for wallpaper automation)
 - **Monetization**: RevenueCat for subscription management
-- **Analytics**: TelemetryDeck for user behavior tracking
+- **Analytics**: Mixpanel for user behavior tracking
 - **Storage**: Local device storage (no cloud sync currently)
 
 ---
@@ -270,7 +270,7 @@ NoteWall has a comprehensive 6-step onboarding flow designed to ensure successfu
    - Settings and configuration
 
 2. **Apple Shortcuts Integration**
-   - iCloud Shortcut URL: `https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35`
+   - iCloud Shortcut URL: `https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3`
    - Shortcut reads wallpaper files from app's shared folder
    - Shortcut applies wallpaper to device
    - Can be automated via iOS Shortcuts automations
@@ -306,7 +306,7 @@ NoteWall has a comprehensive 6-step onboarding flow designed to ensure successfu
 - **Safari Browser** (required for shortcut)
 - **Apple Shortcuts App** (required for automation)
 - **RevenueCat SDK** (subscription management)
-- **TelemetryDeck** (analytics)
+- **Mixpanel** (analytics)
 
 ---
 
@@ -470,7 +470,7 @@ NoteWall has a comprehensive 6-step onboarding flow designed to ensure successfu
 3. **Reliability**
    - Shortcut dependency (Apple's infrastructure)
    - RevenueCat for subscription management (handles scale)
-   - TelemetryDeck for analytics (handles scale)
+   - Mixpanel for analytics (handles scale)
 
 ### Operational Scaling
 
@@ -627,7 +627,7 @@ NoteWall has a comprehensive 6-step onboarding flow designed to ensure successfu
 
 - **Onboarding Documentation**: `ONBOARDING_FLOW_DOCUMENTATION.md`
 - **Codebase**: Swift/SwiftUI iOS application
-- **Analytics**: TelemetryDeck (App ID: F406962D-0C75-41A0-82DB-01AC06B8E21A)
+- **Analytics**: Mixpanel (configure token in Config.swift)
 - **Subscription Management**: RevenueCat
 
 ### Legal

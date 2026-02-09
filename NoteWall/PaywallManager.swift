@@ -82,7 +82,8 @@ final class PaywallManager: NSObject, ObservableObject {
     // MARK: - Initialization
     private override init() {
         super.init()
-        checkPaywallOnLaunch()
+        // NOTE: checkPaywallOnLaunch() moved to refreshCustomerInfo() to avoid showing
+        // paywall to premium users before RevenueCat loads their entitlements
         restoreLegacyAccessIfNeeded()
     }
 
@@ -104,11 +105,26 @@ final class PaywallManager: NSObject, ObservableObject {
         do {
             let info = try await Purchases.shared.customerInfo()
             handle(customerInfo: info)
+            
+            // Check paywall AFTER loading customer info to prevent false positives for premium users
+            checkPaywallOnLaunch()
         } catch {
             lastErrorMessage = "Unable to refresh customer info: \(error.localizedDescription)"
             #if DEBUG
             print("❌ RevenueCat: \(error)")
             #endif
+            
+            // Track refresh error
+            AnalyticsService.shared.logEvent(
+                .error(
+                    errorType: "revenuecat_refresh_error",
+                    errorMessage: error.localizedDescription,
+                    screen: nil
+                ),
+                additionalParams: [
+                    "error_code": (error as NSError).code
+                ]
+            )
         }
     }
 
@@ -128,6 +144,15 @@ final class PaywallManager: NSObject, ObservableObject {
             #if DEBUG
             print("❌ RevenueCat: \(error)")
             #endif
+            
+            // Track offerings error
+            AnalyticsService.shared.logEvent(
+                .error(
+                    errorType: "revenuecat_offerings_error",
+                    errorMessage: error.localizedDescription,
+                    screen: nil
+                )
+            )
         }
     }
 
@@ -141,6 +166,16 @@ final class PaywallManager: NSObject, ObservableObject {
             let result = try await Purchases.shared.purchase(package: package)
             await MainActor.run {
                 handle(customerInfo: result.customerInfo)
+                
+                // Track successful purchase
+                AnalyticsService.shared.logEvent(
+                    .purchaseSuccess(
+                        productId: package.storeProduct.productIdentifier,
+                        transactionId: nil,
+                        revenue: Double(truncating: package.storeProduct.price as NSDecimalNumber),
+                        currency: package.storeProduct.currencyCode ?? "USD"
+                    )
+                )
                 
                 // Check if this was a trial purchase
                 if package.storeProduct.introductoryDiscount != nil {
@@ -161,6 +196,25 @@ final class PaywallManager: NSObject, ObservableObject {
             await MainActor.run {
                 isProcessingPurchase = false
                 lastErrorMessage = purchaseErrorMessage(error)
+                
+                // Track purchase failure
+                let userCancelled = (error as? ErrorCode) == .purchaseCancelledError
+                
+                if userCancelled {
+                    AnalyticsService.shared.logEvent(
+                        .purchaseCancel(productId: package.storeProduct.productIdentifier)
+                    )
+                } else {
+                    AnalyticsService.shared.logEvent(
+                        .purchaseFail(
+                            productId: package.storeProduct.productIdentifier,
+                            errorCode: String((error as NSError).code)
+                        ),
+                        additionalParams: [
+                            "error_message": error.localizedDescription
+                        ]
+                    )
+                }
             }
             throw error
         }
@@ -177,11 +231,33 @@ final class PaywallManager: NSObject, ObservableObject {
             await MainActor.run {
                 handle(customerInfo: info)
                 isProcessingPurchase = false
+                
+                // Track restore result
+                let hasEntitlement = info.entitlements[entitlementID]?.isActive == true
+                if hasEntitlement {
+                     AnalyticsService.shared.logEvent(.restoreSuccess())
+                }
+                
+                AnalyticsService.shared.logEvent(
+                    .custom(
+                        name: "restore_completed",
+                        parameters: [
+                            "success": true,
+                            "has_entitlement": hasEntitlement,
+                            "active_entitlements": info.entitlements.active.keys.joined(separator: ",")
+                        ]
+                    )
+                )
             }
         } catch {
             await MainActor.run {
                 isProcessingPurchase = false
                 lastErrorMessage = "Restore failed: \(error.localizedDescription)"
+                
+                // Track restore failure
+                AnalyticsService.shared.logEvent(
+                    .restoreFail(errorCode: String((error as NSError).code))
+                )
             }
         }
     }
@@ -240,13 +316,12 @@ final class PaywallManager: NSObject, ObservableObject {
     // MARK: - Usage Tracking
 
     func checkPaywallOnLaunch() {
-        #if DEBUG
-        // Skip automatic paywall in debug mode to allow testing What's New
-        print("🔧 DEBUG: Skipping automatic paywall on launch")
-        return
-        #endif
-        
-        guard !isPremium else { return }
+        guard !isPremium else { 
+            #if DEBUG
+            print("✅ PaywallManager: User is premium, skipping paywall on launch")
+            #endif
+            return 
+        }
         
         let hasCompletedSetup = UserDefaults.standard.bool(forKey: "hasCompletedSetup")
         if hasCompletedSetup && hasReachedFreeLimit {
@@ -369,8 +444,17 @@ final class PaywallManager: NSObject, ObservableObject {
             #if DEBUG
             print("⚠️ PaywallManager: Access integrity check failed - possible tampering detected")
             #endif
-            // Reset to safe state (could be more aggressive)
-            // For now, just log - in production you might want to revoke access
+            
+            // Track integrity failure
+            AnalyticsService.shared.logEvent(
+                .custom(
+                    name: "integrity_check_failed",
+                    parameters: [
+                        "stored_hash": storedHash,
+                        "computed_hash": computedHash
+                    ]
+                )
+            )
         }
     }
 

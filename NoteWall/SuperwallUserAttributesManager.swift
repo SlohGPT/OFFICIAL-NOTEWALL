@@ -87,7 +87,6 @@ final class SuperwallUserAttributesManager {
         attributes["saveWallpapersToPhotos"] = UserDefaults.standard.bool(forKey: "saveWallpapersToPhotos")
         attributes["skipDeletingOldWallpaper"] = UserDefaults.standard.bool(forKey: "skipDeletingOldWallpaper")
         attributes["hasLockScreenWidgets"] = UserDefaults.standard.bool(forKey: "hasLockScreenWidgets")
-        attributes["homeScreenUsesCustomPhoto"] = UserDefaults.standard.bool(forKey: "homeScreenUsesCustomPhoto")
         attributes["hasShownAutoUpdatePrompt"] = UserDefaults.standard.bool(forKey: "hasShownAutoUpdatePrompt")
         attributes["hasShownFirstNoteHint"] = UserDefaults.standard.bool(forKey: "hasShownFirstNoteHint")
         attributes["shouldShowTroubleshootingBanner"] = UserDefaults.standard.bool(forKey: "shouldShowTroubleshootingBanner")
@@ -107,11 +106,6 @@ final class SuperwallUserAttributesManager {
         if let autoUpdateRaw = UserDefaults.standard.string(forKey: "autoUpdateWallpaperAfterDeletion"),
            !autoUpdateRaw.isEmpty {
             attributes["autoUpdateWallpaperAfterDeletion"] = autoUpdateRaw
-        }
-        
-        if let homePresetRaw = UserDefaults.standard.string(forKey: "homeScreenPresetSelection"),
-           !homePresetRaw.isEmpty {
-            attributes["homeScreenPresetSelection"] = homePresetRaw
         }
         
         // MARK: - Onboarding Quiz Data (if available)

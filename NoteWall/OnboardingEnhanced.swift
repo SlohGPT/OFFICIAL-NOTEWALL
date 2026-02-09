@@ -7,6 +7,15 @@ import UIKit
 class OnboardingQuizState: ObservableObject {
     static let shared = OnboardingQuizState()
     
+    // User's name for personalization (stored locally only)
+    @AppStorage("onboarding_userName") var userName: String = ""
+    
+    /// Returns the user's first name for display, or nil if not set
+    var displayName: String? {
+        let trimmed = userName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+    
     // Quiz answers stored in UserDefaults for persistence
     @AppStorage("quiz_forgetMost") var forgetMost: String = "" // Comma-separated for multi-select
     @AppStorage("quiz_phoneChecks") var phoneChecks: String = ""
@@ -74,7 +83,7 @@ struct OnboardingAnalytics {
         #if DEBUG
         print("📊 Legacy Analytics: Step shown - \(step)")
         #endif
-        // Using Firebase Analytics via AnalyticsService
+        // Using Mixpanel Analytics via AnalyticsService
         AnalyticsService.shared.trackScreenView(screenName: "onboarding_\(step)")
     }
     
@@ -89,7 +98,7 @@ struct OnboardingAnalytics {
         #if DEBUG
         print("📊 Legacy Analytics: Quiz answer - \(question): \(answer)")
         #endif
-        // Forward to Firebase Analytics
+        // Forward to Mixpanel Analytics
         AnalyticsService.shared.trackQuizAnswer(
             question: question,
             answer: answer,
@@ -190,6 +199,1085 @@ struct OnboardingProgressBar: View {
     }
 }
 
+// MARK: - Notification Permission View (Pre-Onboarding)
+
+/// Notification permission screen shown after the Trajectory view.
+/// Shows mock notification cards to make users want notifications, not just allow them.
+struct NotificationPermissionView: View {
+    let onContinue: () -> Void
+    
+    // MARK: - Animation States
+    @State private var backgroundGlowScale: CGFloat = 0.6
+    @State private var backgroundGlowOpacity: Double = 0
+    @State private var mockNotif1Offset: CGFloat = 60
+    @State private var mockNotif1Opacity: Double = 0
+    @State private var mockNotif2Offset: CGFloat = 60
+    @State private var mockNotif2Opacity: Double = 0
+    @State private var mockNotif3Offset: CGFloat = 60
+    @State private var mockNotif3Opacity: Double = 0
+    @State private var titleOpacity: Double = 0
+    @State private var titleOffset: CGFloat = 20
+    @State private var subtitleOpacity: Double = 0
+    @State private var subtitleOffset: CGFloat = 15
+    @State private var buttonOpacity: Double = 0
+    @State private var buttonOffset: CGFloat = 20
+    @State private var skipOpacity: Double = 0
+    @State private var shimmerOffset: CGFloat = -200
+    @State private var floatingY: CGFloat = 0
+    @State private var particle1Opacity: Double = 0
+    @State private var particle2Opacity: Double = 0
+    @State private var particle3Opacity: Double = 0
+    @State private var particle4Opacity: Double = 0
+    @State private var particle1Y: CGFloat = 0
+    @State private var particle2Y: CGFloat = 0
+    @State private var particle3Y: CGFloat = 0
+    @State private var particle4Y: CGFloat = 0
+    @State private var hasRequestedPermission: Bool = false
+    @State private var buttonPressed: Bool = false
+    
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    var body: some View {
+        ZStack {
+            // MARK: - Background
+            LinearGradient(
+                colors: [Color(red: 0.03, green: 0.03, blue: 0.07), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            // Ambient glow behind notifications
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.appAccent.opacity(0.15), Color.appAccent.opacity(0.03), Color.clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: isCompact ? 200 : 260
+                    )
+                )
+                .scaleEffect(backgroundGlowScale)
+                .opacity(backgroundGlowOpacity)
+                .offset(y: isCompact ? -80 : -100)
+                .blur(radius: 30)
+            
+            // MARK: - Floating Particles
+            notificationParticles
+            
+            // MARK: - Content
+            VStack(spacing: 0) {
+                Spacer()
+                
+                // Notification mock cards
+                VStack(spacing: isCompact ? 10 : 14) {
+                    notificationMockCard(
+                        icon: "brain.head.profile.fill",
+                        iconGradient: [Color.appAccent, Color.appAccent.opacity(0.6)],
+                        title: "Time for a quick check-in",
+                        subtitle: "Your notes are waiting on your lock screen",
+                        time: "Now"
+                    )
+                    .offset(y: mockNotif1Offset + floatingY * 0.3)
+                    .opacity(mockNotif1Opacity)
+                    
+                    notificationMockCard(
+                        icon: "sparkles",
+                        iconGradient: [Color.yellow, Color.orange],
+                        title: "New: Smart Wallpaper Themes",
+                        subtitle: "Try the new gradient styles",
+                        time: "2m ago"
+                    )
+                    .offset(y: mockNotif2Offset + floatingY * 0.5)
+                    .opacity(mockNotif2Opacity)
+                    .scaleEffect(0.96)
+                    
+                    notificationMockCard(
+                        icon: "flame.fill",
+                        iconGradient: [Color.orange, Color.red.opacity(0.7)],
+                        title: "3-day streak!",
+                        subtitle: "You're building a great habit",
+                        time: "Earlier"
+                    )
+                    .offset(y: mockNotif3Offset + floatingY * 0.7)
+                    .opacity(mockNotif3Opacity)
+                    .scaleEffect(0.92)
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                
+                Spacer()
+                    .frame(height: isCompact ? 32 : 44)
+                
+                // MARK: - Title & Subtitle
+                VStack(spacing: isCompact ? 10 : 14) {
+                    Text("Don't miss a thing")
+                        .font(.system(size: isCompact ? 30 : 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .opacity(titleOpacity)
+                        .offset(y: titleOffset)
+                    
+                    Text("Get helpful nudges that keep\nyour momentum going.")
+                        .font(.system(size: isCompact ? 15 : 17, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(3)
+                        .opacity(subtitleOpacity)
+                        .offset(y: subtitleOffset)
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding + 8)
+                
+                Spacer()
+                
+                // MARK: - Buttons
+                VStack(spacing: isCompact ? 12 : 16) {
+                    // Primary button with shimmer
+                    Button(action: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            buttonPressed = true
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            requestNotificationPermission()
+                        }
+                    }) {
+                        ZStack {
+                            // Button background
+                            RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.appAccent, Color.appAccent.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                            
+                            // Shimmer overlay
+                            RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.clear, .white.opacity(0.15), .clear],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .offset(x: shimmerOffset)
+                                .mask(
+                                    RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                )
+                            
+                            // Glass border
+                            RoundedRectangle(cornerRadius: isCompact ? 16 : 20, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.25), .white.opacity(0.05)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                            
+                            // Label
+                            HStack(spacing: 10) {
+                                Text("Keep Me in the Loop")
+                                    .font(.system(size: isCompact ? 16 : 18, weight: .bold))
+                                
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: isCompact ? 14 : 16, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                        }
+                        .frame(height: isCompact ? 54 : 60)
+                        .shadow(color: Color.appAccent.opacity(0.35), radius: 20, x: 0, y: 12)
+                    }
+                    .scaleEffect(buttonPressed ? 0.96 : 1.0)
+                    .opacity(buttonOpacity)
+                    .offset(y: buttonOffset)
+                    
+                    // Skip
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        onContinue()
+                    }) {
+                        Text("Not now")
+                            .font(.system(size: isCompact ? 13 : 14, weight: .medium))
+                            .foregroundColor(.white.opacity(0.3))
+                    }
+                    .opacity(skipOpacity)
+                }
+                .padding(.horizontal, AdaptiveLayout.horizontalPadding)
+                .padding(.bottom, isCompact ? 20 : 32)
+            }
+        }
+        .onAppear {
+            startNotificationAnimations()
+        }
+    }
+    
+    // MARK: - Mock Notification Card
+    
+    private func notificationMockCard(
+        icon: String,
+        iconGradient: [Color],
+        title: String,
+        subtitle: String,
+        time: String
+    ) -> some View {
+        HStack(spacing: isCompact ? 12 : 14) {
+            // App icon
+            ZStack {
+                RoundedRectangle(cornerRadius: isCompact ? 10 : 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: iconGradient.map { $0.opacity(0.15) },
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: isCompact ? 40 : 46, height: isCompact ? 40 : 46)
+                
+                Image(systemName: icon)
+                    .font(.system(size: isCompact ? 17 : 20, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: iconGradient,
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            
+            VStack(alignment: .leading, spacing: 3) {
+                HStack {
+                    Text("NoteWall")
+                        .font(.system(size: isCompact ? 11 : 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.45))
+                    
+                    Spacer()
+                    
+                    Text(time)
+                        .font(.system(size: isCompact ? 10 : 11, weight: .regular))
+                        .foregroundColor(.white.opacity(0.25))
+                }
+                
+                Text(title)
+                    .font(.system(size: isCompact ? 13 : 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .lineLimit(1)
+                
+                Text(subtitle)
+                    .font(.system(size: isCompact ? 12 : 13, weight: .regular))
+                    .foregroundColor(.white.opacity(0.4))
+                    .lineLimit(1)
+            }
+        }
+        .padding(isCompact ? 14 : 16)
+        .background(
+            ZStack {
+                // Glass background
+                RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
+                    .fill(Color.white.opacity(0.04))
+                
+                // Subtle border
+                RoundedRectangle(cornerRadius: isCompact ? 18 : 22, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [.white.opacity(0.1), .white.opacity(0.03)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.8
+                    )
+            }
+        )
+    }
+    
+    // MARK: - Floating Particles
+    
+    private var notificationParticles: some View {
+        ZStack {
+            Circle()
+                .fill(Color.appAccent.opacity(0.4))
+                .frame(width: 4, height: 4)
+                .blur(radius: 1)
+                .offset(x: -80, y: particle1Y)
+                .opacity(particle1Opacity)
+            
+            Circle()
+                .fill(Color.appAccent.opacity(0.3))
+                .frame(width: 3, height: 3)
+                .blur(radius: 0.5)
+                .offset(x: 100, y: particle2Y)
+                .opacity(particle2Opacity)
+            
+            Circle()
+                .fill(Color.white.opacity(0.2))
+                .frame(width: 2.5, height: 2.5)
+                .blur(radius: 0.5)
+                .offset(x: -40, y: particle3Y)
+                .opacity(particle3Opacity)
+            
+            Circle()
+                .fill(Color.appAccent.opacity(0.25))
+                .frame(width: 3.5, height: 3.5)
+                .blur(radius: 1)
+                .offset(x: 60, y: particle4Y)
+                .opacity(particle4Opacity)
+        }
+    }
+    
+    // MARK: - Permission Request
+    
+    private func requestNotificationPermission() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        NotificationManager.shared.requestPermission { granted in
+            #if DEBUG
+            print("🔔 Notification permission from onboarding: \(granted)")
+            #endif
+            hasRequestedPermission = true
+            onContinue()
+        }
+    }
+    
+    // MARK: - Animations
+    
+    private func startNotificationAnimations() {
+        // 1. Background glow breathes in
+        withAnimation(.easeOut(duration: 1.2)) {
+            backgroundGlowScale = 1.0
+            backgroundGlowOpacity = 1
+        }
+        
+        // 2. Notification cards slide up with spring, staggered
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.15)) {
+            mockNotif1Offset = 0
+            mockNotif1Opacity = 1
+        }
+        
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.3)) {
+            mockNotif2Offset = 0
+            mockNotif2Opacity = 1
+        }
+        
+        withAnimation(.spring(response: 0.7, dampingFraction: 0.75).delay(0.45)) {
+            mockNotif3Offset = 0
+            mockNotif3Opacity = 1
+        }
+        
+        // Haptic when cards land
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        // 3. Title & subtitle slide up
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.6)) {
+            titleOpacity = 1
+            titleOffset = 0
+        }
+        
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.75)) {
+            subtitleOpacity = 1
+            subtitleOffset = 0
+        }
+        
+        // 4. Button appears
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.75).delay(0.95)) {
+            buttonOpacity = 1
+            buttonOffset = 0
+        }
+        
+        // 5. Skip fades in
+        withAnimation(.easeOut(duration: 0.4).delay(1.3)) {
+            skipOpacity = 1
+        }
+        
+        // 6. Continuous floating effect for notification cards
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                floatingY = -6
+            }
+        }
+        
+        // 7. Button shimmer loop
+        startNotificationShimmerLoop()
+        
+        // 8. Floating particles
+        startNotificationParticleAnimations()
+    }
+    
+    private func startNotificationShimmerLoop() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                shimmerOffset = 400
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.5) {
+            shimmerOffset = -200
+            withAnimation(.easeInOut(duration: 0.8)) {
+                shimmerOffset = 400
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 7.5) {
+            shimmerOffset = -200
+            withAnimation(.easeInOut(duration: 0.8)) {
+                shimmerOffset = 400
+            }
+        }
+    }
+    
+    private func startNotificationParticleAnimations() {
+        particle1Y = 50
+        particle2Y = 80
+        particle3Y = 30
+        particle4Y = 70
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.easeOut(duration: 4.0).repeatForever(autoreverses: false)) {
+                particle1Y = -300
+            }
+            withAnimation(.easeOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                particle1Opacity = 0.8
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(.easeOut(duration: 5.0).repeatForever(autoreverses: false)) {
+                particle2Y = -350
+            }
+            withAnimation(.easeOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                particle2Opacity = 0.6
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeOut(duration: 4.5).repeatForever(autoreverses: false)) {
+                particle3Y = -280
+            }
+            withAnimation(.easeOut(duration: 1.8).repeatForever(autoreverses: true)) {
+                particle3Opacity = 0.7
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(.easeOut(duration: 3.5).repeatForever(autoreverses: false)) {
+                particle4Y = -320
+            }
+            withAnimation(.easeOut(duration: 1.3).repeatForever(autoreverses: true)) {
+                particle4Opacity = 0.5
+            }
+        }
+    }
+}
+
+// MARK: - Notification Benefit Row Component
+
+struct NotificationBenefitRow: View {
+    let icon: String
+    let iconColor: Color
+    let title: String
+    let description: String
+    
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    var body: some View {
+        HStack(spacing: isCompact ? 14 : 18) {
+            // Icon container
+            ZStack {
+                RoundedRectangle(cornerRadius: isCompact ? 10 : 12, style: .continuous)
+                    .fill(iconColor.opacity(0.15))
+                    .frame(width: isCompact ? 42 : 48, height: isCompact ? 42 : 48)
+                
+                Image(systemName: icon)
+                    .font(.system(size: isCompact ? 18 : 20, weight: .semibold))
+                    .foregroundColor(iconColor)
+            }
+            
+            // Text content
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Text(description)
+                    .font(.system(size: isCompact ? 12 : 13, weight: .regular))
+                    .foregroundColor(.white.opacity(0.5))
+                    .lineLimit(2)
+            }
+            
+            Spacer(minLength: 0)
+        }
+        .padding(isCompact ? 14 : 16)
+        .background(
+            RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - Name Input View (Personalization)
+
+struct NameInputView: View {
+    let onContinue: () -> Void
+    
+    @ObservedObject private var quizState = OnboardingQuizState.shared
+    @State private var nameText: String = ""
+    @FocusState private var isNameFieldFocused: Bool
+    
+    // Animation states — entrance
+    @State private var emojiScale: CGFloat = 0.1
+    @State private var emojiOpacity: Double = 0
+    @State private var emojiRotation: Double = -30
+    @State private var titleOpacity: Double = 0
+    @State private var titleOffset: CGFloat = 18
+    @State private var subtitleOpacity: Double = 0
+    @State private var fieldOpacity: Double = 0
+    @State private var fieldOffset: CGFloat = 24
+    @State private var buttonOpacity: Double = 0
+    @State private var buttonOffset: CGFloat = 16
+    
+    // Animation states — greeting
+    @State private var showGreeting: Bool = false
+    @State private var greetingOpacity: Double = 0
+    @State private var greetingScale: CGFloat = 0.85
+    @State private var nameGradientPhase: CGFloat = 0
+    @State private var confettiTriggered: Bool = false
+    
+    // Background animations
+    @State private var glowScale: CGFloat = 0.8
+    @State private var glowOpacity: Double = 0
+    @State private var particle1Y: CGFloat = 0
+    @State private var particle2Y: CGFloat = 0
+    @State private var particle3Y: CGFloat = 0
+    @State private var particle1Opacity: Double = 0
+    @State private var particle2Opacity: Double = 0
+    @State private var particle3Opacity: Double = 0
+    
+    // Field glow
+    @State private var fieldGlowOpacity: Double = 0
+    @State private var shimmerPhase: CGFloat = -1.5
+    
+    private var isCompact: Bool { ScreenDimensions.isCompactDevice }
+    
+    private var isNameValid: Bool {
+        !nameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    var body: some View {
+        ZStack {
+            // MARK: - Background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.03, green: 0.03, blue: 0.08),
+                    Color(red: 0.01, green: 0.01, blue: 0.04),
+                    Color.black
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+            
+            // Ambient glow behind content
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.appAccent.opacity(0.12),
+                            Color.appAccent.opacity(0.04),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: isCompact ? 200 : 280
+                    )
+                )
+                .scaleEffect(glowScale)
+                .opacity(glowOpacity)
+                .offset(y: isCompact ? -100 : -120)
+                .blur(radius: 40)
+            
+            // Floating particles
+            floatingParticles
+            
+            // MARK: - Content
+            VStack(spacing: 0) {
+                Spacer()
+                
+                if showGreeting {
+                    greetingContent
+                } else {
+                    inputContent
+                }
+                
+                Spacer()
+                
+                // Continue button (only in input mode)
+                if !showGreeting {
+                    continueButton
+                }
+            }
+        }
+        .onAppear {
+            animateEntrance()
+        }
+        .onTapGesture {
+            isNameFieldFocused = false
+        }
+    }
+    
+    // MARK: - Floating Particles
+    
+    private var floatingParticles: some View {
+        GeometryReader { geo in
+            // Large slow particle
+            Circle()
+                .fill(Color.appAccent.opacity(0.08))
+                .frame(width: 6, height: 6)
+                .blur(radius: 2)
+                .position(x: geo.size.width * 0.2, y: geo.size.height * 0.3)
+                .offset(y: particle1Y)
+                .opacity(particle1Opacity)
+            
+            // Medium particle
+            Circle()
+                .fill(Color.appAccent.opacity(0.12))
+                .frame(width: 4, height: 4)
+                .blur(radius: 1)
+                .position(x: geo.size.width * 0.75, y: geo.size.height * 0.25)
+                .offset(y: particle2Y)
+                .opacity(particle2Opacity)
+            
+            // Small accent particle
+            Circle()
+                .fill(Color.appAccent.opacity(0.1))
+                .frame(width: 5, height: 5)
+                .blur(radius: 1.5)
+                .position(x: geo.size.width * 0.6, y: geo.size.height * 0.65)
+                .offset(y: particle3Y)
+                .opacity(particle3Opacity)
+        }
+    }
+    
+    // MARK: - Greeting Content (post-submit)
+    
+    private var greetingContent: some View {
+        VStack(spacing: isCompact ? 20 : 28) {
+            // Big wave emoji with bounce
+            Text("👋")
+                .font(.system(size: isCompact ? 64 : 80))
+                .scaleEffect(emojiScale)
+                .rotationEffect(.degrees(emojiRotation))
+                .opacity(emojiOpacity)
+            
+            VStack(spacing: isCompact ? 10 : 14) {
+                Text("Nice to meet you,")
+                    .font(.system(size: isCompact ? 20 : 24, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                
+                // Name with animated gradient
+                Text("\(nameText.trimmingCharacters(in: .whitespacesAndNewlines))!")
+                    .font(.system(size: isCompact ? 34 : 42, weight: .bold, design: .rounded))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                .appAccent,
+                                .appAccent.opacity(0.7),
+                                Color(red: 0.4, green: 0.7, blue: 1.0),
+                                .appAccent
+                            ],
+                            startPoint: UnitPoint(x: nameGradientPhase, y: 0),
+                            endPoint: UnitPoint(x: nameGradientPhase + 1, y: 1)
+                        )
+                    )
+                    .shadow(color: .appAccent.opacity(0.3), radius: 12, x: 0, y: 4)
+                
+                Text("Let's make forgetting a thing of the past")
+                    .font(.system(size: isCompact ? 15 : 17, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                    .padding(.top, isCompact ? 2 : 6)
+            }
+            .multilineTextAlignment(.center)
+        }
+        .scaleEffect(greetingScale)
+        .opacity(greetingOpacity)
+        .padding(.horizontal, 32)
+    }
+    
+    // MARK: - Input Content
+    
+    private var inputContent: some View {
+        VStack(spacing: isCompact ? 28 : 40) {
+            // Animated hand wave
+            Text("👋")
+                .font(.system(size: isCompact ? 56 : 72))
+                .scaleEffect(emojiScale)
+                .rotationEffect(.degrees(emojiRotation))
+                .opacity(emojiOpacity)
+            
+            // Title + Subtitle
+            VStack(spacing: isCompact ? 8 : 12) {
+                Text("What should we call you?")
+                    .font(.system(size: isCompact ? 26 : 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .opacity(titleOpacity)
+                    .offset(y: titleOffset)
+                
+                Text("So we can make this feel like yours")
+                    .font(.system(size: isCompact ? 15 : 17, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                    .opacity(subtitleOpacity)
+            }
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 24)
+            
+            // Name input field with glow
+            nameInputField
+                .opacity(fieldOpacity)
+                .offset(y: fieldOffset)
+        }
+    }
+    
+    // MARK: - Name Input Field
+    
+    private var nameInputField: some View {
+        VStack(spacing: 0) {
+            ZStack {
+                // Glow behind field when focused
+                RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
+                    .fill(Color.appAccent.opacity(0.06))
+                    .blur(radius: 20)
+                    .scaleEffect(1.1)
+                    .opacity(fieldGlowOpacity)
+                
+                HStack(spacing: 14) {
+                    // Icon with animated color
+                    ZStack {
+                        Circle()
+                            .fill(isNameValid ? Color.appAccent.opacity(0.15) : Color.white.opacity(0.04))
+                            .frame(width: isCompact ? 36 : 40, height: isCompact ? 36 : 40)
+                        
+                        Image(systemName: "person.fill")
+                            .font(.system(size: isCompact ? 15 : 17, weight: .medium))
+                            .foregroundColor(isNameValid ? .appAccent : .white.opacity(0.25))
+                    }
+                    .animation(.easeInOut(duration: 0.3), value: isNameValid)
+                    
+                    TextField("", text: $nameText)
+                        .placeholder(when: nameText.isEmpty) {
+                            Text("Your first name")
+                                .foregroundColor(.white.opacity(0.25))
+                                .font(.system(size: isCompact ? 18 : 20, weight: .medium))
+                        }
+                        .font(.system(size: isCompact ? 18 : 20, weight: .medium))
+                        .foregroundColor(.white)
+                        .focused($isNameFieldFocused)
+                        .autocapitalization(.words)
+                        .disableAutocorrection(true)
+                        .submitLabel(.done)
+                        .onSubmit {
+                            if isNameValid { submitName() }
+                        }
+                    
+                    // Checkmark with spring
+                    if isNameValid {
+                        ZStack {
+                            Circle()
+                                .fill(Color.appAccent.opacity(0.15))
+                                .frame(width: isCompact ? 30 : 34, height: isCompact ? 30 : 34)
+                            
+                            Image(systemName: "checkmark")
+                                .font(.system(size: isCompact ? 12 : 14, weight: .bold))
+                                .foregroundColor(.appAccent)
+                        }
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .padding(.horizontal, isCompact ? 16 : 20)
+                .padding(.vertical, isCompact ? 14 : 18)
+                .background(
+                    RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
+                        .fill(Color.white.opacity(isNameFieldFocused ? 0.07 : 0.04))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
+                                .strokeBorder(
+                                    LinearGradient(
+                                        colors: isNameFieldFocused
+                                            ? [Color.appAccent.opacity(0.6), Color.appAccent.opacity(0.2)]
+                                            : [Color.white.opacity(0.08), Color.white.opacity(0.04)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: isNameFieldFocused ? 1.5 : 1
+                                )
+                        )
+                )
+                .animation(.easeInOut(duration: 0.25), value: isNameFieldFocused)
+                .animation(.easeInOut(duration: 0.25), value: isNameValid)
+            }
+        }
+        .padding(.horizontal, isCompact ? 28 : 40)
+    }
+    
+    // MARK: - Continue Button
+    
+    private var continueButton: some View {
+        Button(action: {
+            if isNameValid { submitName() }
+        }) {
+            HStack(spacing: 10) {
+                Text("Continue")
+                    .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
+                
+                Image(systemName: "arrow.right")
+                    .font(.system(size: isCompact ? 14 : 16, weight: .semibold))
+            }
+            .foregroundColor(isNameValid ? .white : .white.opacity(0.4))
+            .frame(maxWidth: .infinity)
+            .frame(height: isCompact ? 52 : 58)
+            .background(
+                ZStack {
+                    // Base gradient
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            isNameValid
+                                ? LinearGradient(
+                                    colors: [Color.appAccent, Color.appAccent.opacity(0.85)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                  )
+                                : LinearGradient(
+                                    colors: [Color.white.opacity(0.06), Color.white.opacity(0.04)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                  )
+                        )
+                    
+                    // Shimmer overlay
+                    if isNameValid {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.clear, .white.opacity(0.2), .clear],
+                                    startPoint: UnitPoint(x: shimmerPhase, y: 0.5),
+                                    endPoint: UnitPoint(x: shimmerPhase + 0.5, y: 0.5)
+                                )
+                            )
+                    }
+                }
+            )
+            .shadow(color: isNameValid ? Color.appAccent.opacity(0.25) : .clear, radius: 16, x: 0, y: 8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        isNameValid
+                            ? Color.white.opacity(0.15)
+                            : Color.white.opacity(0.06),
+                        lineWidth: 0.5
+                    )
+            )
+        }
+        .disabled(!isNameValid)
+        .opacity(buttonOpacity)
+        .offset(y: buttonOffset)
+        .padding(.horizontal, isCompact ? 24 : 32)
+        .padding(.bottom, isCompact ? 20 : 28)
+        .animation(.easeInOut(duration: 0.35), value: isNameValid)
+    }
+    
+    // MARK: - Actions
+    
+    private func submitName() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+        
+        // Save name
+        quizState.userName = nameText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Dismiss keyboard
+        isNameFieldFocused = false
+        
+        // Transition to greeting
+        withAnimation(.easeOut(duration: 0.35)) {
+            showGreeting = true
+        }
+        
+        // Reset emoji for greeting re-animation
+        emojiScale = 0.1
+        emojiOpacity = 0
+        emojiRotation = -30
+        
+        // Animate greeting elements
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            // Wave emoji bounces in
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.55)) {
+                emojiScale = 1.0
+                emojiOpacity = 1.0
+                emojiRotation = 0
+            }
+            
+            // Wave wiggle
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 0.15).repeatCount(3, autoreverses: true)) {
+                    emojiRotation = 15
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        emojiRotation = 0
+                    }
+                }
+            }
+        }
+        
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(0.25)) {
+            greetingScale = 1.0
+            greetingOpacity = 1.0
+        }
+        
+        // Boost glow for greeting
+        withAnimation(.easeInOut(duration: 0.6).delay(0.2)) {
+            glowOpacity = 0.8
+            glowScale = 1.3
+        }
+        
+        // Animate name gradient shimmer
+        startNameGradientAnimation()
+        
+        // Auto-advance
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) {
+            onContinue()
+        }
+    }
+    
+    // MARK: - Animations
+    
+    private func animateEntrance() {
+        // Background glow breathe-in
+        withAnimation(.easeOut(duration: 1.2).delay(0.1)) {
+            glowOpacity = 0.5
+            glowScale = 1.0
+        }
+        
+        // Start gentle glow pulse
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) {
+                glowScale = 1.1
+                glowOpacity = 0.6
+            }
+        }
+        
+        // Floating particles drift
+        startParticleAnimations()
+        
+        // Wave emoji — bouncy spring with slight rotation
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.5).delay(0.3)) {
+            emojiScale = 1.0
+            emojiOpacity = 1.0
+            emojiRotation = 0
+        }
+        
+        // Quick wave wiggle after landing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            withAnimation(.easeInOut(duration: 0.15).repeatCount(3, autoreverses: true)) {
+                emojiRotation = 12
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    emojiRotation = 0
+                }
+            }
+        }
+        
+        // Title
+        withAnimation(.easeOut(duration: 0.55).delay(0.6)) {
+            titleOpacity = 1.0
+            titleOffset = 0
+        }
+        
+        // Subtitle
+        withAnimation(.easeOut(duration: 0.55).delay(0.9)) {
+            subtitleOpacity = 1.0
+        }
+        
+        // Input field slides up
+        withAnimation(.spring(response: 0.55, dampingFraction: 0.8).delay(1.15)) {
+            fieldOpacity = 1.0
+            fieldOffset = 0
+        }
+        
+        // Auto-focus
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            isNameFieldFocused = true
+            // Field glow when focused
+            withAnimation(.easeOut(duration: 0.4)) {
+                fieldGlowOpacity = 1.0
+            }
+        }
+        
+        // Button
+        withAnimation(.easeOut(duration: 0.5).delay(1.5)) {
+            buttonOpacity = 1.0
+            buttonOffset = 0
+        }
+        
+        // Start shimmer loop
+        startShimmerLoop()
+    }
+    
+    private func startParticleAnimations() {
+        withAnimation(.easeInOut(duration: 4).repeatForever(autoreverses: true).delay(0.5)) {
+            particle1Y = -20
+            particle1Opacity = 0.8
+        }
+        withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true).delay(1.0)) {
+            particle2Y = -15
+            particle2Opacity = 0.6
+        }
+        withAnimation(.easeInOut(duration: 3.5).repeatForever(autoreverses: true).delay(0.8)) {
+            particle3Y = -18
+            particle3Opacity = 0.7
+        }
+    }
+    
+    private func startShimmerLoop() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            guard !showGreeting else { return }
+            withAnimation(.easeInOut(duration: 1.2)) {
+                shimmerPhase = 2.0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                shimmerPhase = -1.5
+                startShimmerLoop()
+            }
+        }
+    }
+    
+    private func startNameGradientAnimation() {
+        withAnimation(.linear(duration: 2.0).repeatForever(autoreverses: false)) {
+            nameGradientPhase = 2.0
+        }
+    }
+}
+
+// Helper for placeholder text in TextField
+private extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content
+    ) -> some View {
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
+    }
+}
+
 // MARK: - Pain Point View (Emotional Hook)
 
 struct PainPointView: View {
@@ -199,6 +1287,7 @@ struct PainPointView: View {
     // 0: Stats (Did you know...)
     // 1: Question (How many times...)
     @State private var internalStep: Int = 0
+    @ObservedObject private var quizState = OnboardingQuizState.shared
     
     // Animation states for step 0
     @State private var headerOpacity: Double = 0
@@ -218,8 +1307,6 @@ struct PainPointView: View {
     @State private var line1Opacity: Double = 0
     @State private var line2Opacity: Double = 0
     @State private var line3Opacity: Double = 0
-    
-    @ObservedObject private var quizState = OnboardingQuizState.shared
     
     // Adaptive layout values
     private var isCompact: Bool { ScreenDimensions.isCompactDevice }
@@ -281,7 +1368,7 @@ struct PainPointView: View {
                             
                             // Main stat section
                             VStack(spacing: isCompact ? 16 : 24) {
-                                Text("Did you know that the average person")
+                                Text(quizState.displayName != nil ? "Did you know, \(quizState.displayName!), that" : "Did you know that the average person")
                                     .font(.system(size: isCompact ? 16 : 19, weight: .medium))
                                     .foregroundColor(.white.opacity(0.7))
                                     .multilineTextAlignment(.center)
@@ -404,6 +1491,9 @@ struct PainPointView: View {
                         generator.impactOccurred()
                         
                         if internalStep == 0 {
+                            // Track "Tell Me More" tap
+                            OnboardingAnalyticsTracker.shared.trackAction(.next, on: .painPoint, additionalParams: ["button": "tell_me_more"])
+                            
                             // Move to next step
                             withAnimation(.easeInOut(duration: 0.4)) {
                                 internalStep = 1
@@ -464,6 +1554,9 @@ struct PainPointView: View {
                                 }
                             }
                         } else {
+                            // Track "Continue" tap
+                            OnboardingAnalyticsTracker.shared.trackAction(.next, on: .painPoint, additionalParams: ["button": "continue"])
+                            
                             // Complete
                             onContinue()
                         }
@@ -498,56 +1591,56 @@ struct PainPointView: View {
         .onAppear {
             if internalStep == 0 {
                 // SLOWED DOWN Animation Sequence for Step 0
+                // EDITED: Speeding up significantly to reduce drop-off (was 8.5s delay)
                 
-                // 1. Header (0.2s delay, slower)
-                withAnimation(.easeOut(duration: 1.0).delay(0.2)) {
+                // 1. Header (0.1s delay)
+                withAnimation(.easeOut(duration: 0.6).delay(0.1)) {
                     headerOpacity = 1
                 }
                 
-                // 2. Text 1 (1.0s delay, much slower)
-                withAnimation(.easeOut(duration: 1.0).delay(1.0)) {
+                // 2. Text 1 (0.3s delay)
+                withAnimation(.easeOut(duration: 0.6).delay(0.3)) {
                     text1Opacity = 1
                 }
                 
-                // 3. Text 2 (2.2s delay, much slower)
-                withAnimation(.easeOut(duration: 1.0).delay(2.2)) {
+                // 3. Text 2 (0.3s delay - appearing with Text 1)
+                withAnimation(.easeOut(duration: 0.6).delay(0.3)) {
                     text2Opacity = 1
                 }
                 
-                // 4. Number Reveal (3.5s delay, perfectly smooth ease-out)
-                let startDelay = 3.5
+                // 4. Number Reveal (0.5s delay, faster spring)
+                let startDelay = 0.5
                 
-                withAnimation(.spring(response: 0.8, dampingFraction: 0.6).delay(startDelay)) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.7).delay(startDelay)) {
                     numberOpacity = 1
                     numberScale = 1.0
                 }
                 
-                // Animate number value smoothly using AnimatableModifier logic via state change
-                // Using an explicit animation block for the value change ensures smooth interpolation
-                withAnimation(.easeOut(duration: 2.5).delay(startDelay)) {
+                // Animate number value smoothly (faster count)
+                withAnimation(.easeOut(duration: 1.5).delay(startDelay)) {
                     numberValue = 498
                 }
                 
-                // 5. Context cards one by one (starting at 6.0s since number takes longer)
-                withAnimation(.easeOut(duration: 0.8).delay(6.0)) {
+                // 5. Context cards (Rapid sequence starting at 1.2s)
+                withAnimation(.easeOut(duration: 0.5).delay(1.2)) {
                     card1Opacity = 1
                 }
                 
-                withAnimation(.easeOut(duration: 0.8).delay(6.8)) {
+                withAnimation(.easeOut(duration: 0.5).delay(1.4)) {
                     card2Opacity = 1
                 }
                 
-                withAnimation(.easeOut(duration: 0.8).delay(7.6)) {
+                withAnimation(.easeOut(duration: 0.5).delay(1.6)) {
                     card3Opacity = 1
                 }
                 
-                // 6. Button (8.5s delay)
-                withAnimation(.easeOut(duration: 0.8).delay(8.5)) {
+                // 6. Button (2.0s delay - Visible almost immediately)
+                withAnimation(.easeOut(duration: 0.5).delay(2.0)) {
                     buttonOpacity = 1
                 }
                 
-                // Success haptic when number finishes
-                DispatchQueue.main.asyncAfter(deadline: .now() + startDelay + 2.5) {
+                // Success haptic
+                DispatchQueue.main.asyncAfter(deadline: .now() + startDelay + 1.5) {
                     let generator = UIImpactFeedbackGenerator(style: .heavy)
                     generator.impactOccurred()
                 }
@@ -744,6 +1837,10 @@ struct QuizTransitionView: View {
                     Button(action: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
+                        
+                        // Track action
+                        OnboardingAnalyticsTracker.shared.trackAction(.next, on: .painPoint, additionalParams: ["subtype": "quiz_transition"])
+                        
                         onContinue()
                     }) {
                         HStack(spacing: isCompact ? 8 : 10) {
@@ -1156,7 +2253,8 @@ struct QuizQuestionView: View {
                 optionsOpacity = 1
             }
             
-            OnboardingAnalytics.trackStepShown("quiz_\(question.prefix(20))")
+            // Track as generic quiz step - proper tracking happens via OnboardingAnalyticsTracker
+            // OnboardingAnalytics.trackStepShown("quiz")
         }
     }
 }
@@ -1301,6 +2399,10 @@ struct MultiSelectQuizQuestionView: View {
                     Button(action: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
+                        
+                        // Track action
+                        OnboardingAnalyticsTracker.shared.trackAction(.next, on: .quizForgetMost, additionalParams: ["subtype": "multiselect_continue"])
+                        
                         onContinue(Array(selectedOptions))
                     }) {
                         Text("Continue")
@@ -1327,7 +2429,8 @@ struct MultiSelectQuizQuestionView: View {
                 optionsOpacity = 1
             }
             
-            OnboardingAnalytics.trackStepShown("multi_quiz_\(question.prefix(20))")
+            // Track as generic multi-select quiz - proper tracking happens via OnboardingAnalyticsTracker
+            // OnboardingAnalytics.trackStepShown("multi_quiz")
         }
         .onChange(of: selectedOptions) { _, _ in
             // Animate button when selections change
@@ -1433,7 +2536,7 @@ struct ResultsPreviewView: View {
                             )
                             .scaleEffect(checkmarkScale)
                             
-                            Text("Your Focus Profile")
+                            Text(quizState.displayName != nil ? "\(quizState.displayName!)'s Focus Profile" : "Your Focus Profile")
                                 .font(.system(size: isCompact ? 28 : 36, weight: .bold, design: .rounded))
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
@@ -1789,6 +2892,10 @@ struct ResultsInsightView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    
+                    // Track action
+                    OnboardingAnalyticsTracker.shared.trackAction(.next, on: .resultsPreview)
+                    
                     onContinue()
                 }) {
                     HStack {
@@ -1917,7 +3024,7 @@ struct TrajectoryView: View {
                         Spacer(minLength: isCompact ? 30 : 50)
                         
                         // MARK: - Title
-                        Text("Your New Trajectory")
+                        Text(OnboardingQuizState.shared.displayName != nil ? "\(OnboardingQuizState.shared.displayName!)'s New Trajectory" : "Your New Trajectory")
                             .font(.system(size: isCompact ? 28 : 36, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                             .multilineTextAlignment(.center)
@@ -2094,6 +3201,10 @@ struct TrajectoryView: View {
                     Button(action: {
                         let generator = UIImpactFeedbackGenerator(style: .medium)
                         generator.impactOccurred()
+                        
+                        // Track action
+                        OnboardingAnalyticsTracker.shared.trackAction(.next, on: .resultsInsight)
+                        
                         onContinue()
                     }) {
                         HStack(spacing: isCompact ? 8 : 10) {
@@ -2365,6 +3476,10 @@ struct SetupIntroView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    
+                    // Track action
+                    OnboardingAnalyticsTracker.shared.trackAction(.next, on: .setupIntro)
+                    
                     onContinue()
                 }) {
                     Text(ctaText)
@@ -2645,7 +3760,7 @@ struct SetupCompleteView: View {
                 
                 // Success message
                 VStack(spacing: 16) {
-                    Text("Your Focus System Is Ready! 🎉")
+                    Text(quizState.displayName != nil ? "\(quizState.displayName!), Your Focus System Is Ready! 🎉" : "Your Focus System Is Ready! 🎉")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                         .multilineTextAlignment(.center)
@@ -2728,6 +3843,10 @@ struct SetupCompleteView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    
+                    // Track action
+                    OnboardingAnalyticsTracker.shared.trackAction(.next, on: .setupComplete)
+                    
                     quizState.setupCompleted = true
                     onContinue()
                 }) {
@@ -2854,6 +3973,10 @@ struct ReassuranceView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    
+                    // Track action
+                    OnboardingAnalyticsTracker.shared.trackAction(.next, on: .installShortcut, additionalParams: ["subtype": "reassurance_continue"])
+                    
                     onContinue()
                 }) {
                     Text(ctaText)

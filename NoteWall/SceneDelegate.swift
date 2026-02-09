@@ -45,6 +45,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     // Handle deep links when app is already running
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
         guard let url = URLContexts.first?.url else { return }
+        
+        // Handle notewall:// URL scheme (shortcut callback)
+        if url.scheme?.lowercased() == "notewall" {
+            let lowerHost = url.host?.lowercased()
+            let lowerPath = url.path.lowercased()
+            if lowerHost == "wallpaper-updated" || lowerPath.contains("wallpaper-updated") {
+                print("✅ SceneDelegate: Received wallpaper-updated callback")
+                // Set persistent flag so allowPermissions step can detect it
+                UserDefaults.standard.set(true, forKey: "shortcut_wallpaper_applied")
+                NotificationCenter.default.post(name: .shortcutWallpaperApplied, object: nil)
+                return
+            }
+        }
+        
         let handled = Superwall.handleDeepLink(url)
         if handled {
             print("🔗 SceneDelegate: Deep link handled by Superwall (app running)")

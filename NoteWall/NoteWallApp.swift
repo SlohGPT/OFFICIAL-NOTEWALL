@@ -1,8 +1,6 @@
 import SwiftUI
 import RevenueCat
-import TelemetryDeck
 import SuperwallKit
-import FirebaseCore
 
 @main
 struct NoteWallApp: App {
@@ -18,9 +16,8 @@ struct NoteWallApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     init() {
-        // IMPORTANT: Configure Firebase FIRST before any other Firebase services
-        // This must be called before RevenueCat, Superwall, etc.
-        FirebaseSetup.shared.configure()
+        // IMPORTANT: Configure Mixpanel FIRST before any other services
+        MixpanelSetup.shared.configure()
         
         // Initialize crash reporting
         setupCrashReporting()
@@ -28,17 +25,14 @@ struct NoteWallApp: App {
         configureRevenueCat()
         configureSuperwall()
         
-        // Initialize TelemetryDeck for analytics
-        let telemetryConfig = TelemetryDeck.Config(appID: "F406962D-0C75-41A0-82DB-01AC06B8E21A")
-        TelemetryDeck.initialize(config: telemetryConfig)
-        
         // Check onboarding status on init (only show for first launch)
-        let shouldShow = !hasCompletedSetup
+        // Note: For DEBUG, this will basically always be true now due to the reset above
+        let shouldShow = !UserDefaults.standard.bool(forKey: "hasCompletedSetup")
         
         _showOnboarding = State(initialValue: shouldShow)
         
         // Reset paywall data if this is a fresh install
-        let isFreshInstall = !hasCompletedSetup
+        let isFreshInstall = !UserDefaults.standard.bool(forKey: "hasCompletedSetup")
         
         if isFreshInstall {
             PaywallManager.shared.resetForFreshInstall()
@@ -57,6 +51,28 @@ struct NoteWallApp: App {
 
         Purchases.configure(with: configuration)
         PaywallManager.shared.connectRevenueCat()
+        
+        // CRITICAL: Attempt silent restore on every launch to prevent "amnesia"
+        // This ensures lifetime/subscription status is synced even if app was offloaded/reinstalled
+        Task {
+            let previousPremiumState = PaywallManager.shared.isPremium
+            await PaywallManager.shared.restoreRevenueCatPurchases()
+            let newPremiumState = PaywallManager.shared.isPremium
+            
+            // Log the "Amnesia Repair" event if it occurred
+            if !previousPremiumState && newPremiumState {
+                 AnalyticsService.shared.logEvent(
+                    .custom(
+                        name: "auto_restore_repair_success",
+                        parameters: [
+                            "previous_state": "free",
+                            "new_state": "premium",
+                            "repair_type": "launch_auto_restore"
+                        ]
+                    )
+                )
+            }
+        }
     }
     
     private func configureSuperwall() {
@@ -83,17 +99,6 @@ struct NoteWallApp: App {
         CrashReporter.setCustomKey("ios_version", value: UIDevice.current.systemVersion)
         
         CrashReporter.logMessage("App launched", level: .info)
-        
-        // To enable Firebase Crashlytics, uncomment below and add Firebase SDK:
-        /*
-        import FirebaseCore
-        import FirebaseCrashlytics
-        
-        FirebaseApp.configure()
-        
-        // Enable Crashlytics collection
-        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-        */
     }
     
     var body: some Scene {
@@ -141,6 +146,8 @@ struct NoteWallApp: App {
                                 let lowerPath = url.path.lowercased()
                                 if lowerHost == "wallpaper-updated" || lowerPath.contains("wallpaper-updated") {
                                     print("✅ NoteWallApp: Posting .shortcutWallpaperApplied notification")
+                                    // Set persistent flag so allowPermissions step can detect it
+                                    UserDefaults.standard.set(true, forKey: "shortcut_wallpaper_applied")
                                     NotificationCenter.default.post(name: .shortcutWallpaperApplied, object: nil)
                                 } else {
                                     print("⚠️ NoteWallApp: URL doesn't match wallpaper-updated pattern")
