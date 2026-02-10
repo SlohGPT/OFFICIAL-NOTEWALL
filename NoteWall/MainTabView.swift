@@ -13,6 +13,9 @@ struct MainTabView: View {
     @State private var showDiscountedPaywall = false
     @State private var shouldRestartOnboarding = false
     
+    // Apology screen state (shows before What's New)
+    @State private var showApology = false
+    
     // What's New popup state
     @State private var showWhatsNew = false
     
@@ -96,6 +99,14 @@ struct MainTabView: View {
                     .interactiveDismissDisabled(true)
             }
         }
+        // Apology screen for pre-Feb 9th premium users (shows BEFORE What's New)
+        .sheet(isPresented: $showApology) {
+            ApologyView(isPresented: $showApology, onDismiss: {
+                // After apology is dismissed, check if What's New should show
+                checkAndShowWhatsNew()
+            })
+                .interactiveDismissDisabled(true)
+        }
         // What's New popup for app updates (pipeline migration for pre-Feb 9th users)
         .sheet(isPresented: $showWhatsNew) {
             WhatsNewView(isPresented: $showWhatsNew, onStartMigration: {
@@ -123,8 +134,8 @@ struct MainTabView: View {
             handleQuickAction(notification)
         }
         .onAppear {
-            // Check if What's New popup should be shown (for app updates)
-            checkAndShowWhatsNew()
+            // Check if apology or What's New popup should be shown
+            checkAndShowApologyOrWhatsNew()
             
             // Check if there's a pending Quick Action on app appear
             if let triggeredAction = QuickActionsManager.shared.triggeredAction {
@@ -178,11 +189,27 @@ struct MainTabView: View {
         }
     }
     
-    // MARK: - What's New Popup
+    // MARK: - Apology & What's New Flow
     
-    private func checkAndShowWhatsNew() {
-        // Delay slightly to let the view fully appear
+    /// Entry point: check apology first, then What's New
+    private func checkAndShowApologyOrWhatsNew() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if ApologyManager.shared.checkShouldShow() {
+                #if DEBUG
+                print("💝 MainTabView: Showing apology screen first")
+                #endif
+                self.showApology = true
+                // What's New will be triggered after apology is dismissed (via onDismiss callback)
+            } else {
+                // No apology needed — go straight to What's New check
+                checkAndShowWhatsNew()
+            }
+        }
+    }
+    
+    /// Shows What's New popup if needed (called directly or after apology dismissal)
+    private func checkAndShowWhatsNew() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             if WhatsNewManager.shared.checkShouldShow() {
                 #if DEBUG
                 print("🎉 MainTabView: Showing What's New popup")

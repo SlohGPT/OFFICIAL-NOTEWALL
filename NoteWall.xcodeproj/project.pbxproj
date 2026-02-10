@@ -21,6 +21,7 @@
 		42D731FA2F200D670020F9D6 /* notewall-pip-vid.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42D731F92F200D670020F9D6 /* notewall-pip-vid.mp4 */; };
 		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
 		42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E415502EFC46BD002F695D /* WhatsNewView.swift */; };
+		APO100000000000000000001 /* ApologyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = APO200000000000000000001 /* ApologyView.swift */; };
 		486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 		777777777777777777777777 /* PromoSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888888888888888888888888 /* PromoSecurityManager.swift */; };
@@ -63,7 +64,8 @@
 		J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = J2000001000000000000001 /* fix-guide-final-version.mp4 */; };
 		L0BF0001000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = L0VG0001000000000000001 /* Localizable.strings */; };
 		SF20000000000000000001 /* SubscriptionFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF10000000000000000001 /* SubscriptionFeedbackView.swift */; };
-		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };
+		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };		0293DC6857494D0FB20C2643 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = BCB08EA4AFFE4598A8B83EAD /* PrivacyInfo.xcprivacy */; };
+
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +82,7 @@
 		42D731F92F200D670020F9D6 /* notewall-pip-vid.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "notewall-pip-vid.mp4"; sourceTree = "<group>"; };
 		42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NoteWall.storekit; sourceTree = "<group>"; };
 		42E415502EFC46BD002F695D /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
+		APO200000000000000000001 /* ApologyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApologyView.swift; sourceTree = "<group>"; };
 		434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoFixWorkflowView.swift; sourceTree = "<group>"; };
 		444444444444444444444444 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitFeedbackView.swift; sourceTree = "<group>"; };
@@ -126,7 +129,8 @@
 		L0ES0001000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L0FR0001000000000000001 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
 		SF10000000000000000001 /* SubscriptionFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeedbackView.swift; sourceTree = "<group>"; };
-		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };
+		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };		BCB08EA4AFFE4598A8B83EAD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -169,6 +173,7 @@
 				42641C1A2F3A875E00CDE59F /* SocialSharingManager.swift */,
 				42D731F92F200D670020F9D6 /* notewall-pip-vid.mp4 */,
 				42E415502EFC46BD002F695D /* WhatsNewView.swift */,
+				APO200000000000000000001 /* ApologyView.swift */,
 				D00000000000000000000002 /* DeviceAdaptive.swift */,
 				D10000000000000000000002 /* OnboardingEnhanced.swift */,
 				D20000000000000000000002 /* SuperwallPaywallView.swift */,
@@ -213,7 +218,8 @@
 				UC200000000000000000001 /* UserCountService.swift */,
 				FA300000000000000000001 /* Analytics */,
 				L0VG0001000000000000001 /* Localizable.strings */,
-			);
+			
+				BCB08EA4AFFE4598A8B83EAD /* PrivacyInfo.xcprivacy */,);
 			path = NoteWall;
 			sourceTree = "<group>";
 		};
@@ -317,7 +323,8 @@
 				H1000001000000000000001 /* how-to-fix-guide.mp4 in Resources */,
 				J1000001000000000000001 /* fix-guide-final-version.mp4 in Resources */,
 				L0BF0001000000000000001 /* Localizable.strings in Resources */,
-			);
+			
+				0293DC6857494D0FB20C2643 /* PrivacyInfo.xcprivacy in Resources */,);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
@@ -363,6 +370,7 @@
 				333333333333333333333333 /* Config.swift in Sources */,
 				777777777777777777777777 /* PromoSecurityManager.swift in Sources */,
 				42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */,
+				APO100000000000000000001 /* ApologyView.swift in Sources */,
 				E00000000000000000000001 /* SuperwallUserAttributesManager.swift in Sources */,
 				999999999999999999999999 /* PromoCodePersistenceManager.swift in Sources */,
 				I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */,

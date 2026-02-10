@@ -644,7 +644,7 @@ class WhatsNewManager: ObservableObject {
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!
-    private let debugForceShow = false
+    private let debugForceShow = true
     
     private init() {}
     
