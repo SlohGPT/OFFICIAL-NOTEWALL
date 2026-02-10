@@ -78,9 +78,14 @@ struct ApologyView: View {
             
             // Analytics
             AnalyticsService.shared.trackScreenView(screenName: "apology_screen")
-            AnalyticsService.shared.logEvent("apology_screen_shown", properties: [
-                "is_premium": PaywallManager.shared.isPremium
-            ])
+            AnalyticsService.shared.logEvent(
+                .custom(
+                    name: "apology_screen_shown",
+                    parameters: [
+                        "is_premium": PaywallManager.shared.isPremium
+                    ]
+                )
+            )
         }
     }
     
@@ -325,7 +330,12 @@ struct ApologyView: View {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
             
-            AnalyticsService.shared.logEvent("apology_screen_accepted")
+            AnalyticsService.shared.logEvent(
+                .custom(
+                    name: "apology_screen_accepted",
+                    parameters: [:]
+                )
+            )
             ApologyManager.shared.markAsShown()
             
             withAnimation(.easeInOut(duration: 0.3)) {
