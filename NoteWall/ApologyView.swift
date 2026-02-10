@@ -62,7 +62,7 @@ struct ApologyView: View {
                     promiseSection
                     
                     Spacer()
-                        .frame(height: isCompact ? 8 : 16)
+                        .frame(height: isCompact ? 16 : 24)
                     
                     // MARK: - Accept Button
                     acceptButton
@@ -221,12 +221,17 @@ struct ApologyView: View {
     // MARK: - Message
     
     private var messageSection: some View {
-        VStack(spacing: isCompact ? 12 : 14) {
-            Text("A recent bug caused issues with your wallpaper updates. We're sorry — that's on us.")
+        VStack(spacing: 6) {
+            Text("A recent bug caused issues with\nyour wallpaper updates.")
                 .font(.system(size: isCompact ? 15 : 16))
                 .foregroundColor(.white.opacity(0.85))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
+            
+            Text("We're sorry — that's on us.")
+                .font(.system(size: isCompact ? 15 : 16))
+                .foregroundColor(.white.opacity(0.75))
+                .multilineTextAlignment(.center)
         }
         .padding(.horizontal, 4)
         .opacity(messageOpacity)
@@ -235,7 +240,7 @@ struct ApologyView: View {
     // MARK: - Promise Section
     
     private var promiseSection: some View {
-        VStack(spacing: isCompact ? 14 : 18) {
+        VStack(spacing: isCompact ? 12 : 14) {
             // Divider
             HStack(spacing: 12) {
                 Rectangle()

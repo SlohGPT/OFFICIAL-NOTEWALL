@@ -61,22 +61,22 @@ struct WhatsNewView: View {
     private var updateItems: [UpdateItem] {
         [
             UpdateItem(
-                icon: "bolt.shield.fill",
+                icon: "sparkles",
                 iconColor: Color("AppAccent"),
-                title: "Faster & More Reliable",
-                description: "Wallpaper updates are now quicker and smoother."
+                title: "Complete UI Redesign",
+                description: "We've rebuilt the entire app from the ground up, focusing exclusively on your lock screen — where your notes matter most."
             ),
             UpdateItem(
-                icon: "lock.rectangle.on.rectangle.fill",
+                icon: "bolt.circle.fill",
                 iconColor: Color("AppAccent").opacity(0.8),
-                title: "Optimized Lock Screen",
-                description: "Focused on your lock screen — where your notes matter most."
+                title: "Faster & Simpler Setup",
+                description: "The new shortcut is quicker to install and more reliable. You'll need to set it up again, but it only takes a minute."
             ),
             UpdateItem(
-                icon: "arrow.triangle.2.circlepath",
+                icon: "crown.fill",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "New System Available",
-                description: "Switch now — takes a minute, no extra charges."
+                title: "No Extra Charges",
+                description: "You're already premium — this is a free upgrade. Just reinstall the shortcut to get started with the improved experience."
             )
         ]
     }

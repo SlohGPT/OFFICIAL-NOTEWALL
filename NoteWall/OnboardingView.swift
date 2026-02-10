@@ -615,8 +615,9 @@ struct OnboardingView: View {
                     // When paywall is dismissed (user subscribed, or restored)
                     
                     // CRITICAL: Only complete onboarding if user is PREMIUM or LIFETIME
+                    // EXCEPTION: Pipeline migration users are already premium, allow them through
                     // This enforces the hard paywall requirement
-                    guard PaywallManager.shared.isPremium else {
+                    guard PaywallManager.shared.isPremium || isPipelineMigration else {
                         // If they somehow dismissed it without paying (shouldn't happen with interactiveDismissDisabled),
                         // do NOT complete setup. They will remain in onboarding.
                         debugLog("⚠️ Paywall dismissed but user is NOT premium. Staying in onboarding.")
