@@ -612,9 +612,9 @@
 "Could not open the Shortcuts app. Please install the shortcut manually." = "No se pudo abrir la app Atajos. Instala el atajo manualmente.";
 
 // MARK: - Quick Actions
-"🚨🚨 Claim Special Offer" = "🚨🚨 Obtener oferta especial";
+"🚨🚨 Claim Your Special Offer" = "🚨🚨 Reclame su oferta especial";
 "Before you delete… Can we ask why?" = "Antes de eliminar… ¿podemos preguntar por qué?";
-"Having issues? We'll fix it in 30 seconds" = "¿Tienes problemas? Lo arreglamos en 30 segundos";
+"Share App" = "Compartir aplicación";
 
 // MARK: - Promo Code
 "Lifetime" = "De por vida";

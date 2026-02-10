@@ -32,7 +32,9 @@ struct SettingsView: View {
     @State private var supportViewFloatOffset: CGFloat = 0
     var selectedTab: Binding<Int>?
 
-    private let shortcutURL = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
+    private var shortcutURL: String {
+        ShortcutSetupViewModel.getShortcutURL()
+    }
     private let whatsappNumber = "421907758852"
     private let supportEmail = "iosnotewall@gmail.com"
     

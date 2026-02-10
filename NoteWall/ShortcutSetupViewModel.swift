@@ -49,6 +49,66 @@ final class ShortcutSetupViewModel: ObservableObject {
     /// Whether we've started the setup flow
     private var hasStartedSetup = false
     
+    // MARK: - Shortcut URL Configuration
+    
+    /// Old shortcut URL for users who installed before February 9th, 2026
+    /// This version updates both home screen and lock screen
+    private static let oldShortcutURL = "https://www.icloud.com/shortcuts/4735a1723f8a4cc28c12d07092c66a35"
+    
+    /// New shortcut URL for users who installed on or after February 9th, 2026
+    /// This version only updates the lock screen
+    private static let newShortcutURL = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
+    
+    /// Public accessor for the new shortcut URL (lock screen only).
+    /// Used during pipeline migration to force the new shortcut regardless of install date.
+    static let newShortcutURLString = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
+    
+    /// Determines which shortcut URL to use based on install date and migration status
+    /// - Returns: The appropriate shortcut URL for the user
+    private static func determineShortcutURL() -> String {
+        // If the user has completed the pipeline migration, always use the new shortcut
+        if UserDefaults.standard.bool(forKey: "hasCompletedPipelineMigration") {
+            print("✅ ShortcutSetupViewModel: User has completed pipeline migration, using new shortcut (lock screen only)")
+            return newShortcutURL
+        }
+        
+        // Get the install date from UserDefaults (same as AnalyticsService)
+        let installDate = UserDefaults.standard.object(forKey: "analytics_install_date") as? Date ?? Date()
+        
+        // Create February 9th, 2026 date
+        var dateComponents = DateComponents()
+        dateComponents.year = 2026
+        dateComponents.month = 2
+        dateComponents.day = 9
+        dateComponents.hour = 0
+        dateComponents.minute = 0
+        dateComponents.second = 0
+        
+        guard let cutoffDate = Calendar.current.date(from: dateComponents) else {
+            // If we can't create the cutoff date, use old shortcut as fallback
+            print("⚠️ ShortcutSetupViewModel: Could not create cutoff date, using old shortcut")
+            return oldShortcutURL
+        }
+        
+        // Compare install date with cutoff date
+        if installDate < cutoffDate {
+            // User installed before February 9th, 2026 - use old shortcut
+            print("✅ ShortcutSetupViewModel: Install date \(installDate) is before cutoff, using old shortcut (both screens)")
+            return oldShortcutURL
+        } else {
+            // User installed on or after February 9th, 2026 - use new shortcut
+            print("✅ ShortcutSetupViewModel: Install date \(installDate) is on/after cutoff, using new shortcut (lock screen only)")
+            return newShortcutURL
+        }
+    }
+    
+    /// Public accessor for the appropriate shortcut URL based on user's install date.
+    /// Use this method throughout the app to ensure consistent shortcut URL usage.
+    /// - Returns: The appropriate shortcut URL string for the current user
+    static func getShortcutURL() -> String {
+        return determineShortcutURL()
+    }
+    
     // MARK: - Setup State
     
     /// States that represent the progress through the shortcut setup flow
@@ -79,13 +139,15 @@ final class ShortcutSetupViewModel: ObservableObject {
     
     /// Creates a new ViewModel instance.
     /// - Parameters:
-    ///   - shortcutURL: The iCloud Shortcut URL to open for installation
+    ///   - shortcutURL: The iCloud Shortcut URL to open for installation. If nil, automatically determines the correct URL based on install date.
     init(shortcutURL: String? = nil) {
         if let urlString = shortcutURL {
+            // Use provided URL
             self.shortcutURL = URL(string: urlString)
         } else {
-            // Default shortcut URL
-            self.shortcutURL = URL(string: "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3")
+            // Automatically determine which shortcut URL to use based on install date
+            let determinedURL = Self.determineShortcutURL()
+            self.shortcutURL = URL(string: determinedURL)
         }
         
         // Check if setup is already complete

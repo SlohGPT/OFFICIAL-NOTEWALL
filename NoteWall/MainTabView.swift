@@ -15,6 +15,9 @@ struct MainTabView: View {
     
     // What's New popup state
     @State private var showWhatsNew = false
+    
+    // Pipeline migration state
+    @State private var showPipelineMigrationOnboarding = false
 
     var body: some View {
         ZStack {
@@ -93,10 +96,24 @@ struct MainTabView: View {
                     .interactiveDismissDisabled(true)
             }
         }
-        // What's New popup for app updates
+        // What's New popup for app updates (pipeline migration for pre-Feb 9th users)
         .sheet(isPresented: $showWhatsNew) {
-            WhatsNewView(isPresented: $showWhatsNew)
+            WhatsNewView(isPresented: $showWhatsNew, onStartMigration: {
+                // User chose to switch to the new pipeline
+                // Trigger the migration onboarding after a small delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.showPipelineMigrationOnboarding = true
+                }
+            })
                 .interactiveDismissDisabled(true)
+        }
+        // Pipeline migration onboarding (re-runs OnboardingView with paywall skipped)
+        .fullScreenCover(isPresented: $showPipelineMigrationOnboarding) {
+            OnboardingView(
+                isPresented: $showPipelineMigrationOnboarding,
+                onboardingVersion: 3,
+                isPipelineMigration: true
+            )
         }
         // Quick Action handler
         .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
@@ -131,11 +148,15 @@ struct MainTabView: View {
                         print("✅ MainTabView: Opening feedback modal (from appear)")
                         #endif
                         self.showExitFeedback = true
-                    case .autoFix:
+                    case .shareApp:
                         #if DEBUG
-                        print("✅ MainTabView: Opening troubleshooting workflow (from appear)")
+                        print("✅ MainTabView: Opening share sheet (from appear)")
                         #endif
-                        self.showTroubleshooting = true
+                        // Get the root view controller and present share sheet
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let rootViewController = windowScene.windows.first?.rootViewController {
+                            SocialSharingManager.shared.shareAppReferral(from: rootViewController)
+                        }
                     }
                     QuickActionsManager.shared.clearTriggeredAction()
                 }
@@ -215,11 +236,15 @@ struct MainTabView: View {
                 #endif
                 self.showExitFeedback = true
                 
-            case .autoFix:
+            case .shareApp:
                 #if DEBUG
-                print("✅ MainTabView: Setting showTroubleshooting = true")
+                print("✅ MainTabView: Opening share sheet")
                 #endif
-                self.showTroubleshooting = true
+                // Get the root view controller and present share sheet
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let rootViewController = windowScene.windows.first?.rootViewController {
+                    SocialSharingManager.shared.shareAppReferral(from: rootViewController)
+                }
             }
             
             // Clear the triggered action

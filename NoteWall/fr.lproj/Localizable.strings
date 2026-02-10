@@ -612,9 +612,9 @@
 "Could not open the Shortcuts app. Please install the shortcut manually." = "Impossible d'ouvrir l'app Raccourcis. Installe le raccourci manuellement.";
 
 // MARK: - Quick Actions
-"🚨🚨 Claim Special Offer" = "🚨🚨 Réclamer l'offre spéciale";
+"🚨🚨 Claim Your Special Offer" = "🚨🚨 Réclamez votre offre spéciale";
 "Before you delete… Can we ask why?" = "Avant de supprimer… Peut-on te demander pourquoi ?";
-"Having issues? We'll fix it in 30 seconds" = "Des problèmes ? On les règle en 30 secondes";
+"Share App" = "Partager l'application";
 
 // MARK: - Promo Code
 "Lifetime" = "À vie";

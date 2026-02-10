@@ -79,8 +79,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             
             // 2. Create content
             let content = UNMutableNotificationContent()
-            content.title = NSLocalizedString("Trial Ending Soon", comment: "")
-            content.body = NSLocalizedString("Your 3-day free trial will end soon. We hope you're enjoying NoteWall!", comment: "")
+            content.title = "Trial Ending Soon"
+            content.body = "Your 3-day free trial will end soon. We hope you're enjoying NoteWall!"
             content.sound = .default
             
             // 3. Create trigger (24 hours from now)
@@ -137,13 +137,18 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 withIdentifiers: ["abandoned_onboarding_1hr", "abandoned_onboarding_24hr"]
             )
             
-            // --- 1 Hour Reminder ---
+            // Get user's name for personalization
             let userName = UserDefaults.standard.string(forKey: "onboarding_userName") ?? ""
-            let hasName = !userName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let firstName = userName.trimmingCharacters(in: .whitespacesAndNewlines).components(separatedBy: " ").first ?? ""
             
+            // --- 1 Hour Reminder ---
             let content1hr = UNMutableNotificationContent()
-            content1hr.title = hasName ? String(format: NSLocalizedString("🚨 %@, 3 things forgotten today", comment: ""), userName) : NSLocalizedString("🚨 3 things forgotten today", comment: "")
-            content1hr.body = NSLocalizedString("Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes.", comment: "")
+            if firstName.isEmpty {
+                content1hr.title = "🚨 You forgot again..."
+            } else {
+                content1hr.title = "🚨 \(firstName), you forgot again..."
+            }
+            content1hr.body = "You see? You even forgot to setup the app that helps you stop forgetting."
             content1hr.sound = .default
             content1hr.badge = 1
             content1hr.userInfo = ["type": "abandoned_onboarding", "reminder": "1hr"]
@@ -161,8 +166,12 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             
             // --- 24 Hour Reminder ---
             let content24hr = UNMutableNotificationContent()
-            content24hr.title = hasName ? String(format: NSLocalizedString("🚨 %@, what did you forget?", comment: ""), userName) : NSLocalizedString("🚨 What did you forget?", comment: "")
-            content24hr.body = NSLocalizedString("Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this.", comment: "")
+            if firstName.isEmpty {
+                content24hr.title = "🚨 Really?"
+            } else {
+                content24hr.title = "🚨 \(firstName), really?"
+            }
+            content24hr.body = "Yesterday you downloaded an app to stop forgetting. Guess what? You FORGOT again.."
             content24hr.sound = .default
             content24hr.badge = 1
             content24hr.userInfo = ["type": "abandoned_onboarding", "reminder": "24hr"]
@@ -224,8 +233,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             guard granted else { return }
             
             let content = UNMutableNotificationContent()
-            content.title = NSLocalizedString("Test Notification", comment: "")
-            content.body = NSLocalizedString("This is how the trial reminder will look.", comment: "")
+            content.title = "Test Notification"
+            content.body = "This is how the trial reminder will look."
             content.sound = .default
             
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5, repeats: false)

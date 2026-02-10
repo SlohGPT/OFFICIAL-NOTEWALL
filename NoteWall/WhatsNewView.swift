@@ -1,15 +1,18 @@
 import SwiftUI
 import StoreKit
 
-/// Pop-up view shown to existing users after an app update.
-/// Highlights what's new and encourages feedback/ratings.
-/// Design matches the onboarding flow brand identity.
+/// Pop-up view shown to existing users (installed before Feb 9th, 2026) after an app update.
+/// Offers the option to migrate from the old shortcut (home + lock screen) to the new one (lock screen only).
+/// Also highlights what's new and encourages feedback/ratings.
+/// Design matches the onboarding flow brand identity with rich animations.
 struct WhatsNewView: View {
     
     // MARK: - Environment & State
     
     @Environment(\.dismiss) private var dismiss
     @Binding var isPresented: Bool
+    /// Callback when user chooses to migrate to the new pipeline
+    var onStartMigration: (() -> Void)? = nil
     @State private var headerOpacity: Double = 0
     @State private var cardsOpacity: Double = 0
     @State private var feedbackOpacity: Double = 0
@@ -17,6 +20,16 @@ struct WhatsNewView: View {
     @State private var confettiTrigger = 0
     @State private var showFeatureRequestAlert = false
     @State private var featureRequestText = ""
+    
+    // Enhanced animation states
+    @State private var iconPulse: Bool = false
+    @State private var iconRotation: Double = 0
+    @State private var shimmerOffset: CGFloat = -200
+    @State private var cardSlideOffsets: [CGFloat] = [50, 50, 50]
+    @State private var glowOpacity: Double = 0.3
+    @State private var buttonShimmerX: CGFloat = -200
+    @State private var badgeScale: CGFloat = 0.5
+    @State private var shieldPulse: Bool = false
     
     // Adaptive layout
     private var isCompact: Bool {
@@ -26,7 +39,7 @@ struct WhatsNewView: View {
     // MARK: - Current Version Info
     
     private var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.3.1"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
     }
     
     private var buildNumber: String {
@@ -48,22 +61,22 @@ struct WhatsNewView: View {
     private var updateItems: [UpdateItem] {
         [
             UpdateItem(
-                icon: "textformat.size",
+                icon: "bolt.shield.fill",
                 iconColor: Color("AppAccent"),
-                title: "Custom Text Styling",
-                description: "You can now change the font, color, size, and alignment of your notes directly in Settings!"
+                title: "Faster & More Reliable",
+                description: "We've streamlined the wallpaper update process. It's now quicker and more efficient than ever!"
             ),
             UpdateItem(
-                icon: "paintbrush.fill",
+                icon: "lock.rectangle.on.rectangle.fill",
                 iconColor: Color("AppAccent").opacity(0.8),
-                title: "Highlight Modes",
-                description: "Add emphasis with outline, white, or black highlight backgrounds to make your notes pop."
+                title: "Optimized Lock Screen Updates",
+                description: "The new pipeline focuses on your lock screen — where your notes matter most. No more unnecessary home screen changes."
             ),
             UpdateItem(
-                icon: "heart.fill",
+                icon: "arrow.triangle.2.circlepath",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "Thank You!",
-                description: "Thanks for supporting independent development. More features coming soon!"
+                title: "Switch to the New System",
+                description: "You can switch to the new optimized pipeline right now. It takes just a minute and your subscription stays exactly the same — no extra charges!"
             )
         ]
     }
@@ -106,8 +119,8 @@ struct WhatsNewView: View {
                         updateItemsView
                             .opacity(cardsOpacity)
                         
-                        // Feedback request
-                        feedbackRequestView
+                        // Subscription reassurance banner
+                        subscriptionReassuranceView
                             .opacity(feedbackOpacity)
                         
                         Spacer(minLength: isCompact ? 60 : 80)
@@ -127,7 +140,7 @@ struct WhatsNewView: View {
         .onAppear {
             // Track screen view
             AnalyticsService.shared.trackScreenView(
-                screenName: "whats_new_popup",
+                screenName: "whats_new_migration_popup",
                 screenClass: "WhatsNewView"
             )
             
@@ -174,13 +187,22 @@ struct WhatsNewView: View {
                 endPoint: .bottom
             )
             
-            // Subtle radial glow
+            // Animated radial glow that pulses
             RadialGradient(
-                colors: [Color("AppAccent").opacity(0.06), Color.clear],
+                colors: [Color("AppAccent").opacity(glowOpacity * 0.15), Color.clear],
                 center: .center,
                 startRadius: 0,
-                endRadius: 350
+                endRadius: 400
             )
+            .onAppear {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    glowOpacity = 0.8
+                }
+            }
+            
+            // Floating ambient particles (brand-colored)
+            WhatsNewParticlesView()
+                .opacity(0.5)
         }
     }
     
@@ -188,11 +210,12 @@ struct WhatsNewView: View {
     
     private var headerView: some View {
         VStack(spacing: isCompact ? 16 : 20) {
-            // Badge (matching onboarding style)
+            // Badge (matching onboarding style) with spring-in animation
             HStack(spacing: 6) {
                 Image(systemName: "sparkles")
                     .font(.system(size: isCompact ? 12 : 14))
                     .foregroundColor(Color("AppAccent"))
+                    .symbolEffect(.pulse, options: .repeating, value: headerOpacity)
                 
                 Text("What's New")
                     .font(.system(size: isCompact ? 12 : 13, weight: .medium))
@@ -208,14 +231,27 @@ struct WhatsNewView: View {
                             .strokeBorder(Color("AppAccent").opacity(0.2), lineWidth: 1)
                     )
             )
+            .scaleEffect(badgeScale)
+            .onAppear {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.15)) {
+                    badgeScale = 1.0
+                }
+            }
             
-            // Main icon
+            // Main icon with pulsing glow ring and rotation
             ZStack {
+                // Outer pulsing glow ring
+                Circle()
+                    .fill(Color("AppAccent").opacity(0.08))
+                    .frame(width: isCompact ? 100 : 120, height: isCompact ? 100 : 120)
+                    .scaleEffect(iconPulse ? 1.15 : 0.95)
+                    .opacity(iconPulse ? 0.0 : 0.6)
+                
                 Circle()
                     .fill(Color("AppAccent").opacity(0.12))
                     .frame(width: isCompact ? 70 : 85, height: isCompact ? 70 : 85)
                 
-                Image(systemName: "party.popper.fill")
+                Image(systemName: "arrow.triangle.2.circlepath")
                     .font(.system(size: isCompact ? 32 : 40, weight: .medium))
                     .foregroundStyle(
                         LinearGradient(
@@ -224,11 +260,20 @@ struct WhatsNewView: View {
                             endPoint: .bottomTrailing
                         )
                     )
+                    .rotationEffect(.degrees(iconRotation))
+            }
+            .onAppear {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    iconPulse = true
+                }
+                withAnimation(.linear(duration: 8.0).repeatForever(autoreverses: false)) {
+                    iconRotation = 360
+                }
             }
             
             // Title and version
             VStack(spacing: isCompact ? 8 : 10) {
-                Text("We Just Updated!")
+                Text("We Made Things Better!")
                     .font(.system(size: isCompact ? 24 : 28, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
@@ -244,24 +289,41 @@ struct WhatsNewView: View {
     
     private var updateItemsView: some View {
         VStack(spacing: isCompact ? 12 : 14) {
-            ForEach(updateItems) { item in
-                updateItemCard(item)
+            ForEach(Array(updateItems.enumerated()), id: \.element.id) { index, item in
+                updateItemCard(item, index: index)
+                    .offset(x: cardSlideOffsets.indices.contains(index) ? cardSlideOffsets[index] : 0)
             }
         }
         .padding(.horizontal, isCompact ? 20 : 24)
+        .onAppear {
+            // Staggered slide-in from right for each card
+            for i in 0..<cardSlideOffsets.count {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.75).delay(0.35 + Double(i) * 0.12)) {
+                    cardSlideOffsets[i] = 0
+                }
+            }
+        }
     }
     
-    private func updateItemCard(_ item: UpdateItem) -> some View {
+    private func updateItemCard(_ item: UpdateItem, index: Int) -> some View {
         HStack(spacing: isCompact ? 12 : 14) {
-            // Icon
+            // Icon with subtle accent glow
             ZStack {
                 Circle()
-                    .fill(Color("AppAccent").opacity(0.15))
-                    .frame(width: isCompact ? 40 : 46, height: isCompact ? 40 : 46)
+                    .fill(
+                        RadialGradient(
+                            colors: [item.iconColor.opacity(0.25), item.iconColor.opacity(0.05)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: isCompact ? 22 : 26
+                        )
+                    )
+                    .frame(width: isCompact ? 44 : 50, height: isCompact ? 44 : 50)
                 
                 Image(systemName: item.icon)
                     .font(.system(size: isCompact ? 18 : 20, weight: .medium))
                     .foregroundColor(item.iconColor)
+                    .shadow(color: item.iconColor.opacity(0.4), radius: 6, x: 0, y: 2)
             }
             
             // Text content
@@ -272,7 +334,7 @@ struct WhatsNewView: View {
                 
                 Text(item.description)
                     .font(.system(size: isCompact ? 13 : 14))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(.white.opacity(0.55))
                     .fixedSize(horizontal: false, vertical: true)
             }
             
@@ -282,32 +344,51 @@ struct WhatsNewView: View {
         .background(
             RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
                 .fill(Color.white.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: isCompact ? 14 : 16, style: .continuous)
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [Color("AppAccent").opacity(0.15), Color.clear, Color("AppAccent").opacity(0.08)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
         )
     }
     
-    // MARK: - Feedback Request
+    // MARK: - Subscription Reassurance
     
-    private var feedbackRequestView: some View {
+    private var subscriptionReassuranceView: some View {
         VStack(spacing: isCompact ? 16 : 20) {
-            // Divider
+            // Animated gradient divider
             Rectangle()
-                .fill(Color.white.opacity(0.1))
+                .fill(
+                    LinearGradient(
+                        colors: [Color.clear, Color("AppAccent").opacity(0.3), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .frame(height: 1)
                 .padding(.horizontal, isCompact ? 40 : 60)
             
-            // Message card
+            // Reassurance card with pulsing shield
             VStack(spacing: isCompact ? 12 : 14) {
                 HStack(spacing: 8) {
-                    Image(systemName: "heart.fill")
+                    Image(systemName: "checkmark.shield.fill")
                         .font(.system(size: isCompact ? 16 : 18))
-                        .foregroundColor(Color("AppAccent"))
+                        .foregroundColor(.green)
+                        .shadow(color: .green.opacity(0.4), radius: shieldPulse ? 8 : 3, x: 0, y: 0)
+                        .scaleEffect(shieldPulse ? 1.1 : 1.0)
                     
-                    Text("Love NoteWall?")
+                    Text("Your Subscription is Safe")
                         .font(.system(size: isCompact ? 17 : 19, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 
-                Text("It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!")
+                Text("Switching to the new system doesn't affect your subscription at all. You won't be charged again — everything stays the same, just faster and better.")
                     .font(.system(size: isCompact ? 14 : 15))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -316,12 +397,24 @@ struct WhatsNewView: View {
             .padding(isCompact ? 16 : 20)
             .background(
                 RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
-                    .fill(Color.white.opacity(0.04))
+                    .fill(Color.green.opacity(0.06))
                     .overlay(
                         RoundedRectangle(cornerRadius: isCompact ? 16 : 18, style: .continuous)
-                            .strokeBorder(Color("AppAccent").opacity(0.15), lineWidth: 1)
+                            .strokeBorder(
+                                LinearGradient(
+                                    colors: [Color.green.opacity(0.25), Color.green.opacity(0.1), Color.green.opacity(0.25)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
                     )
             )
+            .onAppear {
+                withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
+                    shieldPulse = true
+                }
+            }
         }
         .padding(.horizontal, isCompact ? 20 : 24)
     }
@@ -330,23 +423,43 @@ struct WhatsNewView: View {
     
     private var actionButtonsView: some View {
         VStack(spacing: isCompact ? 12 : 14) {
-            // Primary: Rate on App Store
-            Button(action: { requestReview() }) {
-                HStack(spacing: isCompact ? 8 : 10) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
-                    Text("Rate on App Store")
-                        .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+            // Primary: Switch to New Pipeline with shimmer effect
+            Button(action: { startMigration() }) {
+                ZStack {
+                    HStack(spacing: isCompact ? 8 : 10) {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
+                        Text("Switch to New System")
+                            .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
+                    }
+                    
+                    // Shimmer sweep overlay
+                    LinearGradient(
+                        colors: [Color.clear, Color.white.opacity(0.15), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: 80)
+                    .offset(x: buttonShimmerX)
+                    .mask(
+                        RoundedRectangle(cornerRadius: isCompact ? 14 : 20, style: .continuous)
+                    )
                 }
                 .frame(height: isCompact ? 50 : 56)
                 .frame(maxWidth: .infinity)
             }
             .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
+            .onAppear {
+                // Repeating shimmer sweep across the button
+                withAnimation(.linear(duration: 2.5).repeatForever(autoreverses: false).delay(1.0)) {
+                    buttonShimmerX = 200
+                }
+            }
             
             HStack(spacing: 12) {
-                // Secondary: Close
-                Button(action: { closePopup() }) {
-                    Text("Close")
+                // Secondary: Keep Current
+                Button(action: { keepCurrentPipeline() }) {
+                    Text("Keep Current Setup")
                         .font(.system(size: isCompact ? 14 : 16, weight: .medium))
                         .foregroundColor(.white.opacity(0.5))
                         .frame(maxWidth: .infinity)
@@ -355,12 +468,12 @@ struct WhatsNewView: View {
                         .cornerRadius(12)
                 }
                 
-                // Secondary: Contact Us
-                Button(action: { contactSupport() }) {
+                // Secondary: Rate App
+                Button(action: { requestReview() }) {
                     HStack(spacing: 6) {
-                        Image(systemName: "envelope.fill")
+                        Image(systemName: "star.fill")
                             .font(.system(size: 14))
-                        Text("Write Us")
+                        Text("Rate App")
                             .font(.system(size: isCompact ? 14 : 16, weight: .medium))
                     }
                     .foregroundColor(Color("AppAccent"))
@@ -387,26 +500,60 @@ struct WhatsNewView: View {
     
     // MARK: - Actions
     
-    private func contactSupport() {
+    private func startMigration() {
+        // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        // Direct email link
-        let email = "iosnotewall@gmail.com"
-        let subject = "NoteWall Feedback (v\(currentVersion))"
-        let body = "\n\n\n---\nApp Version: \(currentVersion)\nBuild: \(buildNumber)"
+        // Track migration start
+        AnalyticsService.shared.logEvent(
+            .custom(
+                name: "pipeline_migration_started",
+                parameters: [
+                    "source": "whats_new_popup",
+                    "version": currentVersion
+                ]
+            )
+        )
         
-        let urlString = "mailto:\(email)?subject=\(subject)&body=\(body)"
-            .addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        // Mark What's New as shown
+        WhatsNewManager.shared.markAsShown()
         
-        if let url = URL(string: urlString) {
-            if UIApplication.shared.canOpenURL(url) {
-                UIApplication.shared.open(url)
-            } else {
-                // Feature request fallback alert if mail app not configured
-                showFeatureRequestAlert = true
-            }
+        // Dismiss and trigger migration onboarding
+        withAnimation(.easeInOut(duration: 0.3)) {
+            headerOpacity = 0
+            cardsOpacity = 0
+            feedbackOpacity = 0
+            buttonOpacity = 0
         }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            isPresented = false
+            // Trigger the migration flow
+            onStartMigration?()
+        }
+    }
+    
+    private func keepCurrentPipeline() {
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+        
+        // Track user's choice to keep old pipeline
+        AnalyticsService.shared.logEvent(
+            .custom(
+                name: "pipeline_migration_declined",
+                parameters: [
+                    "source": "whats_new_popup",
+                    "version": currentVersion
+                ]
+            )
+        )
+        
+        // Mark as shown so they won't see this again
+        WhatsNewManager.shared.markAsShown()
+        
+        closePopup()
     }
     
     private func requestReview() {
@@ -417,12 +564,10 @@ struct WhatsNewView: View {
         // Open App Store review page directly
         let appID = "6755601996"
         
-        // Try to open the App Store app with write-review action
         if let appStoreURL = URL(string: "itms-apps://itunes.apple.com/app/id\(appID)?action=write-review"),
            UIApplication.shared.canOpenURL(appStoreURL) {
             UIApplication.shared.open(appStoreURL, options: [:], completionHandler: nil)
         } 
-        // Fallback to web URL if App Store app is not available
         else if let webURL = URL(string: "https://apps.apple.com/app/id\(appID)?action=write-review") {
             UIApplication.shared.open(webURL, options: [:], completionHandler: nil)
         }
@@ -451,8 +596,6 @@ struct WhatsNewView: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            // Show feature request popup after What's New is dismissed - optional
-            // showFeatureRequestAlert = true
             finalDismiss()
         }
     }
@@ -463,7 +606,6 @@ struct WhatsNewView: View {
             return
         }
         
-        // Send feature request via FeedbackService
         FeedbackService.shared.sendFeedback(
             reason: "Feature Request",
             details: featureRequestText,
@@ -497,8 +639,8 @@ class WhatsNewManager: ObservableObject {
     
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
-    // Using feature-specific key so new What's New shows for returning users
-    private let whatsNewHasBeenShownKey = "WhatsNewShown_TextStyling_Feb2026"
+    /// Key for the pipeline migration What's New popup (v1.5.0)
+    private let whatsNewHasBeenShownKey = "WhatsNewShown_PipelineMigration_v1.5.0"
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!
@@ -522,41 +664,41 @@ class WhatsNewManager: ObservableObject {
     }
     
     /// Check if What's New popup has EVER been shown to this user
-    /// This is the - once true, popup NEVER shows again
+    /// Once true, popup NEVER shows again
     var hasBeenShownOnce: Bool {
         UserDefaults.standard.bool(forKey: whatsNewHasBeenShownKey)
     }
     
-    /// Start date for showing the What's New popup
-    /// February 3, 2026 at 00:00:00
-    private var startDate: Date {
+    /// Whether the user has already completed the pipeline migration
+    var hasCompletedPipelineMigration: Bool {
+        UserDefaults.standard.bool(forKey: "hasCompletedPipelineMigration")
+    }
+    
+    /// Cutoff date: February 9th, 2026 at 00:00:00
+    /// Users who installed before this date are on the old pipeline (home + lock screen)
+    private var pipelineCutoffDate: Date {
         var components = DateComponents()
         components.year = 2026
         components.month = 2
-        components.day = 3
+        components.day = 9
         components.hour = 0
         components.minute = 0
         components.second = 0
         return Calendar.current.date(from: components) ?? Date()
     }
     
-    /// End date for showing the What's New popup
-    /// February 10, 2026 at 23:59:59
-    private var endDate: Date {
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 2
-        components.day = 10
-        components.hour = 23
-        components.minute = 59
-        components.second = 59
-        return Calendar.current.date(from: components) ?? Date()
+    /// Whether the user installed before the pipeline cutoff (Feb 9, 2026)
+    /// These are the users on the old pipeline who should see the migration prompt
+    var isPreCutoffUser: Bool {
+        let installDate = UserDefaults.standard.object(forKey: "analytics_install_date") as? Date ?? Date()
+        return installDate < pipelineCutoffDate
     }
     
     /// Determines if What's New should be shown
-    /// - Only shows ONCE EVER to paid users who update
-    /// - Only shows between Jan 23-27, 2026
-    /// - Only shows to users with active premium subscription
+    /// - Only shows to users who installed BEFORE February 9th, 2026 (old pipeline users)
+    /// - Only shows ONCE EVER
+    /// - Only shows to users who have completed setup (existing users)
+    /// - Only shows to users who haven't already migrated
     /// - Once shown and dismissed, NEVER shows again
     func checkShouldShow() -> Bool {
         #if DEBUG
@@ -575,12 +717,10 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // Check if we're within the date window (Jan 23-27, 2026)
-        let now = Date()
-        if now < startDate || now > endDate {
+        // If user has already migrated, don't show
+        if hasCompletedPipelineMigration {
             #if DEBUG
-            print("🎉 WhatsNewManager: Outside date window (Jan 23-27, 2026) - not showing")
-            print("   Current: \(now), Start: \(startDate), End: \(endDate)")
+            print("🎉 WhatsNewManager: User already completed pipeline migration - not showing")
             #endif
             return false
         }
@@ -593,18 +733,19 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // User must have active premium subscription
-        guard PaywallManager.shared.isPremium else {
+        // CRITICAL: Only show to users who installed BEFORE February 9th, 2026
+        // These are the users on the old pipeline (home + lock screen)
+        guard isPreCutoffUser else {
             #if DEBUG
-            print("🎉 WhatsNewManager: User is not premium - skipping What's New")
+            print("🎉 WhatsNewManager: User installed on/after Feb 9, 2026 - already on new pipeline, skipping")
             #endif
             return false
         }
         
-        // This is a paid user who hasn't seen the What's New yet - show it!
+        // This is an old-pipeline user who hasn't seen the migration prompt yet - show it!
         #if DEBUG
-        print("🎉 WhatsNewManager: Paid user, first time seeing What's New - showing popup")
-        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup), Premium: true")
+        print("🎉 WhatsNewManager: Pre-cutoff user, showing pipeline migration prompt")
+        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup), Pre-cutoff: true")
         #endif
         return true
     }
@@ -626,6 +767,7 @@ class WhatsNewManager: ObservableObject {
         #if DEBUG
         UserDefaults.standard.removeObject(forKey: lastShownVersionKey)
         UserDefaults.standard.removeObject(forKey: whatsNewHasBeenShownKey)
+        UserDefaults.standard.removeObject(forKey: "hasCompletedPipelineMigration")
         print("🎉 WhatsNewManager: Reset for testing - popup will show on next launch")
         #endif
     }
@@ -635,4 +777,66 @@ class WhatsNewManager: ObservableObject {
 
 #Preview {
     WhatsNewView(isPresented: .constant(true))
+}
+
+// MARK: - Floating Ambient Particles for WhatsNew
+
+private struct WhatsNewParticleData: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    var size: CGFloat
+    var opacity: Double
+    var speed: Double
+    var drift: CGFloat
+}
+
+struct WhatsNewParticlesView: View {
+    @State private var particles: [WhatsNewParticleData] = []
+    @State private var animationPhase: Double = 0
+    
+    private let particleCount = 18
+    
+    var body: some View {
+        GeometryReader { geometry in
+            TimelineView(.animation(minimumInterval: 1.0/30.0)) { timeline in
+                Canvas { context, size in
+                    for particle in particles {
+                        let adjustedY = particle.y + CGFloat(animationPhase * particle.speed * 30)
+                        let loopedY = adjustedY.truncatingRemainder(dividingBy: size.height + 40) - 20
+                        let phaseFloat = CGFloat(animationPhase * 0.5)
+                        let sineVal: CGFloat = CoreGraphics.sin(phaseFloat + particle.drift)
+                        let adjustedX = particle.x + sineVal * 20
+                        
+                        let rect = CGRect(
+                            x: adjustedX - particle.size / 2,
+                            y: loopedY,
+                            width: particle.size,
+                            height: particle.size
+                        )
+                        
+                        let opacityPhase: CGFloat = CoreGraphics.sin(CGFloat(animationPhase) + particle.drift)
+                        context.opacity = particle.opacity * (0.6 + 0.4 * Double(opacityPhase))
+                        context.fill(Circle().path(in: rect), with: .color(Color("AppAccent")))
+                    }
+                }
+                .onChange(of: timeline.date) { _ in
+                    animationPhase += 0.016
+                }
+            }
+            .onAppear {
+                particles = (0..<particleCount).map { _ in
+                    WhatsNewParticleData(
+                        x: CGFloat.random(in: 0...geometry.size.width),
+                        y: CGFloat.random(in: 0...geometry.size.height),
+                        size: CGFloat.random(in: 2...5),
+                        opacity: Double.random(in: 0.1...0.35),
+                        speed: Double.random(in: 0.2...0.8),
+                        drift: CGFloat.random(in: 0...(.pi * 2))
+                    )
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
 }

@@ -14,16 +14,16 @@ final class QuickActionsManager: NSObject, ObservableObject {
     enum QuickActionType: String {
         case claimDiscount = "com.notewall.action.claimDiscount"
         case giveFeedback = "com.notewall.action.giveFeedback"
-        case autoFix = "com.notewall.action.autoFix"
+        case shareApp = "com.notewall.action.shareApp"
         
         var title: String {
             switch self {
             case .claimDiscount:
-                return NSLocalizedString("🚨🚨 Claim Special Offer", comment: "")
+                return NSLocalizedString("🚨🚨 Claim Your Special Offer", comment: "")
             case .giveFeedback:
                 return NSLocalizedString("Before you delete… Can we ask why?", comment: "")
-            case .autoFix:
-                return NSLocalizedString("Having issues? We'll fix it in 30 seconds", comment: "")
+            case .shareApp:
+                return NSLocalizedString("Share App", comment: "")
             }
         }
         
@@ -38,8 +38,8 @@ final class QuickActionsManager: NSObject, ObservableObject {
                 return UIApplicationShortcutIcon(systemImageName: "tag.fill")
             case .giveFeedback:
                 return UIApplicationShortcutIcon(systemImageName: "message.fill")
-            case .autoFix:
-                return UIApplicationShortcutIcon(systemImageName: "wrench.and.screwdriver.fill")
+            case .shareApp:
+                return UIApplicationShortcutIcon(type: .share)
             }
         }
     }
@@ -69,17 +69,17 @@ final class QuickActionsManager: NSObject, ObservableObject {
         var shortcutItems: [UIApplicationShortcutItem] = []
         
         if isPremium {
-            // Premium users: Show troubleshooting and feedback only (NO discount)
+            // Premium users: Show share app and feedback only (NO discount)
             shortcutItems = [
-                createShortcutItem(type: .autoFix),
+                createShortcutItem(type: .shareApp),
                 createShortcutItem(type: .giveFeedback)
             ]
         } else {
-            // Free users: Show discount offer, feedback, and troubleshooting
+            // Free users: Show discount offer, feedback, and share app
             shortcutItems = [
                 createShortcutItem(type: .claimDiscount),
                 createShortcutItem(type: .giveFeedback),
-                createShortcutItem(type: .autoFix)
+                createShortcutItem(type: .shareApp)
             ]
         }
         

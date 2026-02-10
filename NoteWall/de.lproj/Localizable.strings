@@ -612,9 +612,9 @@
 "Could not open the Shortcuts app. Please install the shortcut manually." = "Die Kurzbefehle-App konnte nicht geöffnet werden. Bitte installiere den Kurzbefehl manuell.";
 
 // MARK: - Quick Actions
-"🚨🚨 Claim Special Offer" = "🚨🚨 Sonderangebot sichern";
+"🚨🚨 Claim Your Special Offer" = "🚨🚨 Sichern Sie Ihr Sonderangebot";
 "Before you delete… Can we ask why?" = "Bevor du löschst… Dürfen wir fragen, warum?";
-"Having issues? We'll fix it in 30 seconds" = "Probleme? Wir beheben es in 30 Sekunden";
+"Share App" = "App teilen";
 
 // MARK: - Promo Code
 "Lifetime" = "Lebenslang";

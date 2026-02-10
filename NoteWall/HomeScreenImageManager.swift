@@ -23,8 +23,10 @@ enum HomeScreenImageManager {
     private static let editorFolderName = "TextEditor"
     private static let legacyShortcutsFolderName = "Shortcuts"
     private static let lockScreenFolderName = "LockScreen"
+    private static let homeScreenFolderName = "HomeScreen"
     private static let editorBackgroundFileName = "lockscreen_background.jpg"
     private static let lockScreenFileName = "lockscreen.jpg"
+    private static let homeScreenFileName = "homescreen.jpg"
     private static let legacyMirrorMarkerFileName = ".notewall_legacy_mirror"
 
     static var displayFolderPath: String {
@@ -58,12 +60,20 @@ enum HomeScreenImageManager {
         baseDirectoryURL?.appendingPathComponent(lockScreenFolderName, isDirectory: true)
     }
 
+    private static var homeScreenDirectoryURL: URL? {
+        baseDirectoryURL?.appendingPathComponent(homeScreenFolderName, isDirectory: true)
+    }
+
     private static var editorDirectoryURL: URL? {
         baseDirectoryURL?.appendingPathComponent(editorFolderName, isDirectory: true)
     }
 
     private static var lockScreenFileURL: URL? {
         lockScreenDirectoryURL?.appendingPathComponent(lockScreenFileName, isDirectory: false)
+    }
+
+    private static var homeScreenFileURL: URL? {
+        homeScreenDirectoryURL?.appendingPathComponent(homeScreenFileName, isDirectory: false)
     }
 
     private static var editorBackgroundFileURL: URL? {
@@ -233,6 +243,46 @@ enum HomeScreenImageManager {
         if FileManager.default.fileExists(atPath: url.path) {
             try? FileManager.default.removeItem(at: url)
         }
+    }
+
+    // MARK: - Legacy Home Screen Support (Grandfathered Users)
+    // Users who installed the app before Feb 9 2026 had a shortcut that set
+    // BOTH the home screen and the lock screen wallpaper.  The old app created
+    // a `HomeScreen/` directory on every launch.  If that directory exists the
+    // user is grandfathered in and we keep writing `homescreen.jpg` so their
+    // existing shortcut continues to work.  New users never get this directory.
+
+    /// Returns `true` if the device has a `HomeScreen` directory left over from
+    /// a prior version, indicating the user's shortcut expects both wallpapers.
+    static var isLegacyHomeScreenUser: Bool {
+        guard let dirURL = homeScreenDirectoryURL else { return false }
+        var isDir: ObjCBool = false
+        return FileManager.default.fileExists(atPath: dirURL.path, isDirectory: &isDir) && isDir.boolValue
+    }
+
+    /// Saves a home-screen wallpaper image for legacy users whose shortcuts
+    /// still reference `HomeScreen/homescreen.jpg`.
+    static func saveHomeScreenImage(_ image: UIImage) throws {
+        guard
+            let baseURL = baseDirectoryURL,
+            let directoryURL = homeScreenDirectoryURL,
+            let destinationURL = homeScreenFileURL
+        else {
+            throw HomeScreenImageManagerError.documentsDirectoryUnavailable
+        }
+
+        do {
+            try ensureDirectoryExists(at: baseURL)
+            try ensureDirectoryExists(at: directoryURL)
+        } catch {
+            throw HomeScreenImageManagerError.unableToCreateDirectory
+        }
+
+        guard let data = jpegData(from: image, compressionQuality: 0.9) else {
+            throw HomeScreenImageManagerError.unableToEncodeImage
+        }
+
+        try data.write(to: destinationURL, options: .atomic)
     }
 
     private static func jpegData(from image: UIImage, compressionQuality: CGFloat) -> Data? {

@@ -543,6 +543,23 @@ struct ContentView: View {
             print("❌ Failed to save lock screen wallpaper image: \(error)")
             #endif
         }
+        
+        // Legacy support: keep HomeScreen/homescreen.jpg updated for users
+        // who installed the older shortcut that sets both wallpapers.
+        if HomeScreenImageManager.isLegacyHomeScreenUser {
+            let homeImage = lockBackgroundImage ?? solidColorWallpaperImage(color: lockScreenBackgroundColor)
+            do {
+                try HomeScreenImageManager.saveHomeScreenImage(homeImage)
+                #if DEBUG
+                print("✅ Legacy: Also saved home screen image for grandfathered shortcut")
+                #endif
+            } catch {
+                #if DEBUG
+                print("⚠️ Legacy: Failed to save home screen image: \(error)")
+                #endif
+            }
+        }
+        
         #if DEBUG
         print("==============================")
         #endif
@@ -696,6 +713,23 @@ struct ContentView: View {
         } catch {
             print("❌ Failed to save lock screen wallpaper image: \(error)")
         }
+        
+        // Legacy support: keep HomeScreen/homescreen.jpg updated for
+        // grandfathered users with older shortcuts.
+        if HomeScreenImageManager.isLegacyHomeScreenUser {
+            let homeImage = lockBackgroundImage ?? solidColorWallpaperImage(color: lockScreenBackgroundColor)
+            do {
+                try HomeScreenImageManager.saveHomeScreenImage(homeImage)
+                #if DEBUG
+                print("✅ Legacy: Also saved blank home screen image")
+                #endif
+            } catch {
+                #if DEBUG
+                print("⚠️ Legacy: Failed to save blank home screen image: \(error)")
+                #endif
+            }
+        }
+        
         print("==============================")
 
         saveNewLockScreenWallpaper(lockScreenImage)

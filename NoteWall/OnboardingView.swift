@@ -207,6 +207,9 @@ enum OnboardingPage: Int, CaseIterable, Hashable {
 struct OnboardingView: View {
     @Binding var isPresented: Bool
     let onboardingVersion: Int
+    /// When true, this is a pipeline migration (old shortcut → new shortcut).
+    /// The user is already premium, so the paywall is skipped entirely.
+    var isPipelineMigration: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("completedOnboardingVersion") private var completedOnboardingVersion = 0
@@ -232,6 +235,7 @@ struct OnboardingView: View {
 
     @State private var currentPage: OnboardingPage = .preOnboardingHook
     // Resume from saved progress (set in .onAppear)
+    // For pipeline migration, starts at .welcome (set in .onAppear)
     @State private var isLaunchingShortcut = false
     @State private var shortcutLaunchFallback: DispatchWorkItem?
     @State private var wallpaperVerificationTask: Task<Void, Never>?
@@ -341,7 +345,13 @@ struct OnboardingView: View {
     @State private var overallOffset: CGFloat = 100 // Start lower on screen
     @State private var hasStartedPreOnboardingAnimation = false
 
-    private let shortcutURL = "https://www.icloud.com/shortcuts/3365d3809e8c4ddfa89879ae0a19cbd3"
+    private var shortcutURL: String {
+        // During pipeline migration, always use the new lock-screen-only shortcut
+        if isPipelineMigration {
+            return ShortcutSetupViewModel.newShortcutURLString
+        }
+        return ShortcutSetupViewModel.getShortcutURL()
+    }
     private let whatsappNumber = "421907758852" // Replace with your actual WhatsApp number
     private let supportEmail = "iosnotewall@gmail.com" // Replace with your actual support email
 
@@ -368,6 +378,19 @@ struct OnboardingView: View {
             shortcutLaunchFallback = nil
             wallpaperVerificationTask?.cancel()
             wallpaperVerificationTask = nil
+            
+            // Pipeline migration: skip quiz/hook sections, jump straight to technical setup
+            if isPipelineMigration {
+                debugLog("📱 Onboarding: Pipeline migration mode — skipping to technical setup (.welcome)")
+                currentPage = .welcome
+                AnalyticsService.shared.logEvent(
+                    .custom(
+                        name: "pipeline_migration_onboarding_started",
+                        parameters: ["start_page": "welcome"]
+                    )
+                )
+                return // Skip saved progress restoration and abandoned notifications
+            }
             
             // Track onboarding start (fires only once per session)
             OnboardingAnalyticsTracker.shared.onboardingDidAppear()
@@ -4724,7 +4747,8 @@ struct OnboardingView: View {
     private func advanceStep() {
         // INTERCEPT: Show Paywall after Review Page
         // This must be checked BEFORE the 'next' guard because reviewPage is the last step
-        if currentPage == .reviewPage {
+        // SKIP paywall entirely for pipeline migration users (they are already premium)
+        if currentPage == .reviewPage && !isPipelineMigration {
             // Only show if we haven't already (though logic should prevent loops)
             if !showPostOnboardingPaywall {
                 showPostOnboardingPaywall = true
@@ -5044,9 +5068,16 @@ struct OnboardingView: View {
         
         // MARK: - Hard Paywall Check
         // CRITICAL: Ensure user is premium before completing setup
-        guard PaywallManager.shared.isPremium else {
+        // EXCEPTION: Pipeline migration users are already premium, skip this check
+        guard PaywallManager.shared.isPremium || isPipelineMigration else {
             debugLog("⚠️ completeOnboarding called but user is NOT premium. Aborting completion.")
             return
+        }
+        
+        // If this is a pipeline migration, mark the user as migrated to the new pipeline
+        if isPipelineMigration {
+            UserDefaults.standard.set(true, forKey: "hasCompletedPipelineMigration")
+            debugLog("✅ Pipeline migration complete - user switched to new lock-screen-only shortcut")
         }
         
         // Mark as complete immediately since paywall is now earlier
