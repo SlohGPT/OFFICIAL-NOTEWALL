@@ -25,7 +25,7 @@ struct WhatsNewView: View {
     @State private var iconPulse: Bool = false
     @State private var iconRotation: Double = 0
     @State private var shimmerOffset: CGFloat = -200
-    @State private var cardSlideOffsets: [CGFloat] = [50, 50, 50]
+    @State private var cardSlideOffsets: [CGFloat] = [0, 0, 0]
     @State private var glowOpacity: Double = 0.3
     @State private var buttonShimmerX: CGFloat = -200
     @State private var badgeScale: CGFloat = 0.5
@@ -39,7 +39,7 @@ struct WhatsNewView: View {
     // MARK: - Current Version Info
     
     private var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.0"
+        "1.4.3"
     }
     
     private var buildNumber: String {
@@ -64,19 +64,19 @@ struct WhatsNewView: View {
                 icon: "bolt.shield.fill",
                 iconColor: Color("AppAccent"),
                 title: "Faster & More Reliable",
-                description: "We've streamlined the wallpaper update process. It's now quicker and more efficient than ever!"
+                description: "Wallpaper updates are now quicker and smoother."
             ),
             UpdateItem(
                 icon: "lock.rectangle.on.rectangle.fill",
                 iconColor: Color("AppAccent").opacity(0.8),
-                title: "Optimized Lock Screen Updates",
-                description: "The new pipeline focuses on your lock screen — where your notes matter most. No more unnecessary home screen changes."
+                title: "Optimized Lock Screen",
+                description: "Focused on your lock screen — where your notes matter most."
             ),
             UpdateItem(
                 icon: "arrow.triangle.2.circlepath",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "Switch to the New System",
-                description: "You can switch to the new optimized pipeline right now. It takes just a minute and your subscription stays exactly the same — no extra charges!"
+                title: "New System Available",
+                description: "Switch now — takes a minute, no extra charges."
             )
         ]
     }

@@ -974,7 +974,8 @@ struct OnboardingView: View {
                             ReviewPageView {
                                 // Track action
                                 OnboardingAnalyticsTracker.shared.trackAction(.next, on: .reviewPage)
-                                advanceStep()
+                                // reviewPage is the last page — complete onboarding
+                                completeOnboarding()
                             }
                         case .overview:
                             overviewStep()
@@ -3985,8 +3986,12 @@ struct OnboardingView: View {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
                     
-                    // Continue to next step (Review Page)
-                    advanceStep()
+                    // For migration: skip review, go straight to completion
+                    if isPipelineMigration {
+                        completeOnboarding()
+                    } else {
+                        advanceStep()
+                    }
                 }) {
                     Text("Continue")
                         .font(.system(size: buttonFontSize, weight: .semibold))

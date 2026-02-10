@@ -221,16 +221,10 @@ struct ApologyView: View {
     // MARK: - Message
     
     private var messageSection: some View {
-        VStack(spacing: isCompact ? 14 : 18) {
-            Text("We're truly sorry for the experience you had. A bug in a recent update caused the app to not work as expected, and we know how frustrating that must have been.")
+        VStack(spacing: isCompact ? 12 : 14) {
+            Text("A recent bug caused issues with your wallpaper updates. We're sorry — that's on us.")
                 .font(.system(size: isCompact ? 15 : 16))
                 .foregroundColor(.white.opacity(0.85))
-                .multilineTextAlignment(.center)
-                .lineSpacing(4)
-            
-            Text("You trusted us with something personal — your notes, your wallpapers, your daily routine — and we let you down. That's on us.")
-                .font(.system(size: isCompact ? 15 : 16))
-                .foregroundColor(.white.opacity(0.75))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
         }
@@ -271,11 +265,11 @@ struct ApologyView: View {
             .padding(.horizontal, 20)
             
             VStack(spacing: 10) {
-                Text("Here's What We've Done")
+                Text("What We Fixed")
                     .font(.system(size: isCompact ? 16 : 17, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
                 
-                Text("We've completely rebuilt the update system from scratch. It's now faster, more reliable, and specifically designed to just work — every single time.")
+                Text("We rebuilt the update system. It's faster and works every time.")
                     .font(.system(size: isCompact ? 14 : 15))
                     .foregroundColor(.white.opacity(0.7))
                     .multilineTextAlignment(.center)
@@ -289,11 +283,11 @@ struct ApologyView: View {
                     .foregroundColor(Color("AppAccent"))
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Our Promise")
+                    Text("Your Subscription")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.9))
                     
-                    Text("Your subscription stays exactly the same. No extra charges, no hoops to jump through. Just a better experience.")
+                    Text("Stays the same. No extra charges.")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.65))
                         .lineSpacing(2)
