@@ -2,774 +2,718 @@
   Localizable.strings (English)
   NoteWall
   
-  Base English localization - development language.
-  All keys use the English text as the key for SwiftUI auto-localization.
+  Auto-generated translations
 */
 
 // MARK: - Common UI Elements
-"Continue" = "Continue";
+"Apply" = "Apply";
 "Cancel" = "Cancel";
+"Close" = "Close";
+"Continue" = "Continue";
 "Delete" = "Delete";
 "Done" = "Done";
-"Close" = "Close";
-"OK" = "OK";
-"Skip" = "Skip";
 "Next" = "Next";
-"Yes" = "Yes";
 "No" = "No";
-"Send" = "Send";
-"Apply" = "Apply";
+"OK" = "OK";
 "Save" = "Save";
+"Send" = "Send";
+"Skip" = "Skip";
+"Yes" = "Yes";
+
+// MARK: - Loading States
+"Generating..." = "Generating...";
 "Loading..." = "Loading...";
+"Saving…" = "Saving…";
 "Sending..." = "Sending...";
 "Updating…" = "Updating…";
-"Generating..." = "Generating...";
-"Saving…" = "Saving…";
-"Preview" = "Preview";
-"Install" = "Install";
 
-// MARK: - Tab Bar
-"Home" = "Home";
-"Settings" = "Settings";
-
-// MARK: - Content View (Home Screen)
-"NoteWall" = "NoteWall";
-"No notes yet" = "No notes yet";
+// MARK: - Home Screen
 "Add a note below to get started" = "Add a note below to get started";
-"Add a note..." = "Add a note...";
-"Update Wallpaper" = "Update Wallpaper";
-"Select All" = "Select All";
-"Deselect All" = "Deselect All";
-"Delete Selected" = "Delete Selected";
-"Enter Edit Mode" = "Enter Edit Mode";
-"Note" = "Note";
-"Unmark" = "Unmark";
-"Delete (%lld)" = "Delete (%lld)";
-
-// Content View - Alerts
-"Delete Previous Wallpaper?" = "Delete Previous Wallpaper?";
-"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy." = "To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy.";
-"Delete Note?" = "Delete Note?";
-"Are you sure you want to delete this note? This action cannot be undone." = "Are you sure you want to delete this note? This action cannot be undone.";
-"Delete Selected Notes?" = "Delete Selected Notes?";
-"Are you sure you want to delete the selected notes? This action cannot be undone." = "Are you sure you want to delete the selected notes? This action cannot be undone.";
-"Wallpaper Full" = "Wallpaper Full";
-"Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones." = "Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones.";
-
-// Content View - Banners
+"No notes yet" = "No notes yet";
 "Wallpaper Not Showing?" = "Wallpaper Not Showing?";
-"We can help you fix it in just a few steps." = "We can help you fix it in just a few steps.";
-"Get Help" = "Get Help";
-"Friendly Reminder" = "Friendly Reminder";
-"Your free trial subscription will be ending soon." = "Your free trial subscription will be ending soon.";
 
-// Content View - Tooltips
-"Great! You added your first note" = "Great! You added your first note";
-"Add more notes using the + button, then tap \"Update Wallpaper\" to apply them to your lock screen." = "Add more notes using the + button, then tap \"Update Wallpaper\" to apply them to your lock screen.";
-
-// MARK: - Settings View
-"Delete All Notes?" = "Delete All Notes?";
-"This action cannot be undone. All your notes will be permanently deleted." = "This action cannot be undone. All your notes will be permanently deleted.";
-"Reinstall Shortcut?" = "Reinstall Shortcut?";
-"Reset & Reinstall" = "Reset & Reinstall";
-"NoteWall+ Active" = "NoteWall+ Active";
-"Lifetime Access" = "Lifetime Access";
-"Subscription Active" = "Subscription Active";
-"Upgrade to NoteWall+" = "Upgrade to NoteWall+";
-"%lld free wallpapers remaining" = "%lld free wallpapers remaining";
-"Text Style" = "Text Style";
-"After changing styles, tap **Update Wallpaper Now** above to apply" = "After changing styles, tap **Update Wallpaper Now** above to apply";
-"Wallpaper Settings" = "Wallpaper Settings";
-"I use lock screen widgets" = "I use lock screen widgets";
-"Notes start appearing lower to avoid widgets that are below the time." = "Notes start appearing lower to avoid widgets that are below the time.";
-"Notes start closer to the time for more space and aesthetic look." = "Notes start closer to the time for more space and aesthetic look.";
-"Wallpapers" = "Wallpapers";
-"Actions" = "Actions";
-"Delete All Notes" = "Delete All Notes";
-"Write a Review" = "Write a Review";
+// MARK: - Settings
 "Help & Support" = "Help & Support";
-"Send Feedback" = "Send Feedback";
-"Contact Support" = "Contact Support";
-"Legal" = "Legal";
-"Share NoteWall" = "Share NoteWall";
-"We're Here to Help" = "We're Here to Help";
-"Our team responds within 24 hours" = "Our team responds within 24 hours";
-"Email Support" = "Email Support";
-"Chat on WhatsApp" = "Chat on WhatsApp";
-"Get instant help" = "Get instant help";
-"Twitter / X" = "Twitter / X";
-"Terms of Service" = "Terms of Service";
-"EULA" = "EULA";
-"Privacy Policy" = "Privacy Policy";
-"Update Wallpaper Now" = "Update Wallpaper Now";
-"Saving a lock screen image requires iOS 16 or newer." = "Saving a lock screen image requires iOS 16 or newer.";
+"Settings" = "Settings";
+"Text Style" = "Text Style";
+"Wallpaper Settings" = "Wallpaper Settings";
 
-// Settings - Share Text
-"share_app_text" = "Just discovered NoteWall - it turns your lock screen into a productivity powerhouse! 🚀\n\nSee your goals every time you unlock your phone. Game changer!\n\n#ProductivityHack #NoteWall #LockScreen";
-
-// Settings - Device Info
-"device_info_format" = "Device: %@\niOS: %@\nApp Version: %@";
-
-// MARK: - Font Names
-"Classic" = "Classic";
-"Modern" = "Modern";
-"Rounded" = "Rounded";
-"Mono" = "Mono";
-"Strong" = "Strong";
-"Neon" = "Neon";
-
-// MARK: - Models
-"Black" = "Black";
-"Gray" = "Gray";
-"None" = "None";
-"Terms & Privacy" = "Terms & Privacy";
-
-// MARK: - Onboarding - Pre-Hook
-"Never miss what matters" = "Never miss what matters";
-"Get Started" = "Get Started";
-
-// Onboarding - Sample Notes
-"Remember to call mom" = "Remember to call mom";
-"Read 10 pages tonight" = "Read 10 pages tonight";
-"Stop doom scrolling" = "Stop doom scrolling";
-"Text Sarah back" = "Text Sarah back";
-
-// Onboarding - Welcome
-"Welcome to NoteWall" = "Welcome to NoteWall";
-"You forget things for one simple reason: you don't see them. NoteWall fixes that." = "You forget things for one simple reason: you don't see them. NoteWall fixes that.";
-
-// Onboarding - Value Props
-"Turn Every Pickup Into Focus" = "Turn Every Pickup Into Focus";
-"You pick up your phone up to 498× per day. What if every glance reminded you of what matters?" = "You pick up your phone up to 498× per day. What if every glance reminded you of what matters?";
-"Keep Your Goals Always in Sight" = "Keep Your Goals Always in Sight";
-"Your lock screen becomes a visual cue you can't ignore." = "Your lock screen becomes a visual cue you can't ignore.";
-"Beat Scrolling Before It Starts" = "Beat Scrolling Before It Starts";
-"See your goals before TikTok, Instagram, or distractions." = "See your goals before TikTok, Instagram, or distractions.";
-
-// Onboarding - Quiz Questions
-"But before we start, what do you forget the most?" = "But before we start, what do you forget the most?";
-"Select all that apply" = "Select all that apply";
-"And how often do you check your phone?" = "And how often do you check your phone?";
-"Be honest, no judgment!" = "Be honest, no judgment!";
-"Last one: what's your biggest distraction?" = "Last one: what's your biggest distraction?";
-
-// Onboarding - Quiz Options
-"Work tasks & deadlines" = "Work tasks & deadlines";
-"Personal goals & habits" = "Personal goals & habits";
-"Shopping & errands" = "Shopping & errands";
-"Daily habits & routines" = "Daily habits & routines";
-"A little bit of everything" = "A little bit of everything";
-"50-100 times" = "50-100 times";
-"100-200 times" = "100-200 times";
-"200+ times (power user!)" = "200+ times (power user!)";
-"TikTok" = "TikTok";
-"Instagram" = "Instagram";
-"YouTube" = "YouTube";
-"Twitter/X" = "Twitter/X";
-"Messages & notifications" = "Messages & notifications";
-
-// Onboarding - Setup Intro
-"Quick 4-Minute Setup" = "Quick 4-Minute Setup";
-"Let's get %@'s focus system working" = "Let's get %@'s focus system working";
-"Let's get your focus system working" = "Let's get your focus system working";
-"About 4 minutes" = "About 4 minutes";
-"Let's Do This, %@!" = "Let's Do This, %@!";
-"Let's Do This!" = "Let's Do This!";
-
-// Onboarding - Setup Steps
-"Connect the shortcut" = "Connect the shortcut";
-"~3 minutes" = "~3 minutes";
-"Add your first notes" = "Add your first notes";
-"~30 seconds" = "~30 seconds";
-"Choose your wallpaper style" = "Choose your wallpaper style";
-
-// Onboarding - Success
-"🎉 Nailed It!" = "🎉 Nailed It!";
-"That was the hardest part.\nEverything else takes under 60 seconds." = "That was the hardest part.\nEverything else takes under 60 seconds.";
-"%@, you're crushing this setup!" = "%@, you're crushing this setup!";
-"You're crushing this setup!" = "You're crushing this setup!";
-
-// Onboarding - Shortcut Install
-"Install Shortcut" = "Install Shortcut";
-"We'll open the Shortcuts app now." = "We'll open the Shortcuts app now.";
-"A video guide will appear" = "A video guide will appear";
-"Follow the guide step-by-step to install the shortcut." = "Follow the guide step-by-step to install the shortcut.";
-"Install & Continue" = "Install & Continue";
-"Launching Shortcut…" = "Launching Shortcut…";
-
-// Onboarding - Shortcuts/Safari Required
-"Shortcuts Required" = "Shortcuts Required";
-"NoteWall uses Apple's Shortcuts app to automatically update your lock screen." = "NoteWall uses Apple's Shortcuts app to automatically update your lock screen.";
-"Why Shortcuts?" = "Why Shortcuts?";
-"It's a free Apple app that allows NoteWall to work in the background." = "It's a free Apple app that allows NoteWall to work in the background.";
-"I Have Shortcuts" = "I Have Shortcuts";
-"Download Shortcuts" = "Download Shortcuts";
-"Shortcuts Ready" = "Shortcuts Ready";
-"Safari Required" = "Safari Required";
-"The shortcut requires Safari to work properly." = "The shortcut requires Safari to work properly.";
-"Why Safari?" = "Why Safari?";
-"Safari is used to securely process the wallpaper updates." = "Safari is used to securely process the wallpaper updates.";
-"I Have Safari" = "I Have Safari";
-"Download Safari" = "Download Safari";
-"Safari Ready" = "Safari Ready";
-
-// Onboarding - Apple Preset Fix
-"Quick Fix for Apple Presets" = "Quick Fix for Apple Presets";
-"Why Couldn't You Select a Wallpaper?" = "Why Couldn't You Select a Wallpaper?";
-"The Problem: Apple's Limitation" = "The Problem: Apple's Limitation";
-"The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets." = "The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets.";
-"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets." = "Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets.";
-"This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts." = "This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts.";
-"We've Saved a Special Image for You" = "We've Saved a Special Image for You";
-"This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper." = "This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper.";
-"Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like." = "Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like.";
-"The Easy Fix" = "The Easy Fix";
-"We need to set up a photo-based wallpaper so the shortcut can work properly." = "We need to set up a photo-based wallpaper so the shortcut can work properly.";
-"This takes about 2 minutes. Here's exactly what to do:" = "This takes about 2 minutes. Here's exactly what to do:";
-"Open Photos" = "Open Photos";
-"Find the RED Image" = "Find the RED Image";
-"Long-Press the Image" = "Long-Press the Image";
-"Tap SHARE" = "Tap SHARE";
-"Use as Wallpaper" = "Use as Wallpaper";
-"Set as Lock Screen" = "Set as Lock Screen";
-"Return to NoteWall App" = "Return to NoteWall App";
-"What Happens Next?" = "What Happens Next?";
-"Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes." = "Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes.";
-"The shortcut will then work perfectly every time you update your wallpaper." = "The shortcut will then work perfectly every time you update your wallpaper.";
-"Ready? Let's Do This!" = "Ready? Let's Do This!";
-"Got It - I'll Set This Up Later" = "Got It - I'll Set This Up Later";
-
-// Onboarding - Retry Shortcut
-"Ready to Try Again?" = "Ready to Try Again?";
-"All Set!" = "All Set!";
-"Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time." = "Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time.";
-"This next attempt should only take 30 seconds." = "This next attempt should only take 30 seconds.";
-"Install Shortcut Again" = "Install Shortcut Again";
-"Installation Check" = "Installation Check";
-"Were you able to select a wallpaper?" = "Were you able to select a wallpaper?";
-"Quick Check" = "Quick Check";
-"Did you see your wallpapers in the list and could tap one?" = "Did you see your wallpapers in the list and could tap one?";
-"Yes, It Worked!" = "Yes, It Worked!";
-"No, Got Stuck" = "No, Got Stuck";
-"Accidentally clicked or cancelled?" = "Accidentally clicked or cancelled?";
-"Tap here to replay the video" = "Tap here to replay the video";
-
-// Onboarding - Add Notes
-"Add Your First Notes" = "Add Your First Notes";
-"These notes will appear on your lock screen wallpaper" = "These notes will appear on your lock screen wallpaper";
-"Type a note..." = "Type a note...";
-"Add at least one note to continue" = "Add at least one note to continue";
-
-// Onboarding - Permissions
-"Allow ALL Permissions" = "Allow ALL Permissions";
-"Permission popups appear here" = "Permission popups appear here";
-"click ALLOW for all" = "click ALLOW for all";
-"(this is how it should look)" = "(this is how it should look)";
-"Permissions granted!" = "Permissions granted!";
+// MARK: - Onboarding
 "Grant Permissions First" = "Grant Permissions First";
-
-// Onboarding - Wallpaper Choice
-"Choose Your Wallpapers" = "Choose Your Wallpapers";
-"Edit Notes" = "Edit Notes";
-"Update to iOS 16+ to pick a photo directly. For now, choose a preset below." = "Update to iOS 16+ to pick a photo directly. For now, choose a preset below.";
-"Do you use lock screen widgets?" = "Do you use lock screen widgets?";
-"This adjusts where your notes appear on the lock screen" = "This adjusts where your notes appear on the lock screen";
-"You can change this anytime in Settings" = "You can change this anytime in Settings";
-"You can change the font, color, and size of your notes anytime in Settings." = "You can change the font, color, and size of your notes anytime in Settings.";
-
-// Onboarding - Countdown Transition
-"Ready" = "Ready";
-"for" = "for";
-"your" = "your";
-"new" = "new";
-"PRODUCTIVITY" = "PRODUCTIVITY";
-"HACK" = "HACK";
-"?" = "?";
-"So" = "So";
-"you'll" = "you'll";
-"never" = "never";
-"forget" = "forget";
-"again" = "again";
-
-// Onboarding - Misc
-"Demo video coming soon" = "Demo video coming soon";
 "Start Using NoteWall" = "Start Using NoteWall";
-"Notifications video loading..." = "Notifications video loading...";
-"We couldn't prepare the wallpaper files. Tap \"Save Lock Screen\" again." = "We couldn't prepare the wallpaper files. Tap \"Save Lock Screen\" again.";
+"Welcome to NoteWall" = "Welcome to NoteWall";
 
-// Onboarding - Help Sheet
-"Need Help?" = "Need Help?";
-"We're here to assist you" = "We're here to assist you";
-"Get Help via Email" = "Get Help via Email";
-"We're here to help you" = "We're here to help you";
-"Suggest Improvements" = "Suggest Improvements";
-"Help us make NoteWall better" = "Help us make NoteWall better";
-
-// Onboarding - Suggestion Sheet
-"Thank You!" = "Thank You!";
-"Your suggestion has been sent" = "Your suggestion has been sent";
-"What could we improve?" = "What could we improve?";
-"Your feedback helps us make NoteWall better for everyone." = "Your feedback helps us make NoteWall better for everyone.";
-"Your suggestion" = "Your suggestion";
-"Share your ideas, suggestions, or feedback..." = "Share your ideas, suggestions, or feedback...";
-"Send Suggestion" = "Send Suggestion";
-"Suggestions" = "Suggestions";
+// MARK: - Other
+" daily chances to remember what matters." = " daily chances to remember what matters.";
+"%@ times" = "%@ times";
+"%@, Your Focus System Is Ready! 🎉" = "%@, Your Focus System Is Ready! 🎉";
+"%@, you're crushing this setup!" = "%@, you're crushing this setup!";
 "%lld characters" = "%lld characters";
-
-// Onboarding - WhatsApp/Email Errors
-"WhatsApp could not be opened. Would you like to send an email instead?" = "WhatsApp could not be opened. Would you like to send an email instead?";
-"WhatsApp is not installed. Please send us an email at %@" = "WhatsApp is not installed. Please send us an email at %@";
-"NoteWall Feedback - %@" = "NoteWall Feedback - %@";
-"Email is not configured on your device. Our support email is: %@" = "Email is not configured on your device. Our support email is: %@";
-
-// Onboarding - Completion Overview
-"Ready to Go" = "Ready to Go";
-"You've got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "You've got everything set up. Keep these quick highlights in mind as you start using NoteWall.";
-"What's next?" = "What's next?";
-"Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome." = "Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome.";
-"Pro tip: make it automatic" = "Pro tip: make it automatic";
-"Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed." = "Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed.";
-"Trigger it every morning before you leave for the day." = "Trigger it every morning before you leave for the day.";
-"Pair it with a Focus mode to keep your lock screen current throughout the week." = "Pair it with a Focus mode to keep your lock screen current throughout the week.";
-"Use a personal automation when you arrive at the office or start a commute." = "Use a personal automation when you arrive at the office or start a commute.";
-
-// MARK: - Enhanced Onboarding - Notifications
-"Time for a quick check-in" = "Time for a quick check-in";
-"Your notes are waiting on your lock screen" = "Your notes are waiting on your lock screen";
-"Now" = "Now";
-"New: Smart Wallpaper Themes" = "New: Smart Wallpaper Themes";
-"Try the new gradient styles" = "Try the new gradient styles";
+"%lld free wallpapers remaining" = "%lld free wallpapers remaining";
+"%lld%% OFF" = "%lld%% OFF";
+"(this is how it should look)" = "(this is how it should look)";
+"+2 855 people" = "+2 855 people";
+"+\(formattedUserCount) people" = "+\(formattedUserCount) people";
+"...instead of losing time to %@." = "...instead of losing time to %@.";
+"...instead of losing time to \(distractionText.lowercased())." = "...instead of losing time to \(distractionText.lowercased()).";
+"1-minute fix, then you're done" = "1-minute fix, then you're done";
+"100% Risk-Free" = "100% Risk-Free";
+"100-200 times" = "100-200 times";
+"2.5s" = "2.5s";
+"200+ times (power user!)" = "200+ times (power user!)";
 "2m ago" = "2m ago";
 "3-day streak!" = "3-day streak!";
-"You're building a great habit" = "You're building a great habit";
-"Earlier" = "Earlier";
-"Don't miss a thing" = "Don't miss a thing";
-"Get helpful nudges that keep\nyour momentum going." = "Get helpful nudges that keep\nyour momentum going.";
-"Keep Me in the Loop" = "Keep Me in the Loop";
-"Not now" = "Not now";
-
-// Enhanced Onboarding - Name Input
-"What should we call you?" = "What should we call you?";
-"So we can make this feel like yours" = "So we can make this feel like yours";
-"Your first name" = "Your first name";
-"Nice to meet you," = "Nice to meet you,";
-"Let's make forgetting a thing of the past" = "Let's make forgetting a thing of the past";
-
-// Enhanced Onboarding - Pain Point / Research
-"Research Insight" = "Research Insight";
-"Hey %@, did you know that" = "Hey %@, did you know that";
-"Did you know that the average person" = "Did you know that the average person";
-"unlocks their phone up to" = "unlocks their phone up to";
-"times per day ?" = "times per day ?";
-"4hrs" = "4hrs";
-"screen time" = "screen time";
-"96%%" = "96%%";
-"forgotten" = "forgotten";
-"2.5s" = "2.5s";
-"avg glance" = "avg glance";
-"But here's the real question..." = "But here's the real question...";
-"How many times" = "How many times";
-"did you actually" = "did you actually";
-"remember" = "remember";
-"why?" = "why?";
-"Tell Me More" = "Tell Me More";
-
-// Enhanced Onboarding - Quiz Transition
-"But, before we start..." = "But, before we start...";
-"What do you forget\nthe most?" = "What do you forget\nthe most?";
-"A few quick questions will help us\npersonalize your experience" = "A few quick questions will help us\npersonalize your experience";
-"Takes less than 30 seconds" = "Takes less than 30 seconds";
-"Let's Find Out" = "Let's Find Out";
-
-// Enhanced Onboarding - Personalization Loading
-"Curating Your Experience" = "Curating Your Experience";
-"Just for you" = "Just for you";
-"Analyzing your habits..." = "Analyzing your habits...";
-"Customizing your experience..." = "Customizing your experience...";
-"Preparing your focus plan..." = "Preparing your focus plan...";
-"Almost ready..." = "Almost ready...";
-
-// Enhanced Onboarding - Results Preview
-"Analysis Complete" = "Analysis Complete";
-"Your Focus Profile, %@" = "Your Focus Profile, %@";
-"Your Focus Profile" = "Your Focus Profile";
-"Based on your answers" = "Based on your answers";
-"Here's what we learned" = "Here's what we learned";
-"YOU WANT TO REMEMBER" = "YOU WANT TO REMEMBER";
-"YOUR BIGGEST CHALLENGE" = "YOUR BIGGEST CHALLENGE";
-"DAILY PHONE CHECKS" = "DAILY PHONE CHECKS";
-"%@ times" = "%@ times";
-"See Insights" = "See Insights";
-
-// Enhanced Onboarding - Results Insight
-"What this means" = "What this means";
-"You check your phone\n%@" = "You check your phone\n%@";
-"That's %@ daily chances to remember what matters." = "That's %@ daily chances to remember what matters.";
-"...instead of losing time to %@." = "...instead of losing time to %@.";
-"Let's Set It Up" = "Let's Set It Up";
-
-// Enhanced Onboarding - Trajectory
-"Your New Trajectory,\n%@" = "Your New Trajectory,\n%@";
-"Your New Trajectory" = "Your New Trajectory";
-"Never forget what matters." = "Never forget what matters.";
-"NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone." = "NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone.";
-"Takes about 4 minutes" = "Takes about 4 minutes";
-"Forgetting" = "Forgetting";
-"Daily" = "Daily";
-"Always" = "Always";
-
-// Enhanced Onboarding - Setup Complete
-"%@, Your Focus System Is Ready! 🎉" = "%@, Your Focus System Is Ready! 🎉";
-"Your Focus System Is Ready! 🎉" = "Your Focus System Is Ready! 🎉";
-"You just did what 97% of people never do:\nbuilt a system that actually works." = "You just did what 97% of people never do:\nbuilt a system that actually works.";
-"Setup Time" = "Setup Time";
-"Daily Reminders" = "Daily Reminders";
-"Top 3%" = "Top 3%";
-"Focus Elite" = "Focus Elite";
-"Unlock Full Potential →" = "Unlock Full Potential →";
-
-// Enhanced Onboarding - Step Counter
-"Step %lld of %lld" = "Step %lld of %lld";
-
-// MARK: - Review Page
-"This app was designed for people like you..." = "This app was designed for people like you...";
-"+2 855 people" = "+2 855 people";
-
-// Review Cards
-"Love seeing my notes on my lock screen! It's like having a personal reminder that's always there." = "Love seeing my notes on my lock screen! It's like having a personal reminder that's always there.";
-"The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone." = "The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone.";
-"Simple and effective. My lock screen keeps me focused on what matters. Game changer!" = "Simple and effective. My lock screen keeps me focused on what matters. Game changer!";
-"Finally stopped forgetting important things. The shortcut setup was easy and it just works!" = "Finally stopped forgetting important things. The shortcut setup was easy and it just works!";
-"Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated." = "Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated.";
-"The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!" = "The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!";
-
-// MARK: - What's New
-"What's New" = "What's New";
-"We Just Updated!" = "We Just Updated!";
-"Version %@" = "Version %@";
-"Custom Text Styling" = "Custom Text Styling";
-"You can now change the font, color, size, and alignment of your notes directly in Settings!" = "You can now change the font, color, size, and alignment of your notes directly in Settings!";
-"Highlight Modes" = "Highlight Modes";
-"Add emphasis with outline, white, or black highlight backgrounds to make your notes pop." = "Add emphasis with outline, white, or black highlight backgrounds to make your notes pop.";
-"Thanks for supporting independent development. More features coming soon!" = "Thanks for supporting independent development. More features coming soon!";
-"Love NoteWall?" = "Love NoteWall?";
-"It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!" = "It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!";
-"Rate on App Store" = "Rate on App Store";
-"Write Us" = "Write Us";
-"Want a new feature? 💡" = "Want a new feature? 💡";
-"Describe your feature idea..." = "Describe your feature idea...";
-"No Thanks" = "No Thanks";
-"Let us know what feature you'd like and we'll build it!" = "Let us know what feature you'd like and we'll build it!";
-"NoteWall Feedback" = "NoteWall Feedback";
-
-// MARK: - Exit Feedback
-"Before You Go..." = "Before You Go...";
-"Hey! I built NoteWall myself and I'm genuinely trying to make it better every day." = "Hey! I built NoteWall myself and I'm genuinely trying to make it better every day.";
-"If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next." = "If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next.";
-"What went wrong?" = "What went wrong?";
-"Select all that apply:" = "Select all that apply:";
-"Shortcut setup was confusing" = "Shortcut setup was confusing";
-"Wallpaper didn't generate properly" = "Wallpaper didn't generate properly";
-"This seemed too complicated" = "This seemed too complicated";
-"Notes were too small to read" = "Notes were too small to read";
-"Paywall after 3 uses felt too early" = "Paywall after 3 uses felt too early";
-"Too expensive for what it does" = "Too expensive for what it does";
-"Just testing it out" = "Just testing it out";
-"Want to explain more? (optional)" = "Want to explain more? (optional)";
-"Want me to help fix this in 30 seconds?" = "Want me to help fix this in 30 seconds?";
-"Try Auto-Fix" = "Try Auto-Fix";
-"Send Feedback" = "Send Feedback";
-"Skip for now" = "Skip for now";
-"Thank You! 🙏" = "Thank You! 🙏";
-"This helps more than you know." = "This helps more than you know.";
-"If you change your mind, we'd love to have you back." = "If you change your mind, we'd love to have you back.";
-"Try Auto-Fix Now" = "Try Auto-Fix Now";
-
-// MARK: - Auto-Fix Workflow
-"Auto-Fix Ready" = "Auto-Fix Ready";
-"Verifying Shortcut" = "Verifying Shortcut";
-"Regenerating Wallpaper" = "Regenerating Wallpaper";
-"Checking Permissions" = "Checking Permissions";
-"All Fixed! ✨" = "All Fixed! ✨";
-"Need Manual Help" = "Need Manual Help";
-"We'll automatically check and fix common issues. This takes about 30 seconds." = "We'll automatically check and fix common issues. This takes about 30 seconds.";
-"Checking if the shortcut is properly installed..." = "Checking if the shortcut is properly installed...";
-"Creating a fresh wallpaper with your notes..." = "Creating a fresh wallpaper with your notes...";
-"Verifying folder access and permissions..." = "Verifying folder access and permissions...";
-"Everything is working perfectly now! Your wallpaper should be updated." = "Everything is working perfectly now! Your wallpaper should be updated.";
-"We couldn't fix everything automatically. Let's get you personal help." = "We couldn't fix everything automatically. Let's get you personal help.";
-"Verify Shortcut Setup" = "Verify Shortcut Setup";
-"Regenerate Wallpaper" = "Regenerate Wallpaper";
-"Check Permissions" = "Check Permissions";
-"Start Auto-Fix" = "Start Auto-Fix";
-"Issues found:" = "Issues found:";
-
-// MARK: - Delete Notes Loading
-"sec" = "sec";
-"Deleting notes..." = "Deleting notes...";
-"Notes Deleted!" = "Notes Deleted!";
-
-// MARK: - Wallpaper Update Loading
-"Updating wallpaper..." = "Updating wallpaper...";
-"Wallpaper Updated!" = "Wallpaper Updated!";
-"Update Timed Out" = "Update Timed Out";
-"The wallpaper update took longer than expected. This might be a setup issue." = "The wallpaper update took longer than expected. This might be a setup issue.";
-"Get Help & Fix This" = "Get Help & Fix This";
-"Dismiss" = "Dismiss";
-
-// MARK: - Notifications
-"Trial Ending Soon" = "Trial Ending Soon";
-"Your 3-day free trial will end soon. We hope you're enjoying NoteWall!" = "Your 3-day free trial will end soon. We hope you're enjoying NoteWall!";
-"🚨 %@, 3 things forgotten today" = "🚨 %@, 3 things forgotten today";
-"🚨 3 things forgotten today" = "🚨 3 things forgotten today";
-"Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes." = "Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes.";
-"🚨 %@, what did you forget?" = "🚨 %@, what did you forget?";
-"🚨 What did you forget?" = "🚨 What did you forget?";
-"Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this." = "Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this.";
-
-// MARK: - Troubleshooting
-
-// MARK: - Subscription Feedback
-"Quick check-in" = "Quick check-in";
-"How's NoteWall working for you so far?" = "How's NoteWall working for you so far?";
-"Loving it!" = "Loving it!";
-"It's okay" = "It's okay";
-"Not great" = "Not great";
-"Frustrated" = "Frustrated";
-"Just browsing my account" = "Just browsing my account";
-"Help me make it better" = "Help me make it better";
-"I build NoteWall solo — your honest feedback actually decides what I work on next." = "I build NoteWall solo — your honest feedback actually decides what I work on next.";
-"What's not working? (pick any)" = "What's not working? (pick any)";
-"It's too expensive for me" = "It's too expensive for me";
-"I don't use it enough" = "I don't use it enough";
-"Wallpapers got boring" = "Wallpapers got boring";
-"Notes are hard to read" = "Notes are hard to read";
-"Shortcut is annoying" = "Shortcut is annoying";
-"Missing features I need" = "Missing features I need";
-"Just wanted to try it" = "Just wanted to try it";
-"Anything else? (optional)" = "Anything else? (optional)";
-"What would make you stay? Be brutally honest..." = "What would make you stay? Be brutally honest...";
-"Sending..." = "Sending...";
-"Send & Continue" = "Send & Continue";
-"Skip" = "Skip";
-"Thanks, that really helps!" = "Thanks, that really helps!";
-"Every piece of feedback makes NoteWall better for everyone." = "Every piece of feedback makes NoteWall better for everyone.";
-"If you're enjoying it, a review on the App Store would mean the world to me." = "If you're enjoying it, a review on the App Store would mean the world to me.";
-"Leave a Review" = "Leave a Review";
-"Back to NoteWall" = "Back to NoteWall";
-"Manage My Account" = "Manage My Account";
-"Actually, I'll stay" = "Actually, I'll stay";
-
-// MARK: - Troubleshooting (original)
-"Troubleshooting" = "Troubleshooting";
-"Let's fix the issue together" = "Let's fix the issue together";
-"Start Troubleshooting" = "Start Troubleshooting";
-"Shortcut Setup" = "Shortcut Setup";
-"Most Common Issue" = "Most Common Issue";
-"The Problem" = "The Problem";
-"Something may have gone wrong during the shortcut installation process." = "Something may have gone wrong during the shortcut installation process.";
-"The Solution" = "The Solution";
-"Click \"Yes, Fix This\" below to re-install the shortcut. This usually resolves the issue." = "Click \"Yes, Fix This\" below to re-install the shortcut. This usually resolves the issue.";
-"Yes, Fix This" = "Yes, Fix This";
-"No, This Is Not the Issue" = "No, This Is Not the Issue";
-"Wrong Wallpaper" = "Wrong Wallpaper";
-"Second Most Common" = "Second Most Common";
-"The shortcut worked, but it put notes on the wrong wallpaper in your collection." = "The shortcut worked, but it put notes on the wrong wallpaper in your collection.";
-"Quick Fix" = "Quick Fix";
-"Swipe down to your Lock Screen" = "Swipe down to your Lock Screen";
-"Long-press on your wallpaper" = "Long-press on your wallpaper";
-"Select the one with notes" = "Select the one with notes";
-"Got It, I'll Fix This" = "Got It, I'll Fix This";
-"Still Having Issues" = "Still Having Issues";
-"Please wait while we check your setup..." = "Please wait while we check your setup...";
-"Scan Complete" = "Scan Complete";
-
-// MARK: - Shortcut Setup View
-"One-Time Shortcut Setup Required" = "One-Time Shortcut Setup Required";
-"This takes 30 seconds and you only do it once." = "This takes 30 seconds and you only do it once.";
-"Important:" = "Important:";
-"When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen" = "When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen";
-"Start Setup" = "Start Setup";
-"Follow the Instructions" = "Follow the Instructions";
-"Follow the instructions in Shortcuts, then return to this app." = "Follow the instructions in Shortcuts, then return to this app.";
-"Verifying Setup..." = "Verifying Setup...";
-"Please wait while we verify that your shortcut is configured correctly." = "Please wait while we verify that your shortcut is configured correctly.";
-"Setup Complete ✓" = "Setup Complete ✓";
-"Your shortcut is configured correctly. You're all set!" = "Your shortcut is configured correctly. You're all set!";
-"Setup Not Finished" = "Setup Not Finished";
-"What's missing:" = "What's missing:";
-"Retry Verification" = "Retry Verification";
-"Watch Tutorial Again" = "Watch Tutorial Again";
-"Reopen Shortcuts" = "Reopen Shortcuts";
-
-// MARK: - Shortcut Verification Service
-"Shortcut file not found" = "Shortcut file not found";
-"Lock Screen folder access denied" = "Lock Screen folder access denied";
-"Shortcut cannot be executed" = "Shortcut cannot be executed";
-"The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app." = "The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app.";
-"The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access." = "The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access.";
-"The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app." = "The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app.";
-"Shortcut URL is not available. Please check your configuration." = "Shortcut URL is not available. Please check your configuration.";
-"Could not open the Shortcuts app. Please install the shortcut manually." = "Could not open the Shortcuts app. Please install the shortcut manually.";
-
-// MARK: - Quick Actions
-"🚨🚨 Claim Your Special Offer" = "🚨🚨 Claim Your Special Offer";
-"Before you delete… Can we ask why?" = "Before you delete… Can we ask why?";
-"Share App" = "Share App";
-
-// MARK: - Promo Code
-"Lifetime" = "Lifetime";
-"Monthly" = "Monthly";
-"Please enter a promo code" = "Please enter a promo code";
-"Invalid promo code" = "Invalid promo code";
-"This promo code has already been redeemed" = "This promo code has already been redeemed";
-"Valid promo code" = "Valid promo code";
-"Too many validation attempts. Please try again later." = "Too many validation attempts. Please try again later.";
-
-// MARK: - Home Screen Photo Picker
-"Add Lock Screen Photo" = "Add Lock Screen Photo";
-"Choose your own photo" = "Choose your own photo";
-"Photo Library" = "Photo Library";
-"Presets" = "Presets";
-"Access Required" = "Access Required";
-"Please allow access to your photo library to select a wallpaper." = "Please allow access to your photo library to select a wallpaper.";
-"Lock Screen Preset" = "Lock Screen Preset";
-"Saving background…" = "Saving background…";
-"Unable to load selected photo." = "Unable to load selected photo.";
-"Unable to process captured photo." = "Unable to process captured photo.";
-"No file selected." = "No file selected.";
-"Unable to read selected file." = "Unable to read selected file.";
-"Choose a Preset" = "Choose a Preset";
-"Select a solid color background" = "Select a solid color background";
-
-// MARK: - Legal Documents
-"Privacy Policy" = "Privacy Policy";
-"Your Privacy Policy is hosted online." = "Your Privacy Policy is hosted online.";
-"Open Privacy Policy" = "Open Privacy Policy";
-"Terms of Use" = "Terms of Use";
-"Your Terms of Use are hosted online." = "Your Terms of Use are hosted online.";
-"Open Terms of Use" = "Open Terms of Use";
-"Legal Documents" = "Legal Documents";
-"End-User License Agreement (EULA)" = "End-User License Agreement (EULA)";
-
-// MARK: - Paywall
-"Lock Screen Focus" = "Lock Screen Focus";
-"Keep your goals in front of you every single time you pickup your phone to stay locked in." = "Keep your goals in front of you every single time you pickup your phone to stay locked in.";
-"Stay Accountable" = "Stay Accountable";
-"See your notes, reminders or to-do list up to 498x times a day and never forget things." = "See your notes, reminders or to-do list up to 498x times a day and never forget things.";
-"Instant Exports" = "Instant Exports";
-"Create gorgeous NoteWall wallpapers in seconds with unlimited exports." = "Create gorgeous NoteWall wallpapers in seconds with unlimited exports.";
-"Error" = "Error";
-"Enable Notifications" = "Enable Notifications";
-"Allow" = "Allow";
-"Not Now" = "Not Now";
-"To notify you before your trial ends, we need to send you notifications. You can disable them anytime." = "To notify you before your trial ends, we need to send you notifications. You can disable them anytime.";
-"Have a promo code?" = "Have a promo code?";
-"Enter code" = "Enter code";
-"Code Applied!" = "Code Applied!";
-"Lifetime access has been granted. Enjoy NoteWall+" = "Lifetime access has been granted. Enjoy NoteWall+";
-"Invalid Code" = "Invalid Code";
-"The code you entered is not valid. Please check and try again." = "The code you entered is not valid. Please check and try again.";
-"Privacy Options" = "Privacy Options";
-"Redeem Code" = "Redeem Code";
-"Terms" = "Terms";
-"Privacy" = "Privacy";
-"Restore Purchases" = "Restore Purchases";
-"How your free trial works" = "How your free trial works";
-"100% Risk-Free" = "100% Risk-Free";
-"Cancel anytime during trial." = "Cancel anytime during trial.";
-"Show all plans" = "Show all plans";
-"🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SPECIAL OFFER 🚨🚨";
+"30% OFF" = "30% OFF";
 "30% OFF Lifetime Offer" = "30% OFF Lifetime Offer";
 "44% Sale" = "44% Sale";
+"4hrs" = "4hrs";
+"50-100 times" = "50-100 times";
 "9 spots remaining" = "9 spots remaining";
-"How to use this code?" = "How to use this code?";
-"How to Redeem Your 30% Discount" = "How to Redeem Your 30% Discount";
-"Redeem in App" = "Redeem in App";
-"Copy Code" = "Copy Code";
-"Open App Store" = "Open App Store";
-"Yearly" = "Yearly";
+"96%%" = "96%%";
+"?" = "?";
+"@billikkarol3" = "@billikkarol3";
+"@karchiJR" = "@karchiJR";
+"A few quick questions will help us\npersonalize your experience" = "A few quick questions will help us\npersonalize your experience";
+"A little bit of everything" = "A little bit of everything";
+"A video guide will appear" = "A video guide will appear";
+"About 4 minutes" = "About 4 minutes";
+"Access Granted" = "Access Granted";
+"Access Required" = "Access Required";
+"Accidentally clicked or cancelled?" = "Accidentally clicked or cancelled?";
+"Account" = "Account";
+"Actions" = "Actions";
+"Actually, I'll stay" = "Actually, I'll stay";
+"Add 'tutorial.mp4' to the app bundle" = "Add 'tutorial.mp4' to the app bundle";
+"Add Lock Screen Photo" = "Add Lock Screen Photo";
+"Add Your First Notes" = "Add Your First Notes";
+"Add a note..." = "Add a note...";
+"Add at least one note to continue" = "Add at least one note to continue";
+"Add emphasis with outline, white, or black highlight backgrounds to make your notes pop." = "Add emphasis with outline, white, or black highlight backgrounds to make your notes pop.";
+"Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome." = "Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome.";
+"Add your first notes" = "Add your first notes";
+"After changing styles, tap **Update Wallpaper Now** above to apply" = "After changing styles, tap **Update Wallpaper Now** above to apply";
+"After confirmation" = "After confirmation";
+"All Fixed! ✨" = "All Fixed! ✨";
+"All Set!" = "All Set!";
+"Allow" = "Allow";
+"Allow ALL Permissions" = "Allow ALL Permissions";
+"Allow one permission" = "Allow one permission";
+"Almost ready..." = "Almost ready...";
+"Always" = "Always";
+"Analysis Complete" = "Analysis Complete";
+"Analyzing your habits..." = "Analyzing your habits...";
+"And how often do you check your phone?" = "And how often do you check your phone?";
+"Anything else? (optional)" = "Anything else? (optional)";
+"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets." = "Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets.";
+"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library. It cannot work with Apple's built-in preset wallpapers - like gradients, astronomy images, emoji designs, or any of their default wallpapers." = "Apple designed the Shortcuts app to only work with wallpapers that use photos from your library. It cannot work with Apple's built-in preset wallpapers - like gradients, astronomy images, emoji designs, or any of their default wallpapers.";
+"Are you sure you want to delete the selected notes? This action cannot be undone." = "Are you sure you want to delete the selected notes? This action cannot be undone.";
+"Are you sure you want to delete this note? This action cannot be undone." = "Are you sure you want to delete this note? This action cannot be undone.";
+"Auto-Fix Ready" = "Auto-Fix Ready";
 "BEST VALUE" = "BEST VALUE";
-"30% OFF" = "30% OFF";
-"%lld%% OFF" = "%lld%% OFF";
+"Back to My Notes" = "Back to My Notes";
+"Back to NoteWall" = "Back to NoteWall";
+"Back to Video" = "Back to Video";
+"Based on your answers" = "Based on your answers";
+"Be honest, no judgment!" = "Be honest, no judgment!";
+"Beat Scrolling Before It Starts" = "Beat Scrolling Before It Starts";
+"Before You Go..." = "Before You Go...";
+"Before you delete… Can we ask why?" = "Before you delete… Can we ask why?";
+"Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated." = "Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated.";
+"Black" = "Black";
+"But before we start, what do you forget the most?" = "But before we start, what do you forget the most?";
+"But here's the real question..." = "But here's the real question...";
+"But, before we start..." = "But, before we start...";
+"Cancel anytime during trial." = "Cancel anytime during trial.";
+"Chat on WhatsApp" = "Chat on WhatsApp";
+"Check Permissions" = "Check Permissions";
+"Checking Permissions" = "Checking Permissions";
+"Checking if the shortcut is properly installed..." = "Checking if the shortcut is properly installed...";
+"Choose Your Wallpapers" = "Choose Your Wallpapers";
+"Choose a Preset" = "Choose a Preset";
+"Choose your own photo" = "Choose your own photo";
+"Choose your wallpaper style" = "Choose your wallpaper style";
+"Classic" = "Classic";
+"Code Applied!" = "Code Applied!";
+"Connect the shortcut" = "Connect the shortcut";
+"Contact Support" = "Contact Support";
+"Copy Code" = "Copy Code";
+"Could not open the Shortcuts app. Please install the shortcut manually." = "Could not open the Shortcuts app. Please install the shortcut manually.";
+"Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed." = "Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed.";
+"Create a Shortcuts automation so NoteWall runs on your schedule, like at the start of a workday or when a Focus mode activates." = "Create a Shortcuts automation so NoteWall runs on your schedule, like at the start of a workday or when a Focus mode activates.";
+"Create gorgeous NoteWall wallpapers in seconds with unlimited exports." = "Create gorgeous NoteWall wallpapers in seconds with unlimited exports.";
+"Create unlimited NoteWalls with full customization" = "Create unlimited NoteWalls with full customization";
+"Creating a fresh wallpaper with your notes..." = "Creating a fresh wallpaper with your notes...";
+"Curating Your Experience" = "Curating Your Experience";
+"Current step: \(currentPageName)" = "Current step: \(currentPageName)";
+"Custom Text Styling" = "Custom Text Styling";
+"Customizing your experience..." = "Customizing your experience...";
+"DAILY PHONE CHECKS" = "DAILY PHONE CHECKS";
+"Daily" = "Daily";
+"Daily Motivation" = "Daily Motivation";
+"Daily Reminders" = "Daily Reminders";
+"Daily habits & routines" = "Daily habits & routines";
+"Delete (%lld)" = "Delete (%lld)";
+"Delete (\(context.selectedNotes.wrappedValue.count))" = "Delete (\(context.selectedNotes.wrappedValue.count))";
+"Delete All Notes" = "Delete All Notes";
+"Delete All Notes?" = "Delete All Notes?";
+"Delete Note?" = "Delete Note?";
+"Delete Previous Wallpaper?" = "Delete Previous Wallpaper?";
+"Delete Selected" = "Delete Selected";
+"Delete Selected Notes?" = "Delete Selected Notes?";
+"Deleting notes..." = "Deleting notes...";
+"Demo video coming soon" = "Demo video coming soon";
+"Describe your feature idea..." = "Describe your feature idea...";
+"Deselect All" = "Deselect All";
+"Device Category: \(String(describing: DeviceSizeCategory.current))" = "Device Category: \(String(describing: DeviceSizeCategory.current))";
+"Did you know that the average person" = "Did you know that the average person";
+"Did you see your wallpapers in the list and could tap one?" = "Did you see your wallpapers in the list and could tap one?";
+"Dismiss" = "Dismiss";
+"Do you have a promo code?" = "Do you have a promo code?";
+"Do you use lock screen widgets?" = "Do you use lock screen widgets?";
+"Don't miss a thing" = "Don't miss a thing";
+"Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like." = "Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like.";
+"Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your own custom image wallpaper with your notes on it." = "Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your own custom image wallpaper with your notes on it.";
+"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same.";
+"Done — wallpapers update automatically" = "Done — wallpapers update automatically";
+"Download Safari" = "Download Safari";
+"Download Shortcuts" = "Download Shortcuts";
+"EULA" = "EULA";
+"Earlier" = "Earlier";
+"Edit Notes" = "Edit Notes";
+"Email Support" = "Email Support";
+"Email is not configured on your device. Our support email is: %@" = "Email is not configured on your device. Our support email is: %@";
+"Enable Notifications" = "Enable Notifications";
+"End-User License Agreement (EULA)" = "End-User License Agreement (EULA)";
+"Enjoy NoteWall+ features." = "Enjoy NoteWall+ features.";
+"Enter Edit Mode" = "Enter Edit Mode";
+"Enter Promo Code" = "Enter Promo Code";
+"Enter code" = "Enter code";
+"Enter promo code" = "Enter promo code";
+"Enter your name" = "Enter your name";
+"Error" = "Error";
+"Error: \(error.localizedDescription)" = "Error: \(error.localizedDescription)";
+"Every piece of feedback makes NoteWall better for everyone." = "Every piece of feedback makes NoteWall better for everyone.";
+"Everything is working perfectly now! Your wallpaper should be updated." = "Everything is working perfectly now! Your wallpaper should be updated.";
+"Failed to redeem code. Please try again." = "Failed to redeem code. Please try again.";
+"Finally stopped forgetting important things. The shortcut setup was easy and it just works!" = "Finally stopped forgetting important things. The shortcut setup was easy and it just works!";
+"Find the RED Image" = "Find the RED Image";
+"First things first" = "First things first";
+"Fix It Now" = "Fix It Now";
+"Focus Elite" = "Focus Elite";
+"Follow the Instructions" = "Follow the Instructions";
+"Follow the guide step-by-step - it will show you exactly what to do!" = "Follow the guide step-by-step - it will show you exactly what to do!";
+"Follow the guide step-by-step to install the shortcut." = "Follow the guide step-by-step to install the shortcut.";
+"Follow the instructions in Shortcuts, then return to this app." = "Follow the instructions in Shortcuts, then return to this app.";
+"Forever" = "Forever";
+"Forever Access" = "Forever Access";
+"Forgetting" = "Forgetting";
+"Friendly Reminder" = "Friendly Reminder";
+"Frustrated" = "Frustrated";
+"Get Help" = "Get Help";
+"Get Help & Fix This" = "Get Help & Fix This";
+"Get Help via Email" = "Get Help via Email";
+"Get Started" = "Get Started";
+"Get helpful nudges that keep\nyour momentum going." = "Get helpful nudges that keep\nyour momentum going.";
+"Get instant help" = "Get instant help";
+"Get lifetime access" = "Get lifetime access";
+"Get monthly access" = "Get monthly access";
+"Get yearly access" = "Get yearly access";
+"Got It - I'll Set This Up Later" = "Got It - I'll Set This Up Later";
+"Got It, I'll Fix This" = "Got It, I'll Fix This";
+"Gray" = "Gray";
+"Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time." = "Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time.";
+"Great! You added your first note" = "Great! You added your first note";
+"HACK" = "HACK";
+"Habit Builder" = "Habit Builder";
+"Have a promo code?" = "Have a promo code?";
+"Help me make it better" = "Help me make it better";
+"Help us make NoteWall better" = "Help us make NoteWall better";
+"Here's the Plan" = "Here's the Plan";
+"Here's what we learned" = "Here's what we learned";
+"Hey %@, did you know that" = "Hey %@, did you know that";
+"Hey! I built NoteWall myself and I'm genuinely trying to make it better every day." = "Hey! I built NoteWall myself and I'm genuinely trying to make it better every day.";
+"Highlight Modes" = "Highlight Modes";
+"Home" = "Home";
+"How many times" = "How many times";
+"How to Redeem Your 30% Discount" = "How to Redeem Your 30% Discount";
+"How to use this code?" = "How to use this code?";
+"How your free trial works" = "How your free trial works";
+"How's NoteWall working for you so far?" = "How's NoteWall working for you so far?";
+"I Have Safari" = "I Have Safari";
+"I Have Shortcuts" = "I Have Shortcuts";
+"I build NoteWall solo — your honest feedback actually decides what I work on next." = "I build NoteWall solo — your honest feedback actually decides what I work on next.";
+"I don't use it enough" = "I don't use it enough";
+"I use lock screen widgets" = "I use lock screen widgets";
+"I'll Do This Later" = "I'll Do This Later";
+"If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next." = "If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next.";
+"If you change your mind, we'd love to have you back." = "If you change your mind, we'd love to have you back.";
+"If you're enjoying it, a review on the App Store would mean the world to me." = "If you're enjoying it, a review on the App Store would mean the world to me.";
+"Important:" = "Important:";
+"Instagram" = "Instagram";
+"Install" = "Install";
+"Install & Continue" = "Install & Continue";
+"Install Shortcut" = "Install Shortcut";
+"Install Shortcut Again" = "Install Shortcut Again";
+"Install the new shortcut" = "Install the new shortcut";
+"Installation Check" = "Installation Check";
+"Instant Exports" = "Instant Exports";
+"Invalid Code" = "Invalid Code";
+"Invalid promo code" = "Invalid promo code";
+"Issues found:" = "Issues found:";
+"It's a free Apple app that allows NoteWall to work in the background." = "It's a free Apple app that allows NoteWall to work in the background.";
+"It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!" = "It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!";
+"It's okay" = "It's okay";
+"It's too expensive for me" = "It's too expensive for me";
+"Just browsing my account" = "Just browsing my account";
+"Just for you" = "Just for you";
+"Just testing it out" = "Just testing it out";
+"Just wanted to try it" = "Just wanted to try it";
+"Keep Me in the Loop" = "Keep Me in the Loop";
+"Keep Your Goals Always in Sight" = "Keep Your Goals Always in Sight";
+"Keep your goals in front of you every single time you pickup your phone to stay locked in." = "Keep your goals in front of you every single time you pickup your phone to stay locked in.";
+"LIFETIME" = "LIFETIME";
+"Last one: what's your biggest distraction?" = "Last one: what's your biggest distraction?";
+"Launching Shortcut…" = "Launching Shortcut…";
+"Leave a Review" = "Leave a Review";
+"Legal" = "Legal";
+"Legal Documents" = "Legal Documents";
+"Let us know what feature you'd like and we'll build it!" = "Let us know what feature you'd like and we'll build it!";
+"Let's Do This!" = "Let's Do This!";
+"Let's Do This, %@!" = "Let's Do This, %@!";
+"Let's Find Out" = "Let's Find Out";
+"Let's Fix It" = "Let's Fix It";
+"Let's Set It Up" = "Let's Set It Up";
+"Let's fix the issue together" = "Let's fix the issue together";
+"Let's get %@'s focus system working" = "Let's get %@'s focus system working";
+"Let's get your focus system working" = "Let's get your focus system working";
+"Let's make forgetting a thing of the past" = "Let's make forgetting a thing of the past";
+"Lifetime" = "Lifetime";
+"Lifetime Access" = "Lifetime Access";
+"Lifetime Access Granted" = "Lifetime Access Granted";
+"Lifetime Ownership" = "Lifetime Ownership";
+"Lifetime access has been granted. Enjoy NoteWall+" = "Lifetime access has been granted. Enjoy NoteWall+";
+"Lifetime access has been granted. Enjoy NoteWall+!" = "Lifetime access has been granted. Enjoy NoteWall+!";
+"Lifetime option is currently unavailable" = "Lifetime option is currently unavailable";
+"Loading video..." = "Loading video...";
+"Lock Screen Focus" = "Lock Screen Focus";
+"Lock Screen Preset" = "Lock Screen Preset";
+"Lock Screen folder access denied" = "Lock Screen folder access denied";
+"Lock screen updates automatically" = "Lock screen updates automatically";
+"Long-Press the Image" = "Long-Press the Image";
+"Long-press on your wallpaper" = "Long-press on your wallpaper";
+"Love NoteWall?" = "Love NoteWall?";
+"Love seeing my notes on my lock screen! It's like having a personal reminder that's always there." = "Love seeing my notes on my lock screen! It's like having a personal reminder that's always there.";
+"Loving it!" = "Loving it!";
+"Manage My Account" = "Manage My Account";
+"Max Video Height: \(Int(AdaptiveLayout.maxVideoHeight))" = "Max Video Height: \(Int(AdaptiveLayout.maxVideoHeight))";
+"Maybe later" = "Maybe later";
+"Messages & notifications" = "Messages & notifications";
+"Micro-reminders on each pickup help you follow through without thinking" = "Micro-reminders on each pickup help you follow through without thinking";
+"Missing features I need" = "Missing features I need";
+"Modern" = "Modern";
+"Mono" = "Mono";
+"Monthly" = "Monthly";
+"Monthly Access Granted" = "Monthly Access Granted";
+"Most Common Issue" = "Most Common Issue";
+"Need Help?" = "Need Help?";
+"Need Manual Help" = "Need Manual Help";
+"Neon" = "Neon";
+"Never forget " = "Never forget ";
+"Never forget what matters." = "Never forget what matters.";
+"Never miss what matters" = "Never miss what matters";
+"New system is active" = "New system is active";
+"New: Smart Wallpaper Themes" = "New: Smart Wallpaper Themes";
+"Next: \(nextStep)" = "Next: \(nextStep)";
+"Nice to meet you," = "Nice to meet you,";
+"No Thanks" = "No Thanks";
+"No file selected." = "No file selected.";
+"No, Got Stuck" = "No, Got Stuck";
+"No, This Is Not the Issue" = "No, This Is Not the Issue";
+"None" = "None";
+"Not Now" = "Not Now";
+"Not great" = "Not great";
+"Not now" = "Not now";
+"Note" = "Note";
+"NoteWall" = "NoteWall";
+"NoteWall Feedback" = "NoteWall Feedback";
+"NoteWall Feedback - %@" = "NoteWall Feedback - %@";
+"NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone." = "NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone.";
+"NoteWall uses Apple's Shortcuts app to automatically update your lock screen." = "NoteWall uses Apple's Shortcuts app to automatically update your lock screen.";
+"NoteWall+ Active" = "NoteWall+ Active";
+"Notes Deleted!" = "Notes Deleted!";
+"Notes are hard to read" = "Notes are hard to read";
+"Notes start appearing lower to avoid widgets that are below the time." = "Notes start appearing lower to avoid widgets that are below the time.";
+"Notes start closer to the time for more space and aesthetic look." = "Notes start closer to the time for more space and aesthetic look.";
+"Notes were too small to read" = "Notes were too small to read";
+"Notice" = "Notice";
+"Notifications video loading..." = "Notifications video loading...";
+"Now" = "Now";
+"Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes." = "Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes.";
+"One-Time Shortcut Setup Required" = "One-Time Shortcut Setup Required";
+"One-time purchase, own NoteWall+ forever" = "One-time purchase, own NoteWall+ forever";
+"Open App Store" = "Open App Store";
+"Open Photos" = "Open Photos";
+"Open Privacy Policy" = "Open Privacy Policy";
+"Open Terms of Use" = "Open Terms of Use";
+"Our team responds within 24 hours" = "Our team responds within 24 hours";
+"Own NoteWall+" = "Own NoteWall+";
 "Own NoteWall+ forever" = "Own NoteWall+ forever";
 "Own NoteWall+ forever • No renewals" = "Own NoteWall+ forever • No renewals";
-"One-time purchase, own NoteWall+ forever" = "One-time purchase, own NoteWall+ forever";
-"Get yearly access" = "Get yearly access";
-"Get monthly access" = "Get monthly access";
-"Get lifetime access" = "Get lifetime access";
-"Products are still loading. Please try again in a moment." = "Products are still loading. Please try again in a moment.";
-"Please select a pricing option." = "Please select a pricing option.";
-"Today" = "Today";
-"Start staying locked in and focused on what matters." = "Start staying locked in and focused on what matters.";
-"Tomorrow" = "Tomorrow";
-"We'll remind you so you only keep NoteWall+ if you love it." = "We'll remind you so you only keep NoteWall+ if you love it.";
-"After confirmation" = "After confirmation";
-
-// Paywall - Lifetime Plan Sheet
-"LIFETIME" = "LIFETIME";
-"Own NoteWall+" = "Own NoteWall+";
-"Forever" = "Forever";
-"one-time payment" = "one-time payment";
-"Forever Access" = "Forever Access";
-"Your goals appear every time you pick up your phone — stay consistent effortlessly" = "Your goals appear every time you pick up your phone — stay consistent effortlessly";
-"Habit Builder" = "Habit Builder";
-"Micro-reminders on each pickup help you follow through without thinking" = "Micro-reminders on each pickup help you follow through without thinking";
-"Daily Motivation" = "Daily Motivation";
-"Turn your phone into a focus anchor instead of a distraction magnet" = "Turn your phone into a focus anchor instead of a distraction magnet";
-"Unlimited Personalization" = "Unlimited Personalization";
-"Create unlimited NoteWalls with full customization" = "Create unlimited NoteWalls with full customization";
-"Lifetime Ownership" = "Lifetime Ownership";
+"PRODUCTIVITY" = "PRODUCTIVITY";
+"Pair it with a Focus mode to keep your lock screen current throughout the week." = "Pair it with a Focus mode to keep your lock screen current throughout the week.";
 "Pay once. Use forever. No subscriptions or future charges" = "Pay once. Use forever. No subscriptions or future charges";
-"Unlock Forever" = "Unlock Forever";
-"Lifetime option is currently unavailable" = "Lifetime option is currently unavailable";
-"Do you have a promo code?" = "Do you have a promo code?";
-"Secure" = "Secure";
-"Restore Anytime" = "Restore Anytime";
-"Verified" = "Verified";
-"Maybe later" = "Maybe later";
-
-// Paywall - Promo Code Input
-"Enter Promo Code" = "Enter Promo Code";
-"Unlock lifetime access with a valid code" = "Unlock lifetime access with a valid code";
-"Enter promo code" = "Enter promo code";
-"Please enter a promo code" = "Please enter a promo code";
-"Success! 🎉" = "Success! 🎉";
-"Lifetime Access Granted" = "Lifetime Access Granted";
-"You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever." = "You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever.";
-"Monthly Access Granted" = "Monthly Access Granted";
-"You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month." = "You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month.";
-"Access Granted" = "Access Granted";
-"Enjoy NoteWall+ features." = "Enjoy NoteWall+ features.";
-"Failed to redeem code. Please try again." = "Failed to redeem code. Please try again.";
-
-// MARK: - Social Sharing
-"social_share_wallpaper" = "Created my productivity wallpaper with NoteWall! 📱✨ #NoteWall #ProductivityHack #LockScreen";
-"social_share_long" = "Just discovered NoteWall - it turns your lock screen into a productivity powerhouse! 🚀\nSee your goals every time you unlock your phone. Game changer!\n#ProductivityHack #NoteWall #LockScreen";
-"social_share_goals" = "✨ Daily Goals ✨\n\n• Focus on what matters\n• Stay productive\n• Build better habits\n\nCreated with NoteWall";
-
-// MARK: - Plan Names
+"Paywall after 3 uses felt too early" = "Paywall after 3 uses felt too early";
+"Permission popups appear here" = "Permission popups appear here";
+"Permissions granted!" = "Permissions granted!";
+"Personal goals & habits" = "Personal goals & habits";
+"Photo Library" = "Photo Library";
 "Plan" = "Plan";
-
-// MARK: - Apology & Migration Flow
+"Please allow access to your photo library to select a wallpaper." = "Please allow access to your photo library to select a wallpaper.";
+"Please enter a promo code" = "Please enter a promo code";
+"Please select a pricing option." = "Please select a pricing option.";
+"Please wait while we check your setup..." = "Please wait while we check your setup...";
+"Please wait while we verify that your shortcut is configured correctly." = "Please wait while we verify that your shortcut is configured correctly.";
+"Premium fully restored" = "Premium fully restored";
+"Preparing your focus plan..." = "Preparing your focus plan...";
+"Presets" = "Presets";
+"Preview" = "Preview";
+"Privacy" = "Privacy";
+"Privacy Options" = "Privacy Options";
+"Privacy Policy" = "Privacy Policy";
+"Pro tip: make it automatic" = "Pro tip: make it automatic";
+"Products are still loading. Please try again in a moment." = "Products are still loading. Please try again in a moment.";
+"Quick 4-Minute Setup" = "Quick 4-Minute Setup";
+"Quick Check" = "Quick Check";
+"Quick Fix" = "Quick Fix";
+"Quick Fix for Apple Presets" = "Quick Fix for Apple Presets";
+"Quick check-in" = "Quick check-in";
+"Rate App" = "Rate App";
+"Rate on App Store" = "Rate on App Store";
+"Read 10 pages tonight" = "Read 10 pages tonight";
+"Ready" = "Ready";
+"Ready to Go" = "Ready to Go";
+"Ready to Try Again?" = "Ready to Try Again?";
+"Ready? Let's Do This!" = "Ready? Let's Do This!";
+"Redeem Code" = "Redeem Code";
+"Redeem in App" = "Redeem in App";
+"Regenerate Wallpaper" = "Regenerate Wallpaper";
+"Regenerating Wallpaper" = "Regenerating Wallpaper";
+"Reinstall Shortcut?" = "Reinstall Shortcut?";
+"Remember to call mom" = "Remember to call mom";
+"Reopen Shortcuts" = "Reopen Shortcuts";
+"Research Insight" = "Research Insight";
+"Reset & Reinstall" = "Reset & Reinstall";
+"Restore Anytime" = "Restore Anytime";
+"Restore Purchases" = "Restore Purchases";
+"Retry Verification" = "Retry Verification";
+"Return to NoteWall App" = "Return to NoteWall App";
+"Rounded" = "Rounded";
+"Safari Ready" = "Safari Ready";
+"Safari Required" = "Safari Required";
+"Safari is used to securely process the wallpaper updates." = "Safari is used to securely process the wallpaper updates.";
+"Saving a lock screen image requires iOS 16 or newer." = "Saving a lock screen image requires iOS 16 or newer.";
+"Saving background…" = "Saving background…";
+"Scan Complete" = "Scan Complete";
+"Screen: \(Int(ScreenDimensions.width))×\(Int(ScreenDimensions.height))" = "Screen: \(Int(ScreenDimensions.width))×\(Int(ScreenDimensions.height))";
+"Second Most Common" = "Second Most Common";
+"Secure" = "Secure";
+"See Insights" = "See Insights";
+"See your goals before TikTok, Instagram, or distractions." = "See your goals before TikTok, Instagram, or distractions.";
+"See your notes, reminders or to-do list up to 498x times a day and never forget things." = "See your notes, reminders or to-do list up to 498x times a day and never forget things.";
+"Select All" = "Select All";
+"Select a solid color background" = "Select a solid color background";
+"Select all that apply" = "Select all that apply";
+"Select all that apply:" = "Select all that apply:";
+"Select the one with notes" = "Select the one with notes";
+"Send & Continue" = "Send & Continue";
+"Send Feedback" = "Send Feedback";
+"Send Suggestion" = "Send Suggestion";
+"Set as Lock Screen" = "Set as Lock Screen";
+"Setup Complete ✓" = "Setup Complete ✓";
+"Setup Not Finished" = "Setup Not Finished";
+"Setup Time" = "Setup Time";
+"Share App" = "Share App";
+"Share NoteWall" = "Share NoteWall";
+"Share your ideas, suggestions, or feedback..." = "Share your ideas, suggestions, or feedback...";
+"Shopping & errands" = "Shopping & errands";
+"Shortcut Setup" = "Shortcut Setup";
+"Shortcut URL is not available. Please check your configuration." = "Shortcut URL is not available. Please check your configuration.";
+"Shortcut cannot be executed" = "Shortcut cannot be executed";
+"Shortcut file not found" = "Shortcut file not found";
+"Shortcut is annoying" = "Shortcut is annoying";
+"Shortcut setup was confusing" = "Shortcut setup was confusing";
+"Shortcuts Ready" = "Shortcuts Ready";
+"Shortcuts Required" = "Shortcuts Required";
+"Show all plans" = "Show all plans";
+"Simple and effective. My lock screen keeps me focused on what matters. Game changer!" = "Simple and effective. My lock screen keeps me focused on what matters. Game changer!";
+"Skip for now" = "Skip for now";
+"So" = "So";
+"So we can make this feel like yours" = "So we can make this feel like yours";
+"Something may have gone wrong during the shortcut installation process." = "Something may have gone wrong during the shortcut installation process.";
+"Start Auto-Fix" = "Start Auto-Fix";
+"Start Setup" = "Start Setup";
+"Start Troubleshooting" = "Start Troubleshooting";
+"Start staying locked in and focused on what matters." = "Start staying locked in and focused on what matters.";
+"Starting video..." = "Starting video...";
+"Stay Accountable" = "Stay Accountable";
+"Step %lld of %lld" = "Step %lld of %lld";
+"Step \(currentStep) of \(totalSteps)" = "Step \(currentStep) of \(totalSteps)";
+"Step \(number)" = "Step \(number)";
+"Still Having Issues" = "Still Having Issues";
+"Stop doom scrolling" = "Stop doom scrolling";
+"Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes." = "Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes.";
+"Strong" = "Strong";
+"Subscription Active" = "Subscription Active";
+"Success! 🎉" = "Success! 🎉";
+"Suggest Improvements" = "Suggest Improvements";
+"Suggestions" = "Suggestions";
+"Swipe down to your Lock Screen" = "Swipe down to your Lock Screen";
+"Switch to New System" = "Switch to New System";
+"Switching to the new system doesn't affect your subscription. Nothing changes — it just works better." = "Switching to the new system doesn't affect your subscription. Nothing changes — it just works better.";
+"Takes about 4 minutes" = "Takes about 4 minutes";
+"Takes less than 30 seconds" = "Takes less than 30 seconds";
+"Tap SHARE" = "Tap SHARE";
+"Tap here to replay the video" = "Tap here to replay the video";
+"Tell Me More" = "Tell Me More";
+"Terms" = "Terms";
+"Terms & Privacy" = "Terms & Privacy";
+"Terms of Service" = "Terms of Service";
+"Terms of Use" = "Terms of Use";
+"Test PiP (Debug)" = "Test PiP (Debug)";
+"Text Sarah back" = "Text Sarah back";
+"Text version" = "Text version";
+"Thank You!" = "Thank You!";
+"Thank You! 🙏" = "Thank You! 🙏";
+"Thanks for bearing with us.\nEverything works now." = "Thanks for bearing with us.\nEverything works now.";
+"Thanks for supporting independent development. More features coming soon!" = "Thanks for supporting independent development. More features coming soon!";
+"Thanks, that really helps!" = "Thanks, that really helps!";
+"That was the hardest part.\nEverything else takes under 60 seconds." = "That was the hardest part.\nEverything else takes under 60 seconds.";
+"That's " = "That's ";
+"That's %@ daily chances to remember what matters." = "That's %@ daily chances to remember what matters.";
+"That's \(Text(phoneCheckCount).foregroundColor(.appAccent)) daily chances to remember what matters." = "That's \(Text(phoneCheckCount).foregroundColor(.appAccent)) daily chances to remember what matters.";
+"The Easy Fix" = "The Easy Fix";
+"The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app." = "The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app.";
+"The Problem" = "The Problem";
+"The Problem: Apple's Limitation" = "The Problem: Apple's Limitation";
+"The Solution" = "The Solution";
+"The code you entered is not valid. Please check and try again." = "The code you entered is not valid. Please check and try again.";
+"The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!" = "The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!";
+"The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets." = "The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets.";
+"The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access." = "The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access.";
+"The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app." = "The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app.";
+"The shortcut requires Safari to work properly." = "The shortcut requires Safari to work properly.";
+"The shortcut will then work perfectly - every time you add, edit, or delete notes, your wallpaper will update automatically." = "The shortcut will then work perfectly - every time you add, edit, or delete notes, your wallpaper will update automatically.";
+"The shortcut will then work perfectly every time you update your wallpaper." = "The shortcut will then work perfectly every time you update your wallpaper.";
+"The shortcut worked, but it put notes on the wrong wallpaper in your collection." = "The shortcut worked, but it put notes on the wrong wallpaper in your collection.";
+"The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone." = "The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone.";
+"The wallpaper update took longer than expected. This might be a setup issue." = "The wallpaper update took longer than expected. This might be a setup issue.";
+"These notes will appear on your lock screen wallpaper" = "These notes will appear on your lock screen wallpaper";
+"This action cannot be undone. All your notes will be permanently deleted." = "This action cannot be undone. All your notes will be permanently deleted.";
+"This adjusts where your notes appear on the lock screen" = "This adjusts where your notes appear on the lock screen";
+"This app was designed for people like you..." = "This app was designed for people like you...";
+"This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper." = "This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper.";
+"This happens when you're using Apple's built-in wallpapers. No worries, we will fix this." = "This happens when you're using Apple's built-in wallpapers. No worries, we will fix this.";
+"This helps more than you know." = "This helps more than you know.";
+"This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts." = "This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts.";
+"This isn't a NoteWall bug. It's an Apple limitation that affects all shortcuts that try to modify wallpapers." = "This isn't a NoteWall bug. It's an Apple limitation that affects all shortcuts that try to modify wallpapers.";
+"This next attempt should only take 30 seconds." = "This next attempt should only take 30 seconds.";
+"This promo code has already been redeemed" = "This promo code has already been redeemed";
+"This red image will be saved to your Photos. Set it as your wallpaper to make the shortcut work!" = "This red image will be saved to your Photos. Set it as your wallpaper to make the shortcut work!";
+"This seemed too complicated" = "This seemed too complicated";
+"This takes 30 seconds and you only do it once." = "This takes 30 seconds and you only do it once.";
+"This takes about 2 minutes. Here's exactly what to do:" = "This takes about 2 minutes. Here's exactly what to do:";
+"TikTok" = "TikTok";
+"Time for a quick check-in" = "Time for a quick check-in";
+"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. If you continue, iOS will ask for permission to delete the photo." = "To avoid filling your Photos library, NoteWall can delete the previous wallpaper. If you continue, iOS will ask for permission to delete the photo.";
+"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy." = "To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy.";
+"To notify you before your trial ends, we need to send you notifications. Please allow them in the next step." = "To notify you before your trial ends, we need to send you notifications. Please allow them in the next step.";
+"To notify you before your trial ends, we need to send you notifications. You can disable them anytime." = "To notify you before your trial ends, we need to send you notifications. You can disable them anytime.";
+"Today" = "Today";
+"Tomorrow" = "Tomorrow";
+"Too expensive for what it does" = "Too expensive for what it does";
+"Too many validation attempts. Please try again later." = "Too many validation attempts. Please try again later.";
+"Top 3%" = "Top 3%";
+"Trial Ending Soon" = "Trial Ending Soon";
+"Trigger it every morning before you leave for the day." = "Trigger it every morning before you leave for the day.";
+"Troubleshooting" = "Troubleshooting";
+"Try Auto-Fix" = "Try Auto-Fix";
+"Try Auto-Fix Now" = "Try Auto-Fix Now";
+"Try the new gradient styles" = "Try the new gradient styles";
+"Turn Every Pickup Into Focus" = "Turn Every Pickup Into Focus";
+"Turn your phone into a focus anchor instead of a distraction magnet" = "Turn your phone into a focus anchor instead of a distraction magnet";
+"Tutorial video not found" = "Tutorial video not found";
+"Twitter / X" = "Twitter / X";
+"Twitter/X" = "Twitter/X";
+"Type a note..." = "Type a note...";
+"Unable to load selected photo." = "Unable to load selected photo.";
+"Unable to process captured photo." = "Unable to process captured photo.";
+"Unable to read selected file." = "Unable to read selected file.";
+"Unlimited Personalization" = "Unlimited Personalization";
+"Unlock Forever" = "Unlock Forever";
+"Unlock Full Potential →" = "Unlock Full Potential →";
+"Unlock lifetime access with a valid code" = "Unlock lifetime access with a valid code";
+"Unmark" = "Unmark";
+"Update Timed Out" = "Update Timed Out";
+"Update Wallpaper" = "Update Wallpaper";
+"Update Wallpaper Now" = "Update Wallpaper Now";
+"Update to iOS 16+ to pick a photo directly. For now, choose a preset below." = "Update to iOS 16+ to pick a photo directly. For now, choose a preset below.";
+"Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current lock screen wallpaper." = "Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current lock screen wallpaper.";
+"Updating wallpaper..." = "Updating wallpaper...";
+"Upgrade to NoteWall+" = "Upgrade to NoteWall+";
+"Use a personal automation when you arrive at the office or start a commute." = "Use a personal automation when you arrive at the office or start a commute.";
+"Use as Wallpaper" = "Use as Wallpaper";
+"Valid promo code" = "Valid promo code";
+"Verified" = "Verified";
+"Verify Shortcut Setup" = "Verify Shortcut Setup";
+"Verifying Setup..." = "Verifying Setup...";
+"Verifying Shortcut" = "Verifying Shortcut";
+"Verifying folder access and permissions..." = "Verifying folder access and permissions...";
+"Version %@" = "Version %@";
+"Version \(currentVersion)" = "Version \(currentVersion)";
+"Video playing in Picture-in-Picture" = "Video playing in Picture-in-Picture";
+"Wallpaper Full" = "Wallpaper Full";
+"Wallpaper Updated!" = "Wallpaper Updated!";
+"Wallpaper didn't generate properly" = "Wallpaper didn't generate properly";
+"Wallpapers" = "Wallpapers";
+"Wallpapers got boring" = "Wallpapers got boring";
+"Want a new feature? 💡" = "Want a new feature? 💡";
+"Want me to help fix this in 30 seconds?" = "Want me to help fix this in 30 seconds?";
+"Want to explain more? (optional)" = "Want to explain more? (optional)";
+"Watch Tutorial Again" = "Watch Tutorial Again";
+"Watch this short guide to fix the issue:" = "Watch this short guide to fix the issue:";
+"We Just Updated!" = "We Just Updated!";
+"We Made Things Better!" = "We Made Things Better!";
 "We Owe You an Apology" = "We Owe You an Apology";
+"We can help you fix it in just a few steps." = "We can help you fix it in just a few steps.";
+"We couldn't fix everything automatically. Let's get you personal help." = "We couldn't fix everything automatically. Let's get you personal help.";
+"We need to set up a photo-based wallpaper so the shortcut can work properly." = "We need to set up a photo-based wallpaper so the shortcut can work properly.";
+"We need to set up a photo-based wallpaper so the shortcut can work. The red image is saved to your Photos - let's set it as your wallpaper now." = "We need to set up a photo-based wallpaper so the shortcut can work. The red image is saved to your Photos - let's set it as your wallpaper now.";
+"We'll automatically check and fix common issues. This takes about 30 seconds." = "We'll automatically check and fix common issues. This takes about 30 seconds.";
+"We'll open the Shortcuts app now." = "We'll open the Shortcuts app now.";
+"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "We'll reinstall your shortcut.\nYour notes stay exactly as they are.";
+"We'll remind you so you only keep NoteWall+ if you love it." = "We'll remind you so you only keep NoteWall+ if you love it.";
+"We're Here to Help" = "We're Here to Help";
+"We're here to assist you" = "We're here to assist you";
+"We're here to help you" = "We're here to help you";
+"We've Saved a Special Image for You" = "We've Saved a Special Image for You";
+"Were you able to select a wallpaper?" = "Were you able to select a wallpaper?";
+"What Happens Next?" = "What Happens Next?";
+"What could we improve?" = "What could we improve?";
+"What do you forget\nthe most?" = "What do you forget\nthe most?";
+"What should we call you?" = "What should we call you?";
+"What should we\ncall you?" = "What should we\ncall you?";
+"What this means" = "What this means";
+"What went wrong?" = "What went wrong?";
+"What would make you stay? Be brutally honest..." = "What would make you stay? Be brutally honest...";
+"What's New" = "What's New";
+"What's missing:" = "What's missing:";
+"What's next?" = "What's next?";
+"What's not working? (pick any)" = "What's not working? (pick any)";
+"WhatsApp could not be opened. Would you like to send an email instead?" = "WhatsApp could not be opened. Would you like to send an email instead?";
+"WhatsApp is not installed. Please send us an email at %@" = "WhatsApp is not installed. Please send us an email at %@";
+"What’s next?" = "What’s next?";
+"When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen" = "When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen";
+"Why Couldn't You Select a Wallpaper?" = "Why Couldn't You Select a Wallpaper?";
+"Why Safari?" = "Why Safari?";
+"Why Shortcuts?" = "Why Shortcuts?";
+"Work tasks & deadlines" = "Work tasks & deadlines";
+"Write Us" = "Write Us";
+"Write a Review" = "Write a Review";
+"Wrong Wallpaper" = "Wrong Wallpaper";
+"YOU WANT TO REMEMBER" = "YOU WANT TO REMEMBER";
+"YOUR BIGGEST CHALLENGE" = "YOUR BIGGEST CHALLENGE";
+"Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this." = "Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this.";
+"Yearly" = "Yearly";
+"Yes, Fix This" = "Yes, Fix This";
+"Yes, It Worked!" = "Yes, It Worked!";
+"You can change the font, color, and size of your notes anytime in Settings." = "You can change the font, color, and size of your notes anytime in Settings.";
+"You can change this anytime in Settings" = "You can change this anytime in Settings";
+"You can now change the font, color, size, and alignment of your notes directly in Settings!" = "You can now change the font, color, size, and alignment of your notes directly in Settings!";
+"You check your phone\n" = "You check your phone\n";
+"You check your phone\n%@" = "You check your phone\n%@";
+"You check your phone\n\(Text(reminderFrequency.lowercased()).foregroundColor(.appAccent))" = "You check your phone\n\(Text(reminderFrequency.lowercased()).foregroundColor(.appAccent))";
+"You forget things for one simple reason: you don't see them. NoteWall fixes that." = "You forget things for one simple reason: you don't see them. NoteWall fixes that.";
+"You just did what 97% of people never do:\nbuilt a system that actually works." = "You just did what 97% of people never do:\nbuilt a system that actually works.";
 "You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track." = "You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track.";
-"Your premium is safe" = "Your premium is safe";
+"You pick up your phone up to 498× per day. What if every glance reminded you of what matters?" = "You pick up your phone up to 498× per day. What if every glance reminded you of what matters?";
+"You're All Set!" = "You're All Set!";
+"You're building a great habit" = "You're building a great habit";
+"You're crushing this setup!" = "You're crushing this setup!";
+"You've got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "You've got everything set up. Keep these quick highlights in mind as you start using NoteWall.";
+"You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever." = "You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever.";
+"You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month." = "You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month.";
+"YouTube" = "YouTube";
 "Your %lld note is still here" = "Your %lld note is still here";
 "Your %lld notes are still here" = "Your %lld notes are still here";
+"Your 3-day free trial will end soon. We hope you're enjoying NoteWall!" = "Your 3-day free trial will end soon. We hope you're enjoying NoteWall!";
+"Your Focus Profile" = "Your Focus Profile";
+"Your Focus Profile, %@" = "Your Focus Profile, %@";
+"Your Focus System Is Ready! 🎉" = "Your Focus System Is Ready! 🎉";
+"Your New Trajectory" = "Your New Trajectory";
+"Your New Trajectory,\n%@" = "Your New Trajectory,\n%@";
+"Your Privacy Policy is hosted online." = "Your Privacy Policy is hosted online.";
+"Your Subscription is Safe" = "Your Subscription is Safe";
+"Your Terms of Use are hosted online." = "Your Terms of Use are hosted online.";
+"Your feedback helps us make NoteWall better for everyone." = "Your feedback helps us make NoteWall better for everyone.";
+"Your first name" = "Your first name";
+"Your free trial subscription will be ending soon." = "Your free trial subscription will be ending soon.";
+"Your goals appear every time you pick up your phone — stay consistent effortlessly" = "Your goals appear every time you pick up your phone — stay consistent effortlessly";
+"Your lock screen becomes a visual cue you can't ignore." = "Your lock screen becomes a visual cue you can't ignore.";
 "Your notes are still here" = "Your notes are still here";
-"1-minute fix, then you're done" = "1-minute fix, then you're done";
-"Fix It Now" = "Fix It Now";
-"Here's the Plan" = "Here's the Plan";
-"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "We'll reinstall your shortcut.\nYour notes stay exactly as they are.";
-"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same.";
-"Install the new shortcut" = "Install the new shortcut";
-"Allow one permission" = "Allow one permission";
-"Done — wallpapers update automatically" = "Done — wallpapers update automatically";
-"Let's Fix It" = "Let's Fix It";
-"You're All Set!" = "You're All Set!";
-"Thanks for bearing with us.\nEverything works now." = "Thanks for bearing with us.\nEverything works now.";
-"New system is active" = "New system is active";
-"Premium fully restored" = "Premium fully restored";
-"Lock screen updates automatically" = "Lock screen updates automatically";
-"Back to My Notes" = "Back to My Notes";
+"Your notes are waiting on your lock screen" = "Your notes are waiting on your lock screen";
+"Your premium is safe" = "Your premium is safe";
+"Your shortcut is configured correctly. You're all set!" = "Your shortcut is configured correctly. You're all set!";
+"Your suggestion" = "Your suggestion";
+"Your suggestion has been sent" = "Your suggestion has been sent";
+"Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones." = "Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones.";
+"You’ve got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "You’ve got everything set up. Keep these quick highlights in mind as you start using NoteWall.";
+"\(Int(shadowIntensity * 100))%" = "\(Int(shadowIntensity * 100))%";
+"\(Int(value))" = "\(Int(value))";
+"\(countdownNumber)" = "\(countdownNumber)";
+"\(displayedPercentage)%" = "\(displayedPercentage)%";
+"\(improvementText.count) characters" = "\(improvementText.count) characters";
+"\(index + 1)" = "\(index + 1)";
+"\(nameText.trimmingCharacters(in: .whitespacesAndNewlines))!" = "\(nameText.trimmingCharacters(in: .whitespacesAndNewlines))!";
+"\(noteIndex(for: note) + 1)." = "\(noteIndex(for: note) + 1).";
+"\(number)" = "\(number)";
+"\(paywallManager.remainingFreeExports) free wallpapers remaining" = "\(paywallManager.remainingFreeExports) free wallpapers remaining";
+"\(phoneCheckCount) times" = "\(phoneCheckCount) times";
+"\(position)" = "\(position)";
+"\(remainingSeconds)" = "\(remainingSeconds)";
+"\(step.id)" = "\(step.id)";
+"again" = "again";
+"avg glance" = "avg glance";
+"click ALLOW for all" = "click ALLOW for all";
+"device_info_format" = "Device: %@\niOS: %@\nApp Version: %@";
+"did you actually" = "did you actually";
+"for" = "for";
+"forget" = "forget";
+"forgotten" = "forgotten";
+"iosnotewall@gmail.com" = "iosnotewall@gmail.com";
+"never" = "never";
+"new" = "new";
+"one-time payment" = "one-time payment";
+"remember" = "remember";
+"screen time" = "screen time";
+"sec" = "sec";
+"share_app_text" = "Just discovered NoteWall - it turns your lock screen into a productivity powerhouse! 🚀\n\nSee your goals every time you unlock your phone. Game changer!\n\n#ProductivityHack #NoteWall #LockScreen";
+"social_share_goals" = "✨ Daily Goals ✨\n\n• Focus on what matters\n• Stay productive\n• Build better habits\n\nCreated with NoteWall";
+"social_share_long" = "Just discovered NoteWall - it turns your lock screen into a productivity powerhouse! 🚀\nSee your goals every time you unlock your phone. Game changer!\n#ProductivityHack #NoteWall #LockScreen";
+"social_share_wallpaper" = "Created my productivity wallpaper with NoteWall! 📱✨ #NoteWall #ProductivityHack #LockScreen";
+"the average person unlocks their phone up to" = "the average person unlocks their phone up to";
+"times per day ?" = "times per day ?";
+"unlocks their phone up to" = "unlocks their phone up to";
+"what matters" = "what matters";
+"why?" = "why?";
+"you'll" = "you'll";
+"your" = "your";
+"~3 minutes" = "~3 minutes";
+"~30 seconds" = "~30 seconds";
+"🎉 Nailed It!" = "🎉 Nailed It!";
+"🚨 %@, 3 things forgotten today" = "🚨 %@, 3 things forgotten today";
+"🚨 %@, what did you forget?" = "🚨 %@, what did you forget?";
+"🚨 3 things forgotten today" = "🚨 3 things forgotten today";
+"🚨 What did you forget?" = "🚨 What did you forget?";
+"🚨🚨 Claim Your Special Offer" = "🚨🚨 Claim Your Special Offer";
+"🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SPECIAL OFFER 🚨🚨";
+

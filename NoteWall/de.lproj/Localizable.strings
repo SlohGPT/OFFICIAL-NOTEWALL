@@ -1,772 +1,719 @@
 /* 
-  Localizable.strings (German)
+  Localizable.strings (German - Deutsch)
   NoteWall
   
-  German localization - Deutsch
+  Auto-generated translations
 */
 
 // MARK: - Common UI Elements
-"Continue" = "Weiter";
+"Apply" = "Anwenden";
 "Cancel" = "Abbrechen";
+"Close" = "Schließen";
+"Continue" = "Weiter";
 "Delete" = "Löschen";
 "Done" = "Fertig";
-"Close" = "Schließen";
-"OK" = "OK";
-"Skip" = "Überspringen";
 "Next" = "Weiter";
-"Yes" = "Ja";
 "No" = "Nein";
-"Send" = "Senden";
-"Apply" = "Anwenden";
+"OK" = "OK";
 "Save" = "Speichern";
+"Send" = "Senden";
+"Skip" = "Überspringen";
+"Yes" = "Ja";
+
+// MARK: - Loading States
+"Generating..." = "Wird erstellt...";
 "Loading..." = "Laden...";
+"Saving…" = "Wird gespeichert…";
 "Sending..." = "Wird gesendet...";
 "Updating…" = "Wird aktualisiert…";
-"Generating..." = "Wird erstellt...";
-"Saving…" = "Wird gespeichert…";
-"Preview" = "Vorschau";
-"Install" = "Installieren";
 
-// MARK: - Tab Bar
-"Home" = "Start";
-"Settings" = "Einstellungen";
-
-// MARK: - Content View (Home Screen)
-"NoteWall" = "NoteWall";
-"No notes yet" = "Noch keine Notizen";
+// MARK: - Home Screen
 "Add a note below to get started" = "Füge unten eine Notiz hinzu, um loszulegen";
-"Add a note..." = "Notiz hinzufügen...";
-"Update Wallpaper" = "Hintergrundbild aktualisieren";
-"Select All" = "Alle auswählen";
-"Deselect All" = "Alle abwählen";
-"Delete Selected" = "Ausgewählte löschen";
-"Enter Edit Mode" = "Bearbeitungsmodus";
-"Note" = "Notiz";
-"Unmark" = "Markierung aufheben";
-"Delete (%lld)" = "Löschen (%lld)";
-
-// Content View - Alerts
-"Delete Previous Wallpaper?" = "Vorheriges Hintergrundbild löschen?";
-"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy." = "Um deine Fotobibliothek nicht zu überfüllen, kann NoteWall das vorherige Hintergrundbild löschen. So bleibt alles ordentlich.";
-"Delete Note?" = "Notiz löschen?";
-"Are you sure you want to delete this note? This action cannot be undone." = "Bist du sicher, dass du diese Notiz löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
-"Delete Selected Notes?" = "Ausgewählte Notizen löschen?";
-"Are you sure you want to delete the selected notes? This action cannot be undone." = "Bist du sicher, dass du die ausgewählten Notizen löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
-"Wallpaper Full" = "Hintergrundbild voll";
-"Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones." = "Dein Hintergrundbild hat die maximale Kapazität erreicht. Erledige oder lösche bestehende Notizen, um neue hinzuzufügen.";
-
-// Content View - Banners
+"No notes yet" = "Noch keine Notizen";
 "Wallpaper Not Showing?" = "Hintergrundbild wird nicht angezeigt?";
-"We can help you fix it in just a few steps." = "Wir können dir in wenigen Schritten helfen.";
-"Get Help" = "Hilfe erhalten";
-"Friendly Reminder" = "Freundliche Erinnerung";
-"Your free trial subscription will be ending soon." = "Deine kostenlose Testphase endet bald.";
 
-// Content View - Tooltips
-"Great! You added your first note" = "Super! Du hast deine erste Notiz hinzugefügt";
-"Add more notes using the + button, then tap \"Update Wallpaper\" to apply them to your lock screen." = "Füge weitere Notizen mit der + Taste hinzu und tippe dann auf \"Hintergrundbild aktualisieren\", um sie auf deinem Sperrbildschirm anzuwenden.";
-
-// MARK: - Settings View
-"Delete All Notes?" = "Alle Notizen löschen?";
-"This action cannot be undone. All your notes will be permanently deleted." = "Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Notizen werden dauerhaft gelöscht.";
-"Reinstall Shortcut?" = "Kurzbefehl neu installieren?";
-"Reset & Reinstall" = "Zurücksetzen & neu installieren";
-"NoteWall+ Active" = "NoteWall+ Aktiv";
-"Lifetime Access" = "Lebenslanger Zugang";
-"Subscription Active" = "Abo aktiv";
-"Upgrade to NoteWall+" = "Upgrade auf NoteWall+";
-"%lld free wallpapers remaining" = "%lld kostenlose Hintergrundbilder übrig";
-"Text Style" = "Textstil";
-"After changing styles, tap **Update Wallpaper Now** above to apply" = "Tippe nach dem Ändern des Stils oben auf **Hintergrundbild jetzt aktualisieren**";
-"Wallpaper Settings" = "Hintergrundbild-Einstellungen";
-"I use lock screen widgets" = "Ich verwende Sperrbildschirm-Widgets";
-"Notes start appearing lower to avoid widgets that are below the time." = "Notizen erscheinen weiter unten, um Widgets unterhalb der Uhrzeit nicht zu verdecken.";
-"Notes start closer to the time for more space and aesthetic look." = "Notizen erscheinen näher an der Uhrzeit für mehr Platz und eine ästhetischere Optik.";
-"Wallpapers" = "Hintergrundbilder";
-"Actions" = "Aktionen";
-"Delete All Notes" = "Alle Notizen löschen";
-"Write a Review" = "Bewertung schreiben";
+// MARK: - Settings
 "Help & Support" = "Hilfe & Support";
-"Send Feedback" = "Feedback senden";
-"Contact Support" = "Support kontaktieren";
-"Legal" = "Rechtliches";
-"Share NoteWall" = "NoteWall teilen";
-"We're Here to Help" = "Wir helfen dir gerne";
-"Our team responds within 24 hours" = "Unser Team antwortet innerhalb von 24 Stunden";
-"Email Support" = "E-Mail-Support";
-"Chat on WhatsApp" = "Chat über WhatsApp";
-"Get instant help" = "Sofortige Hilfe";
-"Twitter / X" = "Twitter / X";
-"Terms of Service" = "Nutzungsbedingungen";
-"EULA" = "EULA";
-"Privacy Policy" = "Datenschutzrichtlinie";
-"Update Wallpaper Now" = "Hintergrundbild jetzt aktualisieren";
-"Saving a lock screen image requires iOS 16 or newer." = "Das Speichern eines Sperrbildschirmbilds erfordert iOS 16 oder neuer.";
+"Settings" = "Einstellungen";
+"Text Style" = "Textstil";
+"Wallpaper Settings" = "Hintergrundbild-Einstellungen";
 
-// Settings - Share Text
-"share_app_text" = "Gerade NoteWall entdeckt – es verwandelt deinen Sperrbildschirm in eine Produktivitätsmaschine! 🚀\n\nSieh deine Ziele bei jedem Entsperren. Ein Game Changer!\n\n#ProductivityHack #NoteWall #LockScreen";
-
-// Settings - Device Info
-"device_info_format" = "Gerät: %@\niOS: %@\nApp-Version: %@";
-
-// MARK: - Font Names
-"Classic" = "Klassisch";
-"Modern" = "Modern";
-"Rounded" = "Rund";
-"Mono" = "Mono";
-"Strong" = "Fett";
-"Neon" = "Neon";
-
-// MARK: - Models
-"Black" = "Schwarz";
-"Gray" = "Grau";
-"None" = "Ohne";
-"Terms & Privacy" = "Nutzung & Datenschutz";
-
-// MARK: - Onboarding - Pre-Hook
-"Never miss what matters" = "Vergiss nie, was wichtig ist";
-"Get Started" = "Los geht's";
-
-// Onboarding - Sample Notes
-"Remember to call mom" = "Mama anrufen nicht vergessen";
-"Read 10 pages tonight" = "Heute Abend 10 Seiten lesen";
-"Stop doom scrolling" = "Endloses Scrollen stoppen";
-"Text Sarah back" = "Sarah zurückschreiben";
-
-// Onboarding - Welcome
-"Welcome to NoteWall" = "Willkommen bei NoteWall";
-"You forget things for one simple reason: you don't see them. NoteWall fixes that." = "Du vergisst Dinge aus einem einfachen Grund: Du siehst sie nicht. NoteWall ändert das.";
-
-// Onboarding - Value Props
-"Turn Every Pickup Into Focus" = "Mach jedes Entsperren produktiv";
-"You pick up your phone up to 498× per day. What if every glance reminded you of what matters?" = "Du nimmst dein Handy bis zu 498× am Tag in die Hand. Was wäre, wenn dich jeder Blick an das Wichtige erinnert?";
-"Keep Your Goals Always in Sight" = "Behalte deine Ziele immer im Blick";
-"Your lock screen becomes a visual cue you can't ignore." = "Dein Sperrbildschirm wird zum visuellen Signal, das du nicht ignorieren kannst.";
-"Beat Scrolling Before It Starts" = "Besiege das Scrollen, bevor es beginnt";
-"See your goals before TikTok, Instagram, or distractions." = "Sieh deine Ziele, bevor TikTok, Instagram oder Ablenkungen zuschlagen.";
-
-// Onboarding - Quiz Questions
-"But before we start, what do you forget the most?" = "Aber bevor wir starten, was vergisst du am meisten?";
-"Select all that apply" = "Wähle alle zutreffenden aus";
-"And how often do you check your phone?" = "Und wie oft schaust du auf dein Handy?";
-"Be honest, no judgment!" = "Sei ehrlich, wir urteilen nicht!";
-"Last one: what's your biggest distraction?" = "Letzte Frage: Was lenkt dich am meisten ab?";
-
-// Onboarding - Quiz Options
-"Work tasks & deadlines" = "Arbeitsaufgaben & Deadlines";
-"Personal goals & habits" = "Persönliche Ziele & Gewohnheiten";
-"Shopping & errands" = "Einkaufen & Besorgungen";
-"Daily habits & routines" = "Tägliche Gewohnheiten & Routinen";
-"A little bit of everything" = "Von allem ein bisschen";
-"50-100 times" = "50-100 Mal";
-"100-200 times" = "100-200 Mal";
-"200+ times (power user!)" = "200+ Mal (Power User!)";
-"TikTok" = "TikTok";
-"Instagram" = "Instagram";
-"YouTube" = "YouTube";
-"Twitter/X" = "Twitter/X";
-"Messages & notifications" = "Nachrichten & Benachrichtigungen";
-
-// Onboarding - Setup Intro
-"Quick 4-Minute Setup" = "Schnelles 4-Minuten-Setup";
-"Let's get %@'s focus system working" = "Lass uns %@s Fokus-System einrichten";
-"Let's get your focus system working" = "Lass uns dein Fokus-System einrichten";
-"About 4 minutes" = "Etwa 4 Minuten";
-"Let's Do This, %@!" = "Los geht's, %@!";
-"Let's Do This!" = "Los geht's!";
-
-// Onboarding - Setup Steps
-"Connect the shortcut" = "Kurzbefehl verbinden";
-"~3 minutes" = "~3 Minuten";
-"Add your first notes" = "Erste Notizen hinzufügen";
-"~30 seconds" = "~30 Sekunden";
-"Choose your wallpaper style" = "Hintergrundbild-Stil wählen";
-
-// Onboarding - Success
-"🎉 Nailed It!" = "🎉 Geschafft!";
-"That was the hardest part.\nEverything else takes under 60 seconds." = "Das war der schwierigste Teil.\nAlles andere dauert unter 60 Sekunden.";
-"%@, you're crushing this setup!" = "%@, du rockst dieses Setup!";
-"You're crushing this setup!" = "Du rockst dieses Setup!";
-
-// Onboarding - Shortcut Install
-"Install Shortcut" = "Kurzbefehl installieren";
-"We'll open the Shortcuts app now." = "Wir öffnen jetzt die Kurzbefehle-App.";
-"A video guide will appear" = "Eine Video-Anleitung erscheint";
-"Follow the guide step-by-step to install the shortcut." = "Folge der Anleitung Schritt für Schritt, um den Kurzbefehl zu installieren.";
-"Install & Continue" = "Installieren & Weiter";
-"Launching Shortcut…" = "Kurzbefehl wird gestartet…";
-
-// Onboarding - Shortcuts/Safari Required
-"Shortcuts Required" = "Kurzbefehle erforderlich";
-"NoteWall uses Apple's Shortcuts app to automatically update your lock screen." = "NoteWall nutzt Apples Kurzbefehle-App, um deinen Sperrbildschirm automatisch zu aktualisieren.";
-"Why Shortcuts?" = "Warum Kurzbefehle?";
-"It's a free Apple app that allows NoteWall to work in the background." = "Es ist eine kostenlose Apple-App, die NoteWall im Hintergrund arbeiten lässt.";
-"I Have Shortcuts" = "Ich habe Kurzbefehle";
-"Download Shortcuts" = "Kurzbefehle laden";
-"Shortcuts Ready" = "Kurzbefehle bereit";
-"Safari Required" = "Safari erforderlich";
-"The shortcut requires Safari to work properly." = "Der Kurzbefehl benötigt Safari, um richtig zu funktionieren.";
-"Why Safari?" = "Warum Safari?";
-"Safari is used to securely process the wallpaper updates." = "Safari wird verwendet, um die Hintergrundbild-Updates sicher zu verarbeiten.";
-"I Have Safari" = "Ich habe Safari";
-"Download Safari" = "Safari laden";
-"Safari Ready" = "Safari bereit";
-
-// Onboarding - Apple Preset Fix
-"Quick Fix for Apple Presets" = "Schnellfix für Apple-Voreinstellungen";
-"Why Couldn't You Select a Wallpaper?" = "Warum konntest du kein Hintergrundbild auswählen?";
-"The Problem: Apple's Limitation" = "Das Problem: Eine Apple-Einschränkung";
-"The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets." = "Der Grund, warum du kein Hintergrundbild auswählen konntest, ist einfach: Du verwendest gerade eine von Apples vorinstallierten Hintergrundbild-Voreinstellungen.";
-"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets." = "Apple hat die Kurzbefehle-App so gestaltet, dass sie nur mit Hintergrundbildern aus deiner Fotobibliothek funktioniert – nicht mit vorinstallierten Voreinstellungen.";
-"This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts." = "Das ist kein NoteWall-Fehler. Es ist eine Apple-Einschränkung, die alle Apps betrifft, die Kurzbefehle nutzen.";
-"We've Saved a Special Image for You" = "Wir haben ein spezielles Bild für dich gespeichert";
-"This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper." = "Dieses leuchtend rote Bild wird in deinen Fotos gespeichert, sobald du unten auf Weiter tippst. Du verwendest es, um ein fotobasiertes Hintergrundbild zu erstellen.";
-"Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like." = "Keine Sorge – das ist nur vorübergehend. Sobald der Kurzbefehl funktioniert, kannst du dein Hintergrundbild zu jedem beliebigen Foto ändern.";
-"The Easy Fix" = "Die einfache Lösung";
-"We need to set up a photo-based wallpaper so the shortcut can work properly." = "Wir müssen ein fotobasiertes Hintergrundbild einrichten, damit der Kurzbefehl richtig funktionieren kann.";
-"This takes about 2 minutes. Here's exactly what to do:" = "Das dauert etwa 2 Minuten. So geht's:";
-"Open Photos" = "Fotos öffnen";
-"Find the RED Image" = "Das ROTE Bild finden";
-"Long-Press the Image" = "Lange auf das Bild drücken";
-"Tap SHARE" = "TEILEN antippen";
-"Use as Wallpaper" = "Als Hintergrundbild verwenden";
-"Set as Lock Screen" = "Als Sperrbildschirm festlegen";
-"Return to NoteWall App" = "Zurück zur NoteWall-App";
-"What Happens Next?" = "Was passiert als Nächstes?";
-"Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes." = "Sobald du dein NoteWall-Bild als Hintergrundbild festgelegt hast, kann der Kurzbefehl es mit deinen Notizen aktualisieren.";
-"The shortcut will then work perfectly every time you update your wallpaper." = "Der Kurzbefehl funktioniert dann perfekt bei jeder Hintergrundbild-Aktualisierung.";
-"Ready? Let's Do This!" = "Bereit? Los geht's!";
-"Got It - I'll Set This Up Later" = "Verstanden – Ich mache das später";
-
-// Onboarding - Retry Shortcut
-"Ready to Try Again?" = "Bereit für einen neuen Versuch?";
-"All Set!" = "Alles bereit!";
-"Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time." = "Gut gemacht! Dein fotobasiertes Hintergrundbild ist bereit. Die Kurzbefehl-Installation wird diesmal perfekt funktionieren.";
-"This next attempt should only take 30 seconds." = "Dieser nächste Versuch sollte nur 30 Sekunden dauern.";
-"Install Shortcut Again" = "Kurzbefehl erneut installieren";
-"Installation Check" = "Installationsprüfung";
-"Were you able to select a wallpaper?" = "Konntest du ein Hintergrundbild auswählen?";
-"Quick Check" = "Kurze Überprüfung";
-"Did you see your wallpapers in the list and could tap one?" = "Hast du deine Hintergrundbilder in der Liste gesehen und konntest eines antippen?";
-"Yes, It Worked!" = "Ja, es hat funktioniert!";
-"No, Got Stuck" = "Nein, es hat nicht geklappt";
-"Accidentally clicked or cancelled?" = "Versehentlich getippt oder abgebrochen?";
-"Tap here to replay the video" = "Tippe hier, um das Video erneut abzuspielen";
-
-// Onboarding - Add Notes
-"Add Your First Notes" = "Füge deine ersten Notizen hinzu";
-"These notes will appear on your lock screen wallpaper" = "Diese Notizen erscheinen auf deinem Sperrbildschirm-Hintergrundbild";
-"Type a note..." = "Notiz eingeben...";
-"Add at least one note to continue" = "Füge mindestens eine Notiz hinzu, um fortzufahren";
-
-// Onboarding - Permissions
-"Allow ALL Permissions" = "ALLE Berechtigungen erlauben";
-"Permission popups appear here" = "Berechtigungs-Popups erscheinen hier";
-"click ALLOW for all" = "tippe bei allen auf ERLAUBEN";
-"(this is how it should look)" = "(so sollte es aussehen)";
-"Permissions granted!" = "Berechtigungen erteilt!";
+// MARK: - Onboarding
 "Grant Permissions First" = "Zuerst Berechtigungen erteilen";
-
-// Onboarding - Wallpaper Choice
-"Choose Your Wallpapers" = "Wähle deine Hintergrundbilder";
-"Edit Notes" = "Notizen bearbeiten";
-"Update to iOS 16+ to pick a photo directly. For now, choose a preset below." = "Aktualisiere auf iOS 16+, um direkt ein Foto auszuwählen. Wähle vorerst eine Voreinstellung.";
-"Do you use lock screen widgets?" = "Verwendest du Sperrbildschirm-Widgets?";
-"This adjusts where your notes appear on the lock screen" = "Dies passt an, wo deine Notizen auf dem Sperrbildschirm erscheinen";
-"You can change this anytime in Settings" = "Du kannst dies jederzeit in den Einstellungen ändern";
-"You can change the font, color, and size of your notes anytime in Settings." = "Du kannst Schriftart, Farbe und Größe deiner Notizen jederzeit in den Einstellungen ändern.";
-
-// Onboarding - Countdown Transition
-"Ready" = "Bereit";
-"for" = "für";
-"your" = "deinen";
-"new" = "neuen";
-"PRODUCTIVITY" = "PRODUKTIVITÄTS";
-"HACK" = "HACK";
-"?" = "?";
-"So" = "Damit";
-"you'll" = "du";
-"never" = "nie";
-"forget" = "vergisst";
-"again" = "wieder";
-
-// Onboarding - Misc
-"Demo video coming soon" = "Demo-Video kommt bald";
 "Start Using NoteWall" = "NoteWall verwenden";
-"Notifications video loading..." = "Benachrichtigungsvideo wird geladen...";
-"We couldn't prepare the wallpaper files. Tap \"Save Lock Screen\" again." = "Wir konnten die Hintergrundbild-Dateien nicht vorbereiten. Tippe erneut auf \"Sperrbildschirm speichern\".";
+"Welcome to NoteWall" = "Willkommen bei NoteWall";
 
-// Onboarding - Help Sheet
-"Need Help?" = "Brauchst du Hilfe?";
-"We're here to assist you" = "Wir sind hier, um dir zu helfen";
-"Get Help via Email" = "Hilfe per E-Mail";
-"We're here to help you" = "Wir helfen dir gerne";
-"Suggest Improvements" = "Verbesserungen vorschlagen";
-"Help us make NoteWall better" = "Hilf uns, NoteWall besser zu machen";
-
-// Onboarding - Suggestion Sheet
-"Thank You!" = "Danke!";
-"Your suggestion has been sent" = "Dein Vorschlag wurde gesendet";
-"What could we improve?" = "Was könnten wir verbessern?";
-"Your feedback helps us make NoteWall better for everyone." = "Dein Feedback hilft uns, NoteWall für alle besser zu machen.";
-"Your suggestion" = "Dein Vorschlag";
-"Share your ideas, suggestions, or feedback..." = "Teile deine Ideen, Vorschläge oder Feedback...";
-"Send Suggestion" = "Vorschlag senden";
-"Suggestions" = "Vorschläge";
+// MARK: - Other
+" daily chances to remember what matters." = " daily chances to remember what matters.";
+"%@ times" = "%@ Mal";
+"%@, Your Focus System Is Ready! 🎉" = "%@, dein Fokus-System ist bereit! 🎉";
+"%@, you're crushing this setup!" = "%@, du rockst dieses Setup!";
 "%lld characters" = "%lld Zeichen";
-
-// Onboarding - WhatsApp/Email Errors
-"WhatsApp could not be opened. Would you like to send an email instead?" = "WhatsApp konnte nicht geöffnet werden. Möchtest du stattdessen eine E-Mail senden?";
-"WhatsApp is not installed. Please send us an email at %@" = "WhatsApp ist nicht installiert. Bitte sende uns eine E-Mail an %@";
-"NoteWall Feedback - %@" = "NoteWall Feedback - %@";
-"Email is not configured on your device. Our support email is: %@" = "E-Mail ist auf deinem Gerät nicht konfiguriert. Unsere Support-E-Mail ist: %@";
-
-// Onboarding - Completion Overview
-"Ready to Go" = "Startklar";
-"You've got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "Alles ist eingerichtet. Behalte diese kurzen Tipps im Hinterkopf, wenn du NoteWall verwendest.";
-"What's next?" = "Was kommt als Nächstes?";
-"Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome." = "Füge Notizen hinzu, aktualisiere das Hintergrundbild und lass NoteWall deinen Sperrbildschirm großartig machen.";
-"Pro tip: make it automatic" = "Profi-Tipp: Automatisiere es";
-"Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed." = "Erstelle eine Kurzbefehle-Automatisierung, damit NoteWall nach deinem Zeitplan läuft – ganz ohne manuellen Aufwand.";
-"Trigger it every morning before you leave for the day." = "Starte es jeden Morgen, bevor du das Haus verlässt.";
-"Pair it with a Focus mode to keep your lock screen current throughout the week." = "Kombiniere es mit einem Fokusmodus, um deinen Sperrbildschirm die ganze Woche aktuell zu halten.";
-"Use a personal automation when you arrive at the office or start a commute." = "Nutze eine persönliche Automatisierung, wenn du im Büro ankommst oder dich auf den Weg machst.";
-
-// MARK: - Enhanced Onboarding - Notifications
-"Time for a quick check-in" = "Zeit für einen kurzen Check-in";
-"Your notes are waiting on your lock screen" = "Deine Notizen warten auf deinem Sperrbildschirm";
-"Now" = "Jetzt";
-"New: Smart Wallpaper Themes" = "Neu: Intelligente Hintergrundbild-Designs";
-"Try the new gradient styles" = "Probiere die neuen Verlaufsstile aus";
+"%lld free wallpapers remaining" = "%lld kostenlose Hintergrundbilder übrig";
+"%lld%% OFF" = "%lld%% RABATT";
+"(this is how it should look)" = "(so sollte es aussehen)";
+"+2 855 people" = "+2.855 Nutzer";
+"+\(formattedUserCount) people" = "+\(formattedUserCount) people";
+"...instead of losing time to %@." = "...statt Zeit mit %@ zu verlieren.";
+"...instead of losing time to \(distractionText.lowercased())." = "...instead of losing time to \(distractionText.lowercased()).";
+"1-minute fix, then you're done" = "1-Minuten-Fix, dann sind Sie fertig";
+"100% Risk-Free" = "100% risikolos";
+"100-200 times" = "100-200 Mal";
+"2.5s" = "2,5 Sek.";
+"200+ times (power user!)" = "200+ Mal (Power User!)";
 "2m ago" = "Vor 2 Min.";
 "3-day streak!" = "3-Tage-Serie!";
-"You're building a great habit" = "Du baust eine tolle Gewohnheit auf";
-"Earlier" = "Früher";
-"Don't miss a thing" = "Verpasse nichts";
-"Get helpful nudges that keep\nyour momentum going." = "Erhalte hilfreiche Erinnerungen,\ndie dich am Ball halten.";
-"Keep Me in the Loop" = "Halte mich auf dem Laufenden";
-"Not now" = "Nicht jetzt";
-
-// Enhanced Onboarding - Name Input
-"What should we call you?" = "Wie sollen wir dich nennen?";
-"So we can make this feel like yours" = "Damit sich alles persönlich anfühlt";
-"Your first name" = "Dein Vorname";
-"Nice to meet you," = "Schön dich kennenzulernen,";
-"Let's make forgetting a thing of the past" = "Machen wir das Vergessen zur Vergangenheit";
-
-// Enhanced Onboarding - Pain Point / Research
-"Research Insight" = "Forschungsergebnis";
-"Hey %@, did you know that" = "Hey %@, wusstest du, dass";
-"Did you know that the average person" = "Wusstest du, dass der Durchschnittsmensch";
-"unlocks their phone up to" = "sein Handy bis zu";
-"times per day ?" = "Mal am Tag entsperrt?";
-"4hrs" = "4 Std.";
-"screen time" = "Bildschirmzeit";
-"96%%" = "96%%";
-"forgotten" = "vergessen";
-"2.5s" = "2,5 Sek.";
-"avg glance" = "Ø Blick";
-"But here's the real question..." = "Aber hier ist die eigentliche Frage...";
-"How many times" = "Wie oft";
-"did you actually" = "hast du dich tatsächlich";
-"remember" = "erinnert";
-"why?" = "warum?";
-"Tell Me More" = "Erzähl mir mehr";
-
-// Enhanced Onboarding - Quiz Transition
-"But, before we start..." = "Aber bevor wir starten...";
-"What do you forget\nthe most?" = "Was vergisst du\nam meisten?";
-"A few quick questions will help us\npersonalize your experience" = "Ein paar kurze Fragen helfen uns,\ndein Erlebnis zu personalisieren";
-"Takes less than 30 seconds" = "Dauert weniger als 30 Sekunden";
-"Let's Find Out" = "Finden wir es heraus";
-
-// Enhanced Onboarding - Personalization Loading
-"Curating Your Experience" = "Dein Erlebnis wird zusammengestellt";
-"Just for you" = "Nur für dich";
-"Analyzing your habits..." = "Deine Gewohnheiten werden analysiert...";
-"Customizing your experience..." = "Dein Erlebnis wird angepasst...";
-"Preparing your focus plan..." = "Dein Fokus-Plan wird vorbereitet...";
-"Almost ready..." = "Fast fertig...";
-
-// Enhanced Onboarding - Results Preview
-"Analysis Complete" = "Analyse abgeschlossen";
-"Your Focus Profile, %@" = "Dein Fokus-Profil, %@";
-"Your Focus Profile" = "Dein Fokus-Profil";
-"Based on your answers" = "Basierend auf deinen Antworten";
-"Here's what we learned" = "Folgendes haben wir herausgefunden";
-"YOU WANT TO REMEMBER" = "DU WILLST DICH ERINNERN AN";
-"YOUR BIGGEST CHALLENGE" = "DEINE GRÖSSTE HERAUSFORDERUNG";
-"DAILY PHONE CHECKS" = "TÄGLICHE HANDY-CHECKS";
-"%@ times" = "%@ Mal";
-"See Insights" = "Erkenntnisse ansehen";
-
-// Enhanced Onboarding - Results Insight
-"What this means" = "Was das bedeutet";
-"You check your phone\n%@" = "Du schaust auf dein Handy\n%@";
-"That's %@ daily chances to remember what matters." = "Das sind %@ tägliche Chancen, dich an das Wichtige zu erinnern.";
-"...instead of losing time to %@." = "...statt Zeit mit %@ zu verlieren.";
-"Let's Set It Up" = "Lass es uns einrichten";
-
-// Enhanced Onboarding - Trajectory
-"Your New Trajectory,\n%@" = "Dein neuer Weg,\n%@";
-"Your New Trajectory" = "Dein neuer Weg";
-"Never forget what matters." = "Vergiss nie, was wichtig ist.";
-"NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone." = "NoteWall zeigt deine wichtigsten Dinge auf deinem Hintergrundbild, damit du sie bei jedem Entsperren siehst.";
-"Takes about 4 minutes" = "Dauert etwa 4 Minuten";
-"Forgetting" = "Vergessen";
-"Daily" = "Täglich";
-"Always" = "Immer";
-
-// Enhanced Onboarding - Setup Complete
-"%@, Your Focus System Is Ready! 🎉" = "%@, dein Fokus-System ist bereit! 🎉";
-"Your Focus System Is Ready! 🎉" = "Dein Fokus-System ist bereit! 🎉";
-"You just did what 97% of people never do:\nbuilt a system that actually works." = "Du hast gerade geschafft, was 97% der Menschen nie tun:\nEin System aufgebaut, das wirklich funktioniert.";
-"Setup Time" = "Setup-Zeit";
-"Daily Reminders" = "Tägliche Erinnerungen";
-"Top 3%" = "Top 3%";
-"Focus Elite" = "Fokus-Elite";
-"Unlock Full Potential →" = "Volles Potenzial entfalten →";
-
-// Enhanced Onboarding - Step Counter
-"Step %lld of %lld" = "Schritt %lld von %lld";
-
-// MARK: - Review Page
-"This app was designed for people like you..." = "Diese App wurde für Menschen wie dich entwickelt...";
-"+2 855 people" = "+2.855 Nutzer";
-
-// Review Cards
-"Love seeing my notes on my lock screen! It's like having a personal reminder that's always there." = "Meine Notizen auf dem Sperrbildschirm zu sehen ist genial! Wie ein persönlicher Reminder, der immer da ist.";
-"The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone." = "Die Hintergrundbild-Funktion ist genial. Ich erinnere mich jetzt wirklich an meine Aufgaben, weil sie direkt auf meinem Handy sind.";
-"Simple and effective. My lock screen keeps me focused on what matters. Game changer!" = "Einfach und effektiv. Mein Sperrbildschirm hält mich fokussiert auf das Wichtige. Ein Game Changer!";
-"Finally stopped forgetting important things. The shortcut setup was easy and it just works!" = "Endlich keine vergessenen wichtigen Dinge mehr. Das Kurzbefehl-Setup war einfach und es funktioniert einfach!";
-"Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated." = "Beste Produktivitäts-App, die ich ausprobiert habe. Meine Ziele bei jedem Entsperren zu sehen hält mich motiviert.";
-"The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!" = "Das individuelle Hintergrundbild mit Notizen ist brillant. Keine Klebezettel mehr überall – alles auf meinem Handy!";
-
-// MARK: - What's New
-"What's New" = "Was ist neu";
-"We Just Updated!" = "Gerade aktualisiert!";
-"Version %@" = "Version %@";
-"Custom Text Styling" = "Eigene Textgestaltung";
-"You can now change the font, color, size, and alignment of your notes directly in Settings!" = "Du kannst jetzt Schriftart, Farbe, Größe und Ausrichtung deiner Notizen direkt in den Einstellungen ändern!";
-"Highlight Modes" = "Hervorhebungs-Modi";
-"Add emphasis with outline, white, or black highlight backgrounds to make your notes pop." = "Hebe deine Notizen mit Umriss-, weißen oder schwarzen Hintergründen hervor.";
-"Thanks for supporting independent development. More features coming soon!" = "Danke für die Unterstützung der unabhängigen Entwicklung. Weitere Funktionen kommen bald!";
-"Love NoteWall?" = "Gefällt dir NoteWall?";
-"It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!" = "Ich bin's nur – Karchi, der hart arbeitet, um NoteWall so gut wie möglich zu machen. Dein Feedback bedeutet mir alles!";
-"Rate on App Store" = "Im App Store bewerten";
-"Write Us" = "Schreib uns";
-"Want a new feature? 💡" = "Wünschst du dir ein neues Feature? 💡";
-"Describe your feature idea..." = "Beschreibe deine Feature-Idee...";
-"No Thanks" = "Nein danke";
-"Let us know what feature you'd like and we'll build it!" = "Sag uns, welches Feature du dir wünschst, und wir bauen es!";
-"NoteWall Feedback" = "NoteWall Feedback";
-
-// MARK: - Exit Feedback
-"Before You Go..." = "Bevor du gehst...";
-"Hey! I built NoteWall myself and I'm genuinely trying to make it better every day." = "Hey! Ich habe NoteWall selbst gebaut und versuche wirklich, es jeden Tag besser zu machen.";
-"If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next." = "Wenn etwas nicht funktioniert hat oder sich komisch anfühlte, möchte ich das unbedingt wissen. Dein Feedback bestimmt direkt, was ich als Nächstes verbessere.";
-"What went wrong?" = "Was ist schiefgelaufen?";
-"Select all that apply:" = "Wähle alle zutreffenden aus:";
-"Shortcut setup was confusing" = "Das Kurzbefehl-Setup war verwirrend";
-"Wallpaper didn't generate properly" = "Das Hintergrundbild wurde nicht richtig erstellt";
-"This seemed too complicated" = "Das schien zu kompliziert";
-"Notes were too small to read" = "Die Notizen waren zu klein zum Lesen";
-"Paywall after 3 uses felt too early" = "Die Bezahlschranke nach 3 Nutzungen kam zu früh";
-"Too expensive for what it does" = "Zu teuer für das, was es bietet";
-"Just testing it out" = "Nur mal ausprobiert";
-"Want to explain more? (optional)" = "Möchtest du mehr erklären? (optional)";
-"Want me to help fix this in 30 seconds?" = "Soll ich dir in 30 Sekunden helfen, das zu beheben?";
-"Try Auto-Fix" = "Auto-Reparatur versuchen";
-"Send Feedback" = "Feedback senden";
-"Skip for now" = "Vorerst überspringen";
-"Thank You! 🙏" = "Danke! 🙏";
-"This helps more than you know." = "Das hilft mehr, als du denkst.";
-"If you change your mind, we'd love to have you back." = "Wenn du es dir anders überlegst, freuen wir uns, dich wieder zu haben.";
-"Try Auto-Fix Now" = "Jetzt Auto-Reparatur starten";
-
-// MARK: - Auto-Fix Workflow
-"Auto-Fix Ready" = "Auto-Reparatur bereit";
-"Verifying Shortcut" = "Kurzbefehl wird überprüft";
-"Regenerating Wallpaper" = "Hintergrundbild wird neu erstellt";
-"Checking Permissions" = "Berechtigungen werden geprüft";
-"All Fixed! ✨" = "Alles repariert! ✨";
-"Need Manual Help" = "Manuelle Hilfe benötigt";
-"We'll automatically check and fix common issues. This takes about 30 seconds." = "Wir prüfen und beheben automatisch häufige Probleme. Das dauert etwa 30 Sekunden.";
-"Checking if the shortcut is properly installed..." = "Prüfe, ob der Kurzbefehl richtig installiert ist...";
-"Creating a fresh wallpaper with your notes..." = "Erstelle ein neues Hintergrundbild mit deinen Notizen...";
-"Verifying folder access and permissions..." = "Prüfe Ordnerzugriff und Berechtigungen...";
-"Everything is working perfectly now! Your wallpaper should be updated." = "Alles funktioniert jetzt perfekt! Dein Hintergrundbild sollte aktualisiert sein.";
-"We couldn't fix everything automatically. Let's get you personal help." = "Wir konnten nicht alles automatisch beheben. Lass uns dir persönlich helfen.";
-"Verify Shortcut Setup" = "Kurzbefehl-Setup überprüfen";
-"Regenerate Wallpaper" = "Hintergrundbild neu erstellen";
-"Check Permissions" = "Berechtigungen prüfen";
-"Start Auto-Fix" = "Auto-Reparatur starten";
-"Issues found:" = "Gefundene Probleme:";
-
-// MARK: - Delete Notes Loading
-"sec" = "Sek.";
-"Deleting notes..." = "Notizen werden gelöscht...";
-"Notes Deleted!" = "Notizen gelöscht!";
-
-// MARK: - Wallpaper Update Loading
-"Updating wallpaper..." = "Hintergrundbild wird aktualisiert...";
-"Wallpaper Updated!" = "Hintergrundbild aktualisiert!";
-"Update Timed Out" = "Zeitüberschreitung";
-"The wallpaper update took longer than expected. This might be a setup issue." = "Die Aktualisierung hat länger gedauert als erwartet. Möglicherweise liegt ein Setup-Problem vor.";
-"Get Help & Fix This" = "Hilfe erhalten & Problem beheben";
-"Dismiss" = "Schließen";
-
-// MARK: - Notifications
-"Trial Ending Soon" = "Testphase endet bald";
-"Your 3-day free trial will end soon. We hope you're enjoying NoteWall!" = "Deine 3-tägige Testphase endet bald. Wir hoffen, NoteWall gefällt dir!";
-"🚨 %@, 3 things forgotten today" = "🚨 %@, 3 Sachen heute vergessen";
-"🚨 3 things forgotten today" = "🚨 3 Sachen heute vergessen";
-"Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes." = "Durchbrich den Kreislauf. Schließe das Setup in 60 Sekunden ab und fange jede Idee ein, bevor sie verschwindet.";
-"🚨 %@, what did you forget?" = "🚨 %@, was hast du vergessen?";
-"🚨 What did you forget?" = "🚨 Was hast du vergessen?";
-"Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this." = "Genau. Duschgedanken, geniale Ideen, Aufgaben, die du geschworen hast zu erledigen—alles weg. Beende das Setup, solange du noch weißt, dass du das wolltest.";
-
-// MARK: - Troubleshooting
-
-// MARK: - Subscription Feedback
-"Quick check-in" = "Kurzer Check";
-"How's NoteWall working for you so far?" = "Wie läuft NoteWall für dich bisher?";
-"Loving it!" = "Liebe es!";
-"It's okay" = "Geht so";
-"Not great" = "Nicht so toll";
-"Frustrated" = "Frustriert";
-"Just browsing my account" = "Schaue nur mein Konto an";
-"Help me make it better" = "Hilf mir, es besser zu machen";
-"I build NoteWall solo — your honest feedback actually decides what I work on next." = "Ich baue NoteWall alleine — dein ehrliches Feedback entscheidet wirklich, woran ich als nächstes arbeite.";
-"What's not working? (pick any)" = "Was funktioniert nicht? (wähl einfach)";
-"It's too expensive for me" = "Zu teuer für mich";
-"I don't use it enough" = "Ich nutze es nicht genug";
-"Wallpapers got boring" = "Hintergründe wurden langweilig";
-"Notes are hard to read" = "Notizen sind schwer zu lesen";
-"Shortcut is annoying" = "Kurzbefehl ist nervig";
-"Missing features I need" = "Funktionen fehlen, die ich brauche";
-"Just wanted to try it" = "Wollte es nur ausprobieren";
-"Anything else? (optional)" = "Noch etwas? (optional)";
-"What would make you stay? Be brutally honest..." = "Was würde dich zum Bleiben bringen? Sei brutal ehrlich...";
-"Sending..." = "Wird gesendet...";
-"Send & Continue" = "Senden und weiter";
-"Skip" = "Überspringen";
-"Thanks, that really helps!" = "Danke, das hilft wirklich!";
-"Every piece of feedback makes NoteWall better for everyone." = "Jedes Feedback macht NoteWall besser für alle.";
-"If you're enjoying it, a review on the App Store would mean the world to me." = "Wenn es dir gefällt, würde mir eine Bewertung im App Store die Welt bedeuten.";
-"Leave a Review" = "Bewertung abgeben";
-"Back to NoteWall" = "Zurück zu NoteWall";
-"Manage My Account" = "Mein Konto verwalten";
-"Actually, I'll stay" = "Eigentlich bleibe ich doch";
-
-// MARK: - Troubleshooting (original)
-"Troubleshooting" = "Fehlerbehebung";
-"Let's fix the issue together" = "Lass uns das Problem gemeinsam lösen";
-"Start Troubleshooting" = "Fehlerbehebung starten";
-"Shortcut Setup" = "Kurzbefehl-Setup";
-"Most Common Issue" = "Häufigstes Problem";
-"The Problem" = "Das Problem";
-"Something may have gone wrong during the shortcut installation process." = "Beim Installationsprozess des Kurzbefehls ist möglicherweise etwas schiefgelaufen.";
-"The Solution" = "Die Lösung";
-"Click \"Yes, Fix This\" below to re-install the shortcut. This usually resolves the issue." = "Tippe unten auf \"Ja, das beheben\", um den Kurzbefehl neu zu installieren. Das löst das Problem normalerweise.";
-"Yes, Fix This" = "Ja, das beheben";
-"No, This Is Not the Issue" = "Nein, das ist nicht das Problem";
-"Wrong Wallpaper" = "Falsches Hintergrundbild";
-"Second Most Common" = "Zweithäufigstes Problem";
-"The shortcut worked, but it put notes on the wrong wallpaper in your collection." = "Der Kurzbefehl hat funktioniert, aber die Notizen auf das falsche Hintergrundbild in deiner Sammlung gesetzt.";
-"Quick Fix" = "Schnellfix";
-"Swipe down to your Lock Screen" = "Wische nach unten zu deinem Sperrbildschirm";
-"Long-press on your wallpaper" = "Halte dein Hintergrundbild lange gedrückt";
-"Select the one with notes" = "Wähle das mit den Notizen aus";
-"Got It, I'll Fix This" = "Verstanden, ich behebe das";
-"Still Having Issues" = "Immer noch Probleme";
-"Please wait while we check your setup..." = "Bitte warte, während wir dein Setup überprüfen...";
-"Scan Complete" = "Überprüfung abgeschlossen";
-
-// MARK: - Shortcut Setup View
-"One-Time Shortcut Setup Required" = "Einmalige Kurzbefehl-Einrichtung erforderlich";
-"This takes 30 seconds and you only do it once." = "Das dauert 30 Sekunden und du machst es nur einmal.";
-"Important:" = "Wichtig:";
-"When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen" = "Wenn der Kurzbefehl nach Ordnerzugriff fragt, navigiere zu:\nDateien → Auf meinem iPhone → NoteWall → LockScreen";
-"Start Setup" = "Setup starten";
-"Follow the Instructions" = "Folge den Anweisungen";
-"Follow the instructions in Shortcuts, then return to this app." = "Folge den Anweisungen in Kurzbefehle und kehre dann zu dieser App zurück.";
-"Verifying Setup..." = "Setup wird überprüft...";
-"Please wait while we verify that your shortcut is configured correctly." = "Bitte warte, während wir prüfen, ob dein Kurzbefehl richtig konfiguriert ist.";
-"Setup Complete ✓" = "Setup abgeschlossen ✓";
-"Your shortcut is configured correctly. You're all set!" = "Dein Kurzbefehl ist richtig konfiguriert. Alles bereit!";
-"Setup Not Finished" = "Setup nicht abgeschlossen";
-"What's missing:" = "Was noch fehlt:";
-"Retry Verification" = "Überprüfung wiederholen";
-"Watch Tutorial Again" = "Tutorial erneut ansehen";
-"Reopen Shortcuts" = "Kurzbefehle erneut öffnen";
-
-// MARK: - Shortcut Verification Service
-"Shortcut file not found" = "Kurzbefehl-Datei nicht gefunden";
-"Lock Screen folder access denied" = "Sperrbildschirm-Ordnerzugriff verweigert";
-"Shortcut cannot be executed" = "Kurzbefehl kann nicht ausgeführt werden";
-"The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app." = "Der NoteWall-Kurzbefehl wurde nicht gefunden. Bitte lade ihn herunter und füge ihn über die Kurzbefehle-App hinzu.";
-"The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access." = "Der Kurzbefehl kann nicht auf den Sperrbildschirm-Ordner zugreifen. Stelle sicher, dass du 'Immer erlauben' getippt hast, als nach dem Ordnerzugriff gefragt wurde.";
-"The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app." = "Der Kurzbefehl kann nicht ausgeführt werden. Bitte prüfe, ob er richtig in der Kurzbefehle-App installiert ist.";
-"Shortcut URL is not available. Please check your configuration." = "Kurzbefehl-URL ist nicht verfügbar. Bitte überprüfe deine Konfiguration.";
-"Could not open the Shortcuts app. Please install the shortcut manually." = "Die Kurzbefehle-App konnte nicht geöffnet werden. Bitte installiere den Kurzbefehl manuell.";
-
-// MARK: - Quick Actions
-"🚨🚨 Claim Your Special Offer" = "🚨🚨 Sichern Sie Ihr Sonderangebot";
-"Before you delete… Can we ask why?" = "Bevor du löschst… Dürfen wir fragen, warum?";
-"Share App" = "App teilen";
-
-// MARK: - Promo Code
-"Lifetime" = "Lebenslang";
-"Monthly" = "Monatlich";
-"Please enter a promo code" = "Bitte gib einen Promo-Code ein";
-"Invalid promo code" = "Ungültiger Promo-Code";
-"This promo code has already been redeemed" = "Dieser Promo-Code wurde bereits eingelöst";
-"Valid promo code" = "Gültiger Promo-Code";
-"Too many validation attempts. Please try again later." = "Zu viele Versuche. Bitte versuche es später erneut.";
-
-// MARK: - Home Screen Photo Picker
-"Add Lock Screen Photo" = "Sperrbildschirm-Foto hinzufügen";
-"Choose your own photo" = "Eigenes Foto auswählen";
-"Photo Library" = "Fotobibliothek";
-"Presets" = "Voreinstellungen";
-"Access Required" = "Zugriff erforderlich";
-"Please allow access to your photo library to select a wallpaper." = "Bitte erlaube den Zugriff auf deine Fotobibliothek, um ein Hintergrundbild auszuwählen.";
-"Lock Screen Preset" = "Sperrbildschirm-Voreinstellung";
-"Saving background…" = "Hintergrund wird gespeichert…";
-"Unable to load selected photo." = "Ausgewähltes Foto konnte nicht geladen werden.";
-"Unable to process captured photo." = "Aufgenommenes Foto konnte nicht verarbeitet werden.";
-"No file selected." = "Keine Datei ausgewählt.";
-"Unable to read selected file." = "Ausgewählte Datei konnte nicht gelesen werden.";
-"Choose a Preset" = "Voreinstellung wählen";
-"Select a solid color background" = "Einfarbigen Hintergrund auswählen";
-
-// MARK: - Legal Documents
-"Your Privacy Policy is hosted online." = "Deine Datenschutzrichtlinie ist online verfügbar.";
-"Open Privacy Policy" = "Datenschutzrichtlinie öffnen";
-"Terms of Use" = "Nutzungsbedingungen";
-"Your Terms of Use are hosted online." = "Deine Nutzungsbedingungen sind online verfügbar.";
-"Open Terms of Use" = "Nutzungsbedingungen öffnen";
-"Legal Documents" = "Rechtliche Dokumente";
-"End-User License Agreement (EULA)" = "Endbenutzer-Lizenzvereinbarung (EULA)";
-
-// MARK: - Paywall
-"Lock Screen Focus" = "Sperrbildschirm-Fokus";
-"Keep your goals in front of you every single time you pickup your phone to stay locked in." = "Halte deine Ziele jedes Mal im Blick, wenn du dein Handy in die Hand nimmst, um fokussiert zu bleiben.";
-"Stay Accountable" = "Bleibe verantwortlich";
-"See your notes, reminders or to-do list up to 498x times a day and never forget things." = "Sieh deine Notizen, Erinnerungen oder To-Do-Liste bis zu 498 Mal am Tag und vergiss nie wieder etwas.";
-"Instant Exports" = "Sofortige Exporte";
-"Create gorgeous NoteWall wallpapers in seconds with unlimited exports." = "Erstelle wunderschöne NoteWall-Hintergrundbilder in Sekunden mit unbegrenzten Exporten.";
-"Error" = "Fehler";
-"Enable Notifications" = "Benachrichtigungen aktivieren";
-"Allow" = "Erlauben";
-"Not Now" = "Nicht jetzt";
-"To notify you before your trial ends, we need to send you notifications. You can disable them anytime." = "Um dich vor dem Ende deiner Testphase zu benachrichtigen, müssen wir dir Benachrichtigungen senden. Du kannst sie jederzeit deaktivieren.";
-"Have a promo code?" = "Hast du einen Promo-Code?";
-"Enter code" = "Code eingeben";
-"Code Applied!" = "Code angewendet!";
-"Lifetime access has been granted. Enjoy NoteWall+" = "Lebenslanger Zugang wurde gewährt. Genieße NoteWall+";
-"Invalid Code" = "Ungültiger Code";
-"The code you entered is not valid. Please check and try again." = "Der eingegebene Code ist ungültig. Bitte überprüfe ihn und versuche es erneut.";
-"Privacy Options" = "Datenschutzoptionen";
-"Redeem Code" = "Code einlösen";
-"Terms" = "Bedingungen";
-"Privacy" = "Datenschutz";
-"Restore Purchases" = "Käufe wiederherstellen";
-"How your free trial works" = "So funktioniert deine kostenlose Testphase";
-"100% Risk-Free" = "100% risikolos";
-"Cancel anytime during trial." = "Jederzeit während der Testphase kündbar.";
-"Show all plans" = "Alle Pläne anzeigen";
-"🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SONDERANGEBOT 🚨🚨";
+"30% OFF" = "30% RABATT";
 "30% OFF Lifetime Offer" = "30% RABATT auf Lebenslang-Angebot";
 "44% Sale" = "44% Rabatt";
+"4hrs" = "4 Std.";
+"50-100 times" = "50-100 Mal";
 "9 spots remaining" = "Noch 9 Plätze verfügbar";
-"How to use this code?" = "Wie verwende ich diesen Code?";
-"How to Redeem Your 30% Discount" = "So löst du deinen 30%-Rabatt ein";
-"Redeem in App" = "In App einlösen";
-"Copy Code" = "Code kopieren";
-"Open App Store" = "App Store öffnen";
-"Yearly" = "Jährlich";
+"96%%" = "96%%";
+"?" = "?";
+"@billikkarol3" = "@billikkarol3";
+"@karchiJR" = "@karchiJR";
+"A few quick questions will help us\npersonalize your experience" = "Ein paar kurze Fragen helfen uns,\ndein Erlebnis zu personalisieren";
+"A little bit of everything" = "Von allem ein bisschen";
+"A video guide will appear" = "Eine Video-Anleitung erscheint";
+"About 4 minutes" = "Etwa 4 Minuten";
+"Access Granted" = "Zugang gewährt";
+"Access Required" = "Zugriff erforderlich";
+"Accidentally clicked or cancelled?" = "Versehentlich getippt oder abgebrochen?";
+"Account" = "Account";
+"Actions" = "Aktionen";
+"Actually, I'll stay" = "Eigentlich bleibe ich doch";
+"Add 'tutorial.mp4' to the app bundle" = "Add 'tutorial.mp4' to the app bundle";
+"Add Lock Screen Photo" = "Sperrbildschirm-Foto hinzufügen";
+"Add Your First Notes" = "Füge deine ersten Notizen hinzu";
+"Add a note..." = "Notiz hinzufügen...";
+"Add at least one note to continue" = "Füge mindestens eine Notiz hinzu, um fortzufahren";
+"Add emphasis with outline, white, or black highlight backgrounds to make your notes pop." = "Hebe deine Notizen mit Umriss-, weißen oder schwarzen Hintergründen hervor.";
+"Add notes, update the wallpaper, and let NoteWall keep your lock screen awesome." = "Füge Notizen hinzu, aktualisiere das Hintergrundbild und lass NoteWall deinen Sperrbildschirm großartig machen.";
+"Add your first notes" = "Erste Notizen hinzufügen";
+"After changing styles, tap **Update Wallpaper Now** above to apply" = "Tippe nach dem Ändern des Stils oben auf **Hintergrundbild jetzt aktualisieren**";
+"After confirmation" = "Nach Bestätigung";
+"All Fixed! ✨" = "Alles repariert! ✨";
+"All Set!" = "Alles bereit!";
+"Allow" = "Erlauben";
+"Allow ALL Permissions" = "ALLE Berechtigungen erlauben";
+"Allow one permission" = "Eine Berechtigung erteilen";
+"Almost ready..." = "Fast fertig...";
+"Always" = "Immer";
+"Analysis Complete" = "Analyse abgeschlossen";
+"Analyzing your habits..." = "Deine Gewohnheiten werden analysiert...";
+"And how often do you check your phone?" = "Und wie oft schaust du auf dein Handy?";
+"Anything else? (optional)" = "Noch etwas? (optional)";
+"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library — not their built-in presets." = "Apple hat die Kurzbefehle-App so gestaltet, dass sie nur mit Hintergrundbildern aus deiner Fotobibliothek funktioniert – nicht mit vorinstallierten Voreinstellungen.";
+"Apple designed the Shortcuts app to only work with wallpapers that use photos from your library. It cannot work with Apple's built-in preset wallpapers - like gradients, astronomy images, emoji designs, or any of their default wallpapers." = "Apple designed the Shortcuts app to only work with wallpapers that use photos from your library. It cannot work with Apple's built-in preset wallpapers - like gradients, astronomy images, emoji designs, or any of their default wallpapers.";
+"Are you sure you want to delete the selected notes? This action cannot be undone." = "Bist du sicher, dass du die ausgewählten Notizen löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
+"Are you sure you want to delete this note? This action cannot be undone." = "Bist du sicher, dass du diese Notiz löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
+"Auto-Fix Ready" = "Auto-Reparatur bereit";
 "BEST VALUE" = "BESTER WERT";
-"30% OFF" = "30% RABATT";
-"%lld%% OFF" = "%lld%% RABATT";
+"Back to My Notes" = "Zurück zu meinen Notizen";
+"Back to NoteWall" = "Zurück zu NoteWall";
+"Back to Video" = "Back to Video";
+"Based on your answers" = "Basierend auf deinen Antworten";
+"Be honest, no judgment!" = "Sei ehrlich, wir urteilen nicht!";
+"Beat Scrolling Before It Starts" = "Besiege das Scrollen, bevor es beginnt";
+"Before You Go..." = "Bevor du gehst...";
+"Before you delete… Can we ask why?" = "Bevor du löschst… Dürfen wir fragen, warum?";
+"Best productivity app I've tried. Seeing my goals every time I unlock my phone keeps me motivated." = "Beste Produktivitäts-App, die ich ausprobiert habe. Meine Ziele bei jedem Entsperren zu sehen hält mich motiviert.";
+"Black" = "Schwarz";
+"But before we start, what do you forget the most?" = "Aber bevor wir starten, was vergisst du am meisten?";
+"But here's the real question..." = "Aber hier ist die eigentliche Frage...";
+"But, before we start..." = "Aber bevor wir starten...";
+"Cancel anytime during trial." = "Jederzeit während der Testphase kündbar.";
+"Chat on WhatsApp" = "Chat über WhatsApp";
+"Check Permissions" = "Berechtigungen prüfen";
+"Checking Permissions" = "Berechtigungen werden geprüft";
+"Checking if the shortcut is properly installed..." = "Prüfe, ob der Kurzbefehl richtig installiert ist...";
+"Choose Your Wallpapers" = "Wähle deine Hintergrundbilder";
+"Choose a Preset" = "Voreinstellung wählen";
+"Choose your own photo" = "Eigenes Foto auswählen";
+"Choose your wallpaper style" = "Hintergrundbild-Stil wählen";
+"Classic" = "Klassisch";
+"Code Applied!" = "Code angewendet!";
+"Connect the shortcut" = "Kurzbefehl verbinden";
+"Contact Support" = "Support kontaktieren";
+"Copy Code" = "Code kopieren";
+"Could not open the Shortcuts app. Please install the shortcut manually." = "Die Kurzbefehle-App konnte nicht geöffnet werden. Bitte installiere den Kurzbefehl manuell.";
+"Create a Shortcuts automation so NoteWall runs on your schedule — no manual effort needed." = "Erstelle eine Kurzbefehle-Automatisierung, damit NoteWall nach deinem Zeitplan läuft – ganz ohne manuellen Aufwand.";
+"Create a Shortcuts automation so NoteWall runs on your schedule, like at the start of a workday or when a Focus mode activates." = "Create a Shortcuts automation so NoteWall runs on your schedule, like at the start of a workday or when a Focus mode activates.";
+"Create gorgeous NoteWall wallpapers in seconds with unlimited exports." = "Erstelle wunderschöne NoteWall-Hintergrundbilder in Sekunden mit unbegrenzten Exporten.";
+"Create unlimited NoteWalls with full customization" = "Erstelle unbegrenzte NoteWalls mit voller Anpassung";
+"Creating a fresh wallpaper with your notes..." = "Erstelle ein neues Hintergrundbild mit deinen Notizen...";
+"Curating Your Experience" = "Dein Erlebnis wird zusammengestellt";
+"Current step: \(currentPageName)" = "Current step: \(currentPageName)";
+"Custom Text Styling" = "Eigene Textgestaltung";
+"Customizing your experience..." = "Dein Erlebnis wird angepasst...";
+"DAILY PHONE CHECKS" = "TÄGLICHE HANDY-CHECKS";
+"Daily" = "Täglich";
+"Daily Motivation" = "Tägliche Motivation";
+"Daily Reminders" = "Tägliche Erinnerungen";
+"Daily habits & routines" = "Tägliche Gewohnheiten & Routinen";
+"Delete (%lld)" = "Löschen (%lld)";
+"Delete (\(context.selectedNotes.wrappedValue.count))" = "Delete (\(context.selectedNotes.wrappedValue.count))";
+"Delete All Notes" = "Alle Notizen löschen";
+"Delete All Notes?" = "Alle Notizen löschen?";
+"Delete Note?" = "Notiz löschen?";
+"Delete Previous Wallpaper?" = "Vorheriges Hintergrundbild löschen?";
+"Delete Selected" = "Ausgewählte löschen";
+"Delete Selected Notes?" = "Ausgewählte Notizen löschen?";
+"Deleting notes..." = "Notizen werden gelöscht...";
+"Demo video coming soon" = "Demo-Video kommt bald";
+"Describe your feature idea..." = "Beschreibe deine Feature-Idee...";
+"Deselect All" = "Alle abwählen";
+"Device Category: \(String(describing: DeviceSizeCategory.current))" = "Device Category: \(String(describing: DeviceSizeCategory.current))";
+"Did you know that the average person" = "Wusstest du, dass der Durchschnittsmensch";
+"Did you see your wallpapers in the list and could tap one?" = "Hast du deine Hintergrundbilder in der Liste gesehen und konntest eines antippen?";
+"Dismiss" = "Schließen";
+"Do you have a promo code?" = "Hast du einen Promo-Code?";
+"Do you use lock screen widgets?" = "Verwendest du Sperrbildschirm-Widgets?";
+"Don't miss a thing" = "Verpasse nichts";
+"Don't worry - this is temporary. Once the shortcut is working, you can change your wallpaper to any photo you like." = "Keine Sorge – das ist nur vorübergehend. Sobald der Kurzbefehl funktioniert, kannst du dein Hintergrundbild zu jedem beliebigen Foto ändern.";
+"Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your own custom image wallpaper with your notes on it." = "Don't worry - this is temporary. Once you've set it up and the shortcut works, you can change it to your own custom image wallpaper with your notes on it.";
+"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "Keine Sorge — der Ablauf wird wie die ursprüngliche Einrichtung aussehen, die Sie bereits durchgeführt haben. Haben Sie nur Geduld mit uns. Ihr Abonnement bleibt unverändert.";
+"Done — wallpapers update automatically" = "Fertig — Hintergründe werden automatisch aktualisiert";
+"Download Safari" = "Safari laden";
+"Download Shortcuts" = "Kurzbefehle laden";
+"EULA" = "EULA";
+"Earlier" = "Früher";
+"Edit Notes" = "Notizen bearbeiten";
+"Email Support" = "E-Mail-Support";
+"Email is not configured on your device. Our support email is: %@" = "E-Mail ist auf deinem Gerät nicht konfiguriert. Unsere Support-E-Mail ist: %@";
+"Enable Notifications" = "Benachrichtigungen aktivieren";
+"End-User License Agreement (EULA)" = "Endbenutzer-Lizenzvereinbarung (EULA)";
+"Enjoy NoteWall+ features." = "Genieße NoteWall+-Funktionen.";
+"Enter Edit Mode" = "Bearbeitungsmodus";
+"Enter Promo Code" = "Promo-Code eingeben";
+"Enter code" = "Code eingeben";
+"Enter promo code" = "Promo-Code eingeben";
+"Enter your name" = "Gib deinen Namen ein";
+"Error" = "Fehler";
+"Error: \(error.localizedDescription)" = "Error: \(error.localizedDescription)";
+"Every piece of feedback makes NoteWall better for everyone." = "Jedes Feedback macht NoteWall besser für alle.";
+"Everything is working perfectly now! Your wallpaper should be updated." = "Alles funktioniert jetzt perfekt! Dein Hintergrundbild sollte aktualisiert sein.";
+"Failed to redeem code. Please try again." = "Code konnte nicht eingelöst werden. Bitte versuche es erneut.";
+"Finally stopped forgetting important things. The shortcut setup was easy and it just works!" = "Endlich keine vergessenen wichtigen Dinge mehr. Das Kurzbefehl-Setup war einfach und es funktioniert einfach!";
+"Find the RED Image" = "Das ROTE Bild finden";
+"First things first" = "First things first";
+"Fix It Now" = "Jetzt beheben";
+"Focus Elite" = "Fokus-Elite";
+"Follow the Instructions" = "Folge den Anweisungen";
+"Follow the guide step-by-step - it will show you exactly what to do!" = "Follow the guide step-by-step - it will show you exactly what to do!";
+"Follow the guide step-by-step to install the shortcut." = "Folge der Anleitung Schritt für Schritt, um den Kurzbefehl zu installieren.";
+"Follow the instructions in Shortcuts, then return to this app." = "Folge den Anweisungen in Kurzbefehle und kehre dann zu dieser App zurück.";
+"Forever" = "Für immer";
+"Forever Access" = "Zugang für immer";
+"Forgetting" = "Vergessen";
+"Friendly Reminder" = "Freundliche Erinnerung";
+"Frustrated" = "Frustriert";
+"Get Help" = "Hilfe erhalten";
+"Get Help & Fix This" = "Hilfe erhalten & Problem beheben";
+"Get Help via Email" = "Hilfe per E-Mail";
+"Get Started" = "Los geht's";
+"Get helpful nudges that keep\nyour momentum going." = "Erhalte hilfreiche Erinnerungen,\ndie dich am Ball halten.";
+"Get instant help" = "Sofortige Hilfe";
+"Get lifetime access" = "Lebenslangen Zugang erhalten";
+"Get monthly access" = "Monatlichen Zugang erhalten";
+"Get yearly access" = "Jährlichen Zugang erhalten";
+"Got It - I'll Set This Up Later" = "Verstanden – Ich mache das später";
+"Got It, I'll Fix This" = "Verstanden, ich behebe das";
+"Gray" = "Grau";
+"Great job! Your photo-based wallpaper is ready. The shortcut installation will work perfectly this time." = "Gut gemacht! Dein fotobasiertes Hintergrundbild ist bereit. Die Kurzbefehl-Installation wird diesmal perfekt funktionieren.";
+"Great! You added your first note" = "Super! Du hast deine erste Notiz hinzugefügt";
+"HACK" = "HACK";
+"Habit Builder" = "Gewohnheits-Builder";
+"Have a promo code?" = "Hast du einen Promo-Code?";
+"Help me make it better" = "Hilf mir, es besser zu machen";
+"Help us make NoteWall better" = "Hilf uns, NoteWall besser zu machen";
+"Here's the Plan" = "Hier ist der Plan";
+"Here's what we learned" = "Folgendes haben wir herausgefunden";
+"Hey %@, did you know that" = "Hey %@, wusstest du, dass";
+"Hey! I built NoteWall myself and I'm genuinely trying to make it better every day." = "Hey! Ich habe NoteWall selbst gebaut und versuche wirklich, es jeden Tag besser zu machen.";
+"Highlight Modes" = "Hervorhebungs-Modi";
+"Home" = "Start";
+"How many times" = "Wie oft";
+"How to Redeem Your 30% Discount" = "So löst du deinen 30%-Rabatt ein";
+"How to use this code?" = "Wie verwende ich diesen Code?";
+"How your free trial works" = "So funktioniert deine kostenlose Testphase";
+"How's NoteWall working for you so far?" = "Wie läuft NoteWall für dich bisher?";
+"I Have Safari" = "Ich habe Safari";
+"I Have Shortcuts" = "Ich habe Kurzbefehle";
+"I build NoteWall solo — your honest feedback actually decides what I work on next." = "Ich baue NoteWall alleine — dein ehrliches Feedback entscheidet wirklich, woran ich als nächstes arbeite.";
+"I don't use it enough" = "Ich nutze es nicht genug";
+"I use lock screen widgets" = "Ich verwende Sperrbildschirm-Widgets";
+"I'll Do This Later" = "I'll Do This Later";
+"If something didn't work or felt off, I really want to know. Your feedback directly shapes what I fix next." = "Wenn etwas nicht funktioniert hat oder sich komisch anfühlte, möchte ich das unbedingt wissen. Dein Feedback bestimmt direkt, was ich als Nächstes verbessere.";
+"If you change your mind, we'd love to have you back." = "Wenn du es dir anders überlegst, freuen wir uns, dich wieder zu haben.";
+"If you're enjoying it, a review on the App Store would mean the world to me." = "Wenn es dir gefällt, würde mir eine Bewertung im App Store die Welt bedeuten.";
+"Important:" = "Wichtig:";
+"Instagram" = "Instagram";
+"Install" = "Installieren";
+"Install & Continue" = "Installieren & Weiter";
+"Install Shortcut" = "Kurzbefehl installieren";
+"Install Shortcut Again" = "Kurzbefehl erneut installieren";
+"Install the new shortcut" = "Neue Verknüpfung installieren";
+"Installation Check" = "Installationsprüfung";
+"Instant Exports" = "Sofortige Exporte";
+"Invalid Code" = "Ungültiger Code";
+"Invalid promo code" = "Ungültiger Promo-Code";
+"Issues found:" = "Gefundene Probleme:";
+"It's a free Apple app that allows NoteWall to work in the background." = "Es ist eine kostenlose Apple-App, die NoteWall im Hintergrund arbeiten lässt.";
+"It's just me - Karchi, working hard to make NoteWall the best it can be. Your feedback means everything to me!" = "Ich bin's nur – Karchi, der hart arbeitet, um NoteWall so gut wie möglich zu machen. Dein Feedback bedeutet mir alles!";
+"It's okay" = "Geht so";
+"It's too expensive for me" = "Zu teuer für mich";
+"Just browsing my account" = "Schaue nur mein Konto an";
+"Just for you" = "Nur für dich";
+"Just testing it out" = "Nur mal ausprobiert";
+"Just wanted to try it" = "Wollte es nur ausprobieren";
+"Keep Me in the Loop" = "Halte mich auf dem Laufenden";
+"Keep Your Goals Always in Sight" = "Behalte deine Ziele immer im Blick";
+"Keep your goals in front of you every single time you pickup your phone to stay locked in." = "Halte deine Ziele jedes Mal im Blick, wenn du dein Handy in die Hand nimmst, um fokussiert zu bleiben.";
+"LIFETIME" = "LEBENSLANG";
+"Last one: what's your biggest distraction?" = "Letzte Frage: Was lenkt dich am meisten ab?";
+"Launching Shortcut…" = "Kurzbefehl wird gestartet…";
+"Leave a Review" = "Bewertung abgeben";
+"Legal" = "Rechtliches";
+"Legal Documents" = "Rechtliche Dokumente";
+"Let us know what feature you'd like and we'll build it!" = "Sag uns, welches Feature du dir wünschst, und wir bauen es!";
+"Let's Do This!" = "Los geht's!";
+"Let's Do This, %@!" = "Los geht's, %@!";
+"Let's Find Out" = "Finden wir es heraus";
+"Let's Fix It" = "Los geht's";
+"Let's Set It Up" = "Lass es uns einrichten";
+"Let's fix the issue together" = "Lass uns das Problem gemeinsam lösen";
+"Let's get %@'s focus system working" = "Lass uns %@s Fokus-System einrichten";
+"Let's get your focus system working" = "Lass uns dein Fokus-System einrichten";
+"Let's make forgetting a thing of the past" = "Machen wir das Vergessen zur Vergangenheit";
+"Lifetime" = "Lebenslang";
+"Lifetime Access" = "Lebenslanger Zugang";
+"Lifetime Access Granted" = "Lebenslanger Zugang gewährt";
+"Lifetime Ownership" = "Lebenslanger Besitz";
+"Lifetime access has been granted. Enjoy NoteWall+" = "Lebenslanger Zugang wurde gewährt. Genieße NoteWall+";
+"Lifetime access has been granted. Enjoy NoteWall+!" = "Lifetime access has been granted. Enjoy NoteWall+!";
+"Lifetime option is currently unavailable" = "Lebenslang-Option ist derzeit nicht verfügbar";
+"Loading video..." = "Loading video...";
+"Lock Screen Focus" = "Sperrbildschirm-Fokus";
+"Lock Screen Preset" = "Sperrbildschirm-Voreinstellung";
+"Lock Screen folder access denied" = "Sperrbildschirm-Ordnerzugriff verweigert";
+"Lock screen updates automatically" = "Sperrbildschirm wird automatisch aktualisiert";
+"Long-Press the Image" = "Lange auf das Bild drücken";
+"Long-press on your wallpaper" = "Halte dein Hintergrundbild lange gedrückt";
+"Love NoteWall?" = "Gefällt dir NoteWall?";
+"Love seeing my notes on my lock screen! It's like having a personal reminder that's always there." = "Meine Notizen auf dem Sperrbildschirm zu sehen ist genial! Wie ein persönlicher Reminder, der immer da ist.";
+"Loving it!" = "Liebe es!";
+"Manage My Account" = "Mein Konto verwalten";
+"Max Video Height: \(Int(AdaptiveLayout.maxVideoHeight))" = "Max Video Height: \(Int(AdaptiveLayout.maxVideoHeight))";
+"Maybe later" = "Vielleicht später";
+"Messages & notifications" = "Nachrichten & Benachrichtigungen";
+"Micro-reminders on each pickup help you follow through without thinking" = "Mikro-Erinnerungen bei jedem Entsperren helfen dir, ohne nachzudenken dranzubleiben";
+"Missing features I need" = "Funktionen fehlen, die ich brauche";
+"Modern" = "Modern";
+"Mono" = "Mono";
+"Monthly" = "Monatlich";
+"Monthly Access Granted" = "Monatlicher Zugang gewährt";
+"Most Common Issue" = "Häufigstes Problem";
+"Need Help?" = "Brauchst du Hilfe?";
+"Need Manual Help" = "Manuelle Hilfe benötigt";
+"Neon" = "Neon";
+"Never forget " = "Never forget ";
+"Never forget what matters." = "Vergiss nie, was wichtig ist.";
+"Never miss what matters" = "Vergiss nie, was wichtig ist";
+"New system is active" = "Neues System ist aktiv";
+"New: Smart Wallpaper Themes" = "Neu: Intelligente Hintergrundbild-Designs";
+"Next: \(nextStep)" = "Next: \(nextStep)";
+"Nice to meet you," = "Schön dich kennenzulernen,";
+"No Thanks" = "Nein danke";
+"No file selected." = "Keine Datei ausgewählt.";
+"No, Got Stuck" = "Nein, es hat nicht geklappt";
+"No, This Is Not the Issue" = "Nein, das ist nicht das Problem";
+"None" = "Ohne";
+"Not Now" = "Nicht jetzt";
+"Not great" = "Nicht so toll";
+"Not now" = "Nicht jetzt";
+"Note" = "Notiz";
+"NoteWall" = "NoteWall";
+"NoteWall Feedback" = "NoteWall Feedback";
+"NoteWall Feedback - %@" = "NoteWall Feedback - %@";
+"NoteWall puts your most important things on your wallpaper, so you see them every time you unlock your phone." = "NoteWall zeigt deine wichtigsten Dinge auf deinem Hintergrundbild, damit du sie bei jedem Entsperren siehst.";
+"NoteWall uses Apple's Shortcuts app to automatically update your lock screen." = "NoteWall nutzt Apples Kurzbefehle-App, um deinen Sperrbildschirm automatisch zu aktualisieren.";
+"NoteWall+ Active" = "NoteWall+ Aktiv";
+"Notes Deleted!" = "Notizen gelöscht!";
+"Notes are hard to read" = "Notizen sind schwer zu lesen";
+"Notes start appearing lower to avoid widgets that are below the time." = "Notizen erscheinen weiter unten, um Widgets unterhalb der Uhrzeit nicht zu verdecken.";
+"Notes start closer to the time for more space and aesthetic look." = "Notizen erscheinen näher an der Uhrzeit für mehr Platz und eine ästhetischere Optik.";
+"Notes were too small to read" = "Die Notizen waren zu klein zum Lesen";
+"Notice" = "Notice";
+"Notifications video loading..." = "Benachrichtigungsvideo wird geladen...";
+"Now" = "Jetzt";
+"Once you've set your NoteWall image as your wallpaper, the shortcut will be able to update it with your notes." = "Sobald du dein NoteWall-Bild als Hintergrundbild festgelegt hast, kann der Kurzbefehl es mit deinen Notizen aktualisieren.";
+"One-Time Shortcut Setup Required" = "Einmalige Kurzbefehl-Einrichtung erforderlich";
+"One-time purchase, own NoteWall+ forever" = "Einmalkauf, NoteWall+ für immer besitzen";
+"Open App Store" = "App Store öffnen";
+"Open Photos" = "Fotos öffnen";
+"Open Privacy Policy" = "Datenschutzrichtlinie öffnen";
+"Open Terms of Use" = "Nutzungsbedingungen öffnen";
+"Our team responds within 24 hours" = "Unser Team antwortet innerhalb von 24 Stunden";
+"Own NoteWall+" = "NoteWall+ besitzen";
 "Own NoteWall+ forever" = "NoteWall+ für immer besitzen";
 "Own NoteWall+ forever • No renewals" = "NoteWall+ für immer besitzen • Keine Verlängerungen";
-"One-time purchase, own NoteWall+ forever" = "Einmalkauf, NoteWall+ für immer besitzen";
-"Get yearly access" = "Jährlichen Zugang erhalten";
-"Get monthly access" = "Monatlichen Zugang erhalten";
-"Get lifetime access" = "Lebenslangen Zugang erhalten";
-"Products are still loading. Please try again in a moment." = "Produkte werden noch geladen. Bitte versuche es gleich erneut.";
-"Please select a pricing option." = "Bitte wähle eine Preisoption.";
-"Today" = "Heute";
-"Start staying locked in and focused on what matters." = "Bleibe fokussiert auf das, was zählt.";
-"Tomorrow" = "Morgen";
-"We'll remind you so you only keep NoteWall+ if you love it." = "Wir erinnern dich, damit du NoteWall+ nur behältst, wenn es dir gefällt.";
-"After confirmation" = "Nach Bestätigung";
-
-// Paywall - Lifetime Plan Sheet
-"LIFETIME" = "LEBENSLANG";
-"Own NoteWall+" = "NoteWall+ besitzen";
-"Forever" = "Für immer";
-"one-time payment" = "Einmalzahlung";
-"Forever Access" = "Zugang für immer";
-"Your goals appear every time you pick up your phone — stay consistent effortlessly" = "Deine Ziele erscheinen jedes Mal, wenn du dein Handy in die Hand nimmst – bleibe mühelos konsistent";
-"Habit Builder" = "Gewohnheits-Builder";
-"Micro-reminders on each pickup help you follow through without thinking" = "Mikro-Erinnerungen bei jedem Entsperren helfen dir, ohne nachzudenken dranzubleiben";
-"Daily Motivation" = "Tägliche Motivation";
-"Turn your phone into a focus anchor instead of a distraction magnet" = "Verwandle dein Handy in einen Fokus-Anker statt einen Ablenkungsmagneten";
-"Unlimited Personalization" = "Unbegrenzte Personalisierung";
-"Create unlimited NoteWalls with full customization" = "Erstelle unbegrenzte NoteWalls mit voller Anpassung";
-"Lifetime Ownership" = "Lebenslanger Besitz";
+"PRODUCTIVITY" = "PRODUKTIVITÄTS";
+"Pair it with a Focus mode to keep your lock screen current throughout the week." = "Kombiniere es mit einem Fokusmodus, um deinen Sperrbildschirm die ganze Woche aktuell zu halten.";
 "Pay once. Use forever. No subscriptions or future charges" = "Einmal zahlen. Für immer nutzen. Keine Abos oder zukünftigen Kosten";
-"Unlock Forever" = "Für immer freischalten";
-"Lifetime option is currently unavailable" = "Lebenslang-Option ist derzeit nicht verfügbar";
-"Do you have a promo code?" = "Hast du einen Promo-Code?";
-"Secure" = "Sicher";
-"Restore Anytime" = "Jederzeit wiederherstellen";
-"Verified" = "Verifiziert";
-"Maybe later" = "Vielleicht später";
-
-// Paywall - Promo Code Input
-"Enter Promo Code" = "Promo-Code eingeben";
-"Unlock lifetime access with a valid code" = "Schalte lebenslangen Zugang mit einem gültigen Code frei";
-"Enter promo code" = "Promo-Code eingeben";
-"Success! 🎉" = "Erfolg! 🎉";
-"Lifetime Access Granted" = "Lebenslanger Zugang gewährt";
-"You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever." = "Du hast einen Lebenslang-Promo-Code eingelöst.\nGenieße unbegrenzte NoteWall+-Funktionen für immer.";
-"Monthly Access Granted" = "Monatlicher Zugang gewährt";
-"You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month." = "Du hast einen Monats-Promo-Code eingelöst.\nGenieße NoteWall+-Funktionen für 1 Monat.";
-"Access Granted" = "Zugang gewährt";
-"Enjoy NoteWall+ features." = "Genieße NoteWall+-Funktionen.";
-"Failed to redeem code. Please try again." = "Code konnte nicht eingelöst werden. Bitte versuche es erneut.";
-
-// MARK: - Social Sharing
-"social_share_wallpaper" = "Mein Produktivitäts-Hintergrundbild mit NoteWall erstellt! 📱✨ #NoteWall #ProductivityHack #LockScreen";
-"social_share_long" = "Gerade NoteWall entdeckt – es verwandelt deinen Sperrbildschirm in eine Produktivitätsmaschine! 🚀\nSieh deine Ziele bei jedem Entsperren. Ein Game Changer!\n#ProductivityHack #NoteWall #LockScreen";
-"social_share_goals" = "✨ Tägliche Ziele ✨\n\n• Fokus auf das Wichtige\n• Produktiv bleiben\n• Bessere Gewohnheiten aufbauen\n\nErstellt mit NoteWall";
-
-// MARK: - Plan Names
+"Paywall after 3 uses felt too early" = "Die Bezahlschranke nach 3 Nutzungen kam zu früh";
+"Permission popups appear here" = "Berechtigungs-Popups erscheinen hier";
+"Permissions granted!" = "Berechtigungen erteilt!";
+"Personal goals & habits" = "Persönliche Ziele & Gewohnheiten";
+"Photo Library" = "Fotobibliothek";
 "Plan" = "Plan";
-
-// MARK: - Apology & Migration Flow
+"Please allow access to your photo library to select a wallpaper." = "Bitte erlaube den Zugriff auf deine Fotobibliothek, um ein Hintergrundbild auszuwählen.";
+"Please enter a promo code" = "Bitte gib einen Promo-Code ein";
+"Please select a pricing option." = "Bitte wähle eine Preisoption.";
+"Please wait while we check your setup..." = "Bitte warte, während wir dein Setup überprüfen...";
+"Please wait while we verify that your shortcut is configured correctly." = "Bitte warte, während wir prüfen, ob dein Kurzbefehl richtig konfiguriert ist.";
+"Premium fully restored" = "Premium vollständig wiederhergestellt";
+"Preparing your focus plan..." = "Dein Fokus-Plan wird vorbereitet...";
+"Presets" = "Voreinstellungen";
+"Preview" = "Vorschau";
+"Privacy" = "Datenschutz";
+"Privacy Options" = "Datenschutzoptionen";
+"Privacy Policy" = "Datenschutzrichtlinie";
+"Pro tip: make it automatic" = "Profi-Tipp: Automatisiere es";
+"Products are still loading. Please try again in a moment." = "Produkte werden noch geladen. Bitte versuche es gleich erneut.";
+"Quick 4-Minute Setup" = "Schnelles 4-Minuten-Setup";
+"Quick Check" = "Kurze Überprüfung";
+"Quick Fix" = "Schnellfix";
+"Quick Fix for Apple Presets" = "Schnellfix für Apple-Voreinstellungen";
+"Quick check-in" = "Kurzer Check";
+"Rate App" = "Rate App";
+"Rate on App Store" = "Im App Store bewerten";
+"Read 10 pages tonight" = "Heute Abend 10 Seiten lesen";
+"Ready" = "Bereit";
+"Ready to Go" = "Startklar";
+"Ready to Try Again?" = "Bereit für einen neuen Versuch?";
+"Ready? Let's Do This!" = "Bereit? Los geht's!";
+"Redeem Code" = "Code einlösen";
+"Redeem in App" = "In App einlösen";
+"Regenerate Wallpaper" = "Hintergrundbild neu erstellen";
+"Regenerating Wallpaper" = "Hintergrundbild wird neu erstellt";
+"Reinstall Shortcut?" = "Kurzbefehl neu installieren?";
+"Remember to call mom" = "Mama anrufen nicht vergessen";
+"Reopen Shortcuts" = "Kurzbefehle erneut öffnen";
+"Research Insight" = "Forschungsergebnis";
+"Reset & Reinstall" = "Zurücksetzen & neu installieren";
+"Restore Anytime" = "Jederzeit wiederherstellen";
+"Restore Purchases" = "Käufe wiederherstellen";
+"Retry Verification" = "Überprüfung wiederholen";
+"Return to NoteWall App" = "Zurück zur NoteWall-App";
+"Rounded" = "Rund";
+"Safari Ready" = "Safari bereit";
+"Safari Required" = "Safari erforderlich";
+"Safari is used to securely process the wallpaper updates." = "Safari wird verwendet, um die Hintergrundbild-Updates sicher zu verarbeiten.";
+"Saving a lock screen image requires iOS 16 or newer." = "Das Speichern eines Sperrbildschirmbilds erfordert iOS 16 oder neuer.";
+"Saving background…" = "Hintergrund wird gespeichert…";
+"Scan Complete" = "Überprüfung abgeschlossen";
+"Screen: \(Int(ScreenDimensions.width))×\(Int(ScreenDimensions.height))" = "Screen: \(Int(ScreenDimensions.width))×\(Int(ScreenDimensions.height))";
+"Second Most Common" = "Zweithäufigstes Problem";
+"Secure" = "Sicher";
+"See Insights" = "Erkenntnisse ansehen";
+"See your goals before TikTok, Instagram, or distractions." = "Sieh deine Ziele, bevor TikTok, Instagram oder Ablenkungen zuschlagen.";
+"See your notes, reminders or to-do list up to 498x times a day and never forget things." = "Sieh deine Notizen, Erinnerungen oder To-Do-Liste bis zu 498 Mal am Tag und vergiss nie wieder etwas.";
+"Select All" = "Alle auswählen";
+"Select a solid color background" = "Einfarbigen Hintergrund auswählen";
+"Select all that apply" = "Wähle alle zutreffenden aus";
+"Select all that apply:" = "Wähle alle zutreffenden aus:";
+"Select the one with notes" = "Wähle das mit den Notizen aus";
+"Send & Continue" = "Senden und weiter";
+"Send Feedback" = "Feedback senden";
+"Send Suggestion" = "Vorschlag senden";
+"Set as Lock Screen" = "Als Sperrbildschirm festlegen";
+"Setup Complete ✓" = "Setup abgeschlossen ✓";
+"Setup Not Finished" = "Setup nicht abgeschlossen";
+"Setup Time" = "Setup-Zeit";
+"Share App" = "App teilen";
+"Share NoteWall" = "NoteWall teilen";
+"Share your ideas, suggestions, or feedback..." = "Teile deine Ideen, Vorschläge oder Feedback...";
+"Shopping & errands" = "Einkaufen & Besorgungen";
+"Shortcut Setup" = "Kurzbefehl-Setup";
+"Shortcut URL is not available. Please check your configuration." = "Kurzbefehl-URL ist nicht verfügbar. Bitte überprüfe deine Konfiguration.";
+"Shortcut cannot be executed" = "Kurzbefehl kann nicht ausgeführt werden";
+"Shortcut file not found" = "Kurzbefehl-Datei nicht gefunden";
+"Shortcut is annoying" = "Kurzbefehl ist nervig";
+"Shortcut setup was confusing" = "Das Kurzbefehl-Setup war verwirrend";
+"Shortcuts Ready" = "Kurzbefehle bereit";
+"Shortcuts Required" = "Kurzbefehle erforderlich";
+"Show all plans" = "Alle Pläne anzeigen";
+"Simple and effective. My lock screen keeps me focused on what matters. Game changer!" = "Einfach und effektiv. Mein Sperrbildschirm hält mich fokussiert auf das Wichtige. Ein Game Changer!";
+"Skip for now" = "Vorerst überspringen";
+"So" = "Damit";
+"So we can make this feel like yours" = "Damit sich alles persönlich anfühlt";
+"Something may have gone wrong during the shortcut installation process." = "Beim Installationsprozess des Kurzbefehls ist möglicherweise etwas schiefgelaufen.";
+"Start Auto-Fix" = "Auto-Reparatur starten";
+"Start Setup" = "Setup starten";
+"Start Troubleshooting" = "Fehlerbehebung starten";
+"Start staying locked in and focused on what matters." = "Bleibe fokussiert auf das, was zählt.";
+"Starting video..." = "Starting video...";
+"Stay Accountable" = "Bleibe verantwortlich";
+"Step %lld of %lld" = "Schritt %lld von %lld";
+"Step \(currentStep) of \(totalSteps)" = "Step \(currentStep) of \(totalSteps)";
+"Step \(number)" = "Step \(number)";
+"Still Having Issues" = "Immer noch Probleme";
+"Stop doom scrolling" = "Endloses Scrollen stoppen";
+"Stop the cycle. Finish setup in 60 seconds and capture every idea before it vanishes." = "Durchbrich den Kreislauf. Schließe das Setup in 60 Sekunden ab und fange jede Idee ein, bevor sie verschwindet.";
+"Strong" = "Fett";
+"Subscription Active" = "Abo aktiv";
+"Success! 🎉" = "Erfolg! 🎉";
+"Suggest Improvements" = "Verbesserungen vorschlagen";
+"Suggestions" = "Vorschläge";
+"Swipe down to your Lock Screen" = "Wische nach unten zu deinem Sperrbildschirm";
+"Switch to New System" = "Switch to New System";
+"Switching to the new system doesn't affect your subscription. Nothing changes — it just works better." = "Switching to the new system doesn't affect your subscription. Nothing changes — it just works better.";
+"Takes about 4 minutes" = "Dauert etwa 4 Minuten";
+"Takes less than 30 seconds" = "Dauert weniger als 30 Sekunden";
+"Tap SHARE" = "TEILEN antippen";
+"Tap here to replay the video" = "Tippe hier, um das Video erneut abzuspielen";
+"Tell Me More" = "Erzähl mir mehr";
+"Terms" = "Bedingungen";
+"Terms & Privacy" = "Nutzung & Datenschutz";
+"Terms of Service" = "Nutzungsbedingungen";
+"Terms of Use" = "Nutzungsbedingungen";
+"Test PiP (Debug)" = "Test PiP (Debug)";
+"Text Sarah back" = "Sarah zurückschreiben";
+"Text version" = "Text version";
+"Thank You!" = "Danke!";
+"Thank You! 🙏" = "Danke! 🙏";
+"Thanks for bearing with us.\nEverything works now." = "Danke für Ihre Geduld.\nJetzt funktioniert alles.";
+"Thanks for supporting independent development. More features coming soon!" = "Danke für die Unterstützung der unabhängigen Entwicklung. Weitere Funktionen kommen bald!";
+"Thanks, that really helps!" = "Danke, das hilft wirklich!";
+"That was the hardest part.\nEverything else takes under 60 seconds." = "Das war der schwierigste Teil.\nAlles andere dauert unter 60 Sekunden.";
+"That's " = "That's ";
+"That's %@ daily chances to remember what matters." = "Das sind %@ tägliche Chancen, dich an das Wichtige zu erinnern.";
+"That's \(Text(phoneCheckCount).foregroundColor(.appAccent)) daily chances to remember what matters." = "That's \(Text(phoneCheckCount).foregroundColor(.appAccent)) daily chances to remember what matters.";
+"The Easy Fix" = "Die einfache Lösung";
+"The NoteWall Shortcut was not found. Please download and add it from the Shortcuts app." = "Der NoteWall-Kurzbefehl wurde nicht gefunden. Bitte lade ihn herunter und füge ihn über die Kurzbefehle-App hinzu.";
+"The Problem" = "Das Problem";
+"The Problem: Apple's Limitation" = "Das Problem: Eine Apple-Einschränkung";
+"The Solution" = "Die Lösung";
+"The code you entered is not valid. Please check and try again." = "Der eingegebene Code ist ungültig. Bitte überprüfe ihn und versuche es erneut.";
+"The custom wallpaper with notes is brilliant. No more sticky notes everywhere - it's all on my phone!" = "Das individuelle Hintergrundbild mit Notizen ist brillant. Keine Klebezettel mehr überall – alles auf meinem Handy!";
+"The reason you couldn't select any wallpaper is simple: You're currently using one of Apple's built-in wallpaper presets." = "Der Grund, warum du kein Hintergrundbild auswählen konntest, ist einfach: Du verwendest gerade eine von Apples vorinstallierten Hintergrundbild-Voreinstellungen.";
+"The shortcut cannot access the Lock Screen folder. Make sure you tapped 'Always Allow' when prompted for folder access." = "Der Kurzbefehl kann nicht auf den Sperrbildschirm-Ordner zugreifen. Stelle sicher, dass du 'Immer erlauben' getippt hast, als nach dem Ordnerzugriff gefragt wurde.";
+"The shortcut cannot be executed. Please check that it's properly installed in the Shortcuts app." = "Der Kurzbefehl kann nicht ausgeführt werden. Bitte prüfe, ob er richtig in der Kurzbefehle-App installiert ist.";
+"The shortcut requires Safari to work properly." = "Der Kurzbefehl benötigt Safari, um richtig zu funktionieren.";
+"The shortcut will then work perfectly - every time you add, edit, or delete notes, your wallpaper will update automatically." = "The shortcut will then work perfectly - every time you add, edit, or delete notes, your wallpaper will update automatically.";
+"The shortcut will then work perfectly every time you update your wallpaper." = "Der Kurzbefehl funktioniert dann perfekt bei jeder Hintergrundbild-Aktualisierung.";
+"The shortcut worked, but it put notes on the wrong wallpaper in your collection." = "Der Kurzbefehl hat funktioniert, aber die Notizen auf das falsche Hintergrundbild in deiner Sammlung gesetzt.";
+"The wallpaper feature is genius. I actually remember my tasks now because they're right on my phone." = "Die Hintergrundbild-Funktion ist genial. Ich erinnere mich jetzt wirklich an meine Aufgaben, weil sie direkt auf meinem Handy sind.";
+"The wallpaper update took longer than expected. This might be a setup issue." = "Die Aktualisierung hat länger gedauert als erwartet. Möglicherweise liegt ein Setup-Problem vor.";
+"These notes will appear on your lock screen wallpaper" = "Diese Notizen erscheinen auf deinem Sperrbildschirm-Hintergrundbild";
+"This action cannot be undone. All your notes will be permanently deleted." = "Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Notizen werden dauerhaft gelöscht.";
+"This adjusts where your notes appear on the lock screen" = "Dies passt an, wo deine Notizen auf dem Sperrbildschirm erscheinen";
+"This app was designed for people like you..." = "Diese App wurde für Menschen wie dich entwickelt...";
+"This bright red image will be saved to your Photos once you click the continue button below. You'll use it to create a photo-based wallpaper." = "Dieses leuchtend rote Bild wird in deinen Fotos gespeichert, sobald du unten auf Weiter tippst. Du verwendest es, um ein fotobasiertes Hintergrundbild zu erstellen.";
+"This happens when you're using Apple's built-in wallpapers. No worries, we will fix this." = "This happens when you're using Apple's built-in wallpapers. No worries, we will fix this.";
+"This helps more than you know." = "Das hilft mehr, als du denkst.";
+"This isn't a NoteWall bug. It's an Apple limitation that affects all apps using Shortcuts." = "Das ist kein NoteWall-Fehler. Es ist eine Apple-Einschränkung, die alle Apps betrifft, die Kurzbefehle nutzen.";
+"This isn't a NoteWall bug. It's an Apple limitation that affects all shortcuts that try to modify wallpapers." = "This isn't a NoteWall bug. It's an Apple limitation that affects all shortcuts that try to modify wallpapers.";
+"This next attempt should only take 30 seconds." = "Dieser nächste Versuch sollte nur 30 Sekunden dauern.";
+"This promo code has already been redeemed" = "Dieser Promo-Code wurde bereits eingelöst";
+"This red image will be saved to your Photos. Set it as your wallpaper to make the shortcut work!" = "This red image will be saved to your Photos. Set it as your wallpaper to make the shortcut work!";
+"This seemed too complicated" = "Das schien zu kompliziert";
+"This takes 30 seconds and you only do it once." = "Das dauert 30 Sekunden und du machst es nur einmal.";
+"This takes about 2 minutes. Here's exactly what to do:" = "Das dauert etwa 2 Minuten. So geht's:";
+"TikTok" = "TikTok";
+"Time for a quick check-in" = "Zeit für einen kurzen Check-in";
+"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. If you continue, iOS will ask for permission to delete the photo." = "Um deine Fotomediathek nicht zu füllen, kann NoteWall das vorherige Hintergrundbild löschen. Wenn du fortsetzt, wird iOS um Erlaubnis zum Löschen des Fotos bitten.";
+"To avoid filling your Photos library, NoteWall can delete the previous wallpaper. This helps keep things tidy." = "Um deine Fotobibliothek nicht zu überfüllen, kann NoteWall das vorherige Hintergrundbild löschen. So bleibt alles ordentlich.";
+"To notify you before your trial ends, we need to send you notifications. Please allow them in the next step." = "To notify you before your trial ends, we need to send you notifications. Please allow them in the next step.";
+"To notify you before your trial ends, we need to send you notifications. You can disable them anytime." = "Um dich vor dem Ende deiner Testphase zu benachrichtigen, müssen wir dir Benachrichtigungen senden. Du kannst sie jederzeit deaktivieren.";
+"Today" = "Heute";
+"Tomorrow" = "Morgen";
+"Too expensive for what it does" = "Zu teuer für das, was es bietet";
+"Too many validation attempts. Please try again later." = "Zu viele Versuche. Bitte versuche es später erneut.";
+"Top 3%" = "Top 3%";
+"Trial Ending Soon" = "Testphase endet bald";
+"Trigger it every morning before you leave for the day." = "Starte es jeden Morgen, bevor du das Haus verlässt.";
+"Troubleshooting" = "Fehlerbehebung";
+"Try Auto-Fix" = "Auto-Reparatur versuchen";
+"Try Auto-Fix Now" = "Jetzt Auto-Reparatur starten";
+"Try the new gradient styles" = "Probiere die neuen Verlaufsstile aus";
+"Turn Every Pickup Into Focus" = "Mach jedes Entsperren produktiv";
+"Turn your phone into a focus anchor instead of a distraction magnet" = "Verwandle dein Handy in einen Fokus-Anker statt einen Ablenkungsmagneten";
+"Tutorial video not found" = "Tutorial video not found";
+"Twitter / X" = "Twitter / X";
+"Twitter/X" = "Twitter/X";
+"Type a note..." = "Notiz eingeben...";
+"Unable to load selected photo." = "Ausgewähltes Foto konnte nicht geladen werden.";
+"Unable to process captured photo." = "Aufgenommenes Foto konnte nicht verarbeitet werden.";
+"Unable to read selected file." = "Ausgewählte Datei konnte nicht gelesen werden.";
+"Unlimited Personalization" = "Unbegrenzte Personalisierung";
+"Unlock Forever" = "Für immer freischalten";
+"Unlock Full Potential →" = "Volles Potenzial entfalten →";
+"Unlock lifetime access with a valid code" = "Schalte lebenslangen Zugang mit einem gültigen Code frei";
+"Unmark" = "Markierung aufheben";
+"Update Timed Out" = "Zeitüberschreitung";
+"Update Wallpaper" = "Hintergrundbild aktualisieren";
+"Update Wallpaper Now" = "Hintergrundbild jetzt aktualisieren";
+"Update to iOS 16+ to pick a photo directly. For now, choose a preset below." = "Aktualisiere auf iOS 16+, um direkt ein Foto auszuwählen. Wähle vorerst eine Voreinstellung.";
+"Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current lock screen wallpaper." = "Update to iOS 16+ to pick a photo directly. For now, the shortcut will reuse your current lock screen wallpaper.";
+"Updating wallpaper..." = "Hintergrundbild wird aktualisiert...";
+"Upgrade to NoteWall+" = "Upgrade auf NoteWall+";
+"Use a personal automation when you arrive at the office or start a commute." = "Nutze eine persönliche Automatisierung, wenn du im Büro ankommst oder dich auf den Weg machst.";
+"Use as Wallpaper" = "Als Hintergrundbild verwenden";
+"Valid promo code" = "Gültiger Promo-Code";
+"Verified" = "Verifiziert";
+"Verify Shortcut Setup" = "Kurzbefehl-Setup überprüfen";
+"Verifying Setup..." = "Setup wird überprüft...";
+"Verifying Shortcut" = "Kurzbefehl wird überprüft";
+"Verifying folder access and permissions..." = "Prüfe Ordnerzugriff und Berechtigungen...";
+"Version %@" = "Version %@";
+"Version \(currentVersion)" = "Version \(currentVersion)";
+"Video playing in Picture-in-Picture" = "Video playing in Picture-in-Picture";
+"Wallpaper Full" = "Hintergrundbild voll";
+"Wallpaper Updated!" = "Hintergrundbild aktualisiert!";
+"Wallpaper didn't generate properly" = "Das Hintergrundbild wurde nicht richtig erstellt";
+"Wallpapers" = "Hintergrundbilder";
+"Wallpapers got boring" = "Hintergründe wurden langweilig";
+"Want a new feature? 💡" = "Wünschst du dir ein neues Feature? 💡";
+"Want me to help fix this in 30 seconds?" = "Soll ich dir in 30 Sekunden helfen, das zu beheben?";
+"Want to explain more? (optional)" = "Möchtest du mehr erklären? (optional)";
+"Watch Tutorial Again" = "Tutorial erneut ansehen";
+"Watch this short guide to fix the issue:" = "Watch this short guide to fix the issue:";
+"We Just Updated!" = "Gerade aktualisiert!";
+"We Made Things Better!" = "We Made Things Better!";
 "We Owe You an Apology" = "Wir schulden Ihnen eine Entschuldigung";
+"We can help you fix it in just a few steps." = "Wir können dir in wenigen Schritten helfen.";
+"We couldn't fix everything automatically. Let's get you personal help." = "Wir konnten nicht alles automatisch beheben. Lass uns dir persönlich helfen.";
+"We need to set up a photo-based wallpaper so the shortcut can work properly." = "Wir müssen ein fotobasiertes Hintergrundbild einrichten, damit der Kurzbefehl richtig funktionieren kann.";
+"We need to set up a photo-based wallpaper so the shortcut can work. The red image is saved to your Photos - let's set it as your wallpaper now." = "We need to set up a photo-based wallpaper so the shortcut can work. The red image is saved to your Photos - let's set it as your wallpaper now.";
+"We'll automatically check and fix common issues. This takes about 30 seconds." = "Wir prüfen und beheben automatisch häufige Probleme. Das dauert etwa 30 Sekunden.";
+"We'll open the Shortcuts app now." = "Wir öffnen jetzt die Kurzbefehle-App.";
+"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "Wir installieren Ihre Verknüpfung neu.\nIhre Notizen bleiben genau so, wie sie sind.";
+"We'll remind you so you only keep NoteWall+ if you love it." = "Wir erinnern dich, damit du NoteWall+ nur behältst, wenn es dir gefällt.";
+"We're Here to Help" = "Wir helfen dir gerne";
+"We're here to assist you" = "Wir sind hier, um dir zu helfen";
+"We're here to help you" = "Wir helfen dir gerne";
+"We've Saved a Special Image for You" = "Wir haben ein spezielles Bild für dich gespeichert";
+"Were you able to select a wallpaper?" = "Konntest du ein Hintergrundbild auswählen?";
+"What Happens Next?" = "Was passiert als Nächstes?";
+"What could we improve?" = "Was könnten wir verbessern?";
+"What do you forget\nthe most?" = "Was vergisst du\nam meisten?";
+"What should we call you?" = "Wie sollen wir dich nennen?";
+"What should we\ncall you?" = "What should we\ncall you?";
+"What this means" = "Was das bedeutet";
+"What went wrong?" = "Was ist schiefgelaufen?";
+"What would make you stay? Be brutally honest..." = "Was würde dich zum Bleiben bringen? Sei brutal ehrlich...";
+"What's New" = "Was ist neu";
+"What's missing:" = "Was noch fehlt:";
+"What's next?" = "Was kommt als Nächstes?";
+"What's not working? (pick any)" = "Was funktioniert nicht? (wähl einfach)";
+"WhatsApp could not be opened. Would you like to send an email instead?" = "WhatsApp konnte nicht geöffnet werden. Möchtest du stattdessen eine E-Mail senden?";
+"WhatsApp is not installed. Please send us an email at %@" = "WhatsApp ist nicht installiert. Bitte sende uns eine E-Mail an %@";
+"What’s next?" = "What’s next?";
+"When the shortcut asks for folder access, you'll need to navigate to:\nFiles → On My iPhone → NoteWall → LockScreen" = "Wenn der Kurzbefehl nach Ordnerzugriff fragt, navigiere zu:\nDateien → Auf meinem iPhone → NoteWall → LockScreen";
+"Why Couldn't You Select a Wallpaper?" = "Warum konntest du kein Hintergrundbild auswählen?";
+"Why Safari?" = "Warum Safari?";
+"Why Shortcuts?" = "Warum Kurzbefehle?";
+"Work tasks & deadlines" = "Arbeitsaufgaben & Deadlines";
+"Write Us" = "Schreib uns";
+"Write a Review" = "Bewertung schreiben";
+"Wrong Wallpaper" = "Falsches Hintergrundbild";
+"YOU WANT TO REMEMBER" = "DU WILLST DICH ERINNERN AN";
+"YOUR BIGGEST CHALLENGE" = "DEINE GRÖSSTE HERAUSFORDERUNG";
+"Yeah, exactly. Shower thoughts, brilliant ideas, tasks you swore you'd do—all gone. Finish setup while you still remember you wanted this." = "Genau. Duschgedanken, geniale Ideen, Aufgaben, die du geschworen hast zu erledigen—alles weg. Beende das Setup, solange du noch weißt, dass du das wolltest.";
+"Yearly" = "Jährlich";
+"Yes, Fix This" = "Ja, das beheben";
+"Yes, It Worked!" = "Ja, es hat funktioniert!";
+"You can change the font, color, and size of your notes anytime in Settings." = "Du kannst Schriftart, Farbe und Größe deiner Notizen jederzeit in den Einstellungen ändern.";
+"You can change this anytime in Settings" = "Du kannst dies jederzeit in den Einstellungen ändern";
+"You can now change the font, color, size, and alignment of your notes directly in Settings!" = "Du kannst jetzt Schriftart, Farbe, Größe und Ausrichtung deiner Notizen direkt in den Einstellungen ändern!";
+"You check your phone\n" = "You check your phone\n";
+"You check your phone\n%@" = "Du schaust auf dein Handy\n%@";
+"You check your phone\n\(Text(reminderFrequency.lowercased()).foregroundColor(.appAccent))" = "You check your phone\n\(Text(reminderFrequency.lowercased()).foregroundColor(.appAccent))";
+"You forget things for one simple reason: you don't see them. NoteWall fixes that." = "Du vergisst Dinge aus einem einfachen Grund: Du siehst sie nicht. NoteWall ändert das.";
+"You just did what 97% of people never do:\nbuilt a system that actually works." = "Du hast gerade geschafft, was 97% der Menschen nie tun:\nEin System aufgebaut, das wirklich funktioniert.";
 "You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track." = "Möglicherweise hatten Sie einen Fehler, der die Aktualisierung Ihres Hintergrunds verhinderte. Das liegt an uns — lassen Sie uns Sie wieder auf Kurs bringen.";
-"Your premium is safe" = "Ihr Premium ist sicher";
+"You pick up your phone up to 498× per day. What if every glance reminded you of what matters?" = "Du nimmst dein Handy bis zu 498× am Tag in die Hand. Was wäre, wenn dich jeder Blick an das Wichtige erinnert?";
+"You're All Set!" = "Alles erledigt!";
+"You're building a great habit" = "Du baust eine tolle Gewohnheit auf";
+"You're crushing this setup!" = "Du rockst dieses Setup!";
+"You've got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "Alles ist eingerichtet. Behalte diese kurzen Tipps im Hinterkopf, wenn du NoteWall verwendest.";
+"You've redeemed a lifetime promo code.\nEnjoy unlimited NoteWall+ features forever." = "Du hast einen Lebenslang-Promo-Code eingelöst.\nGenieße unbegrenzte NoteWall+-Funktionen für immer.";
+"You've redeemed a monthly promo code.\nEnjoy NoteWall+ features for 1 month." = "Du hast einen Monats-Promo-Code eingelöst.\nGenieße NoteWall+-Funktionen für 1 Monat.";
+"YouTube" = "YouTube";
 "Your %lld note is still here" = "Ihre %lld Notiz ist noch hier";
 "Your %lld notes are still here" = "Ihre %lld Notizen sind noch hier";
+"Your 3-day free trial will end soon. We hope you're enjoying NoteWall!" = "Deine 3-tägige Testphase endet bald. Wir hoffen, NoteWall gefällt dir!";
+"Your Focus Profile" = "Dein Fokus-Profil";
+"Your Focus Profile, %@" = "Dein Fokus-Profil, %@";
+"Your Focus System Is Ready! 🎉" = "Dein Fokus-System ist bereit! 🎉";
+"Your New Trajectory" = "Dein neuer Weg";
+"Your New Trajectory,\n%@" = "Dein neuer Weg,\n%@";
+"Your Privacy Policy is hosted online." = "Deine Datenschutzrichtlinie ist online verfügbar.";
+"Your Subscription is Safe" = "Your Subscription is Safe";
+"Your Terms of Use are hosted online." = "Deine Nutzungsbedingungen sind online verfügbar.";
+"Your feedback helps us make NoteWall better for everyone." = "Dein Feedback hilft uns, NoteWall für alle besser zu machen.";
+"Your first name" = "Dein Vorname";
+"Your free trial subscription will be ending soon." = "Deine kostenlose Testphase endet bald.";
+"Your goals appear every time you pick up your phone — stay consistent effortlessly" = "Deine Ziele erscheinen jedes Mal, wenn du dein Handy in die Hand nimmst – bleibe mühelos konsistent";
+"Your lock screen becomes a visual cue you can't ignore." = "Dein Sperrbildschirm wird zum visuellen Signal, das du nicht ignorieren kannst.";
 "Your notes are still here" = "Ihre Notizen sind noch hier";
-"1-minute fix, then you're done" = "1-Minuten-Fix, dann sind Sie fertig";
-"Fix It Now" = "Jetzt beheben";
-"Here's the Plan" = "Hier ist der Plan";
-"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "Wir installieren Ihre Verknüpfung neu.\nIhre Notizen bleiben genau so, wie sie sind.";
-"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "Keine Sorge — der Ablauf wird wie die ursprüngliche Einrichtung aussehen, die Sie bereits durchgeführt haben. Haben Sie nur Geduld mit uns. Ihr Abonnement bleibt unverändert.";
-"Install the new shortcut" = "Neue Verknüpfung installieren";
-"Allow one permission" = "Eine Berechtigung erteilen";
-"Done — wallpapers update automatically" = "Fertig — Hintergründe werden automatisch aktualisiert";
-"Let's Fix It" = "Los geht's";
-"You're All Set!" = "Alles erledigt!";
-"Thanks for bearing with us.\nEverything works now." = "Danke für Ihre Geduld.\nJetzt funktioniert alles.";
-"New system is active" = "Neues System ist aktiv";
-"Premium fully restored" = "Premium vollständig wiederhergestellt";
-"Lock screen updates automatically" = "Sperrbildschirm wird automatisch aktualisiert";
-"Back to My Notes" = "Zurück zu meinen Notizen";
+"Your notes are waiting on your lock screen" = "Deine Notizen warten auf deinem Sperrbildschirm";
+"Your premium is safe" = "Ihr Premium ist sicher";
+"Your shortcut is configured correctly. You're all set!" = "Dein Kurzbefehl ist richtig konfiguriert. Alles bereit!";
+"Your suggestion" = "Dein Vorschlag";
+"Your suggestion has been sent" = "Dein Vorschlag wurde gesendet";
+"Your wallpaper has reached its maximum capacity. Complete or delete existing notes to add new ones." = "Dein Hintergrundbild hat die maximale Kapazität erreicht. Erledige oder lösche bestehende Notizen, um neue hinzuzufügen.";
+"You’ve got everything set up. Keep these quick highlights in mind as you start using NoteWall." = "You’ve got everything set up. Keep these quick highlights in mind as you start using NoteWall.";
+"\(Int(shadowIntensity * 100))%" = "\(Int(shadowIntensity * 100))%";
+"\(Int(value))" = "\(Int(value))";
+"\(countdownNumber)" = "\(countdownNumber)";
+"\(displayedPercentage)%" = "\(displayedPercentage)%";
+"\(improvementText.count) characters" = "\(improvementText.count) characters";
+"\(index + 1)" = "\(index + 1)";
+"\(nameText.trimmingCharacters(in: .whitespacesAndNewlines))!" = "\(nameText.trimmingCharacters(in: .whitespacesAndNewlines))!";
+"\(noteIndex(for: note) + 1)." = "\(noteIndex(for: note) + 1).";
+"\(number)" = "\(number)";
+"\(paywallManager.remainingFreeExports) free wallpapers remaining" = "\(paywallManager.remainingFreeExports) free wallpapers remaining";
+"\(phoneCheckCount) times" = "\(phoneCheckCount) times";
+"\(position)" = "\(position)";
+"\(remainingSeconds)" = "\(remainingSeconds)";
+"\(step.id)" = "\(step.id)";
+"again" = "wieder";
+"avg glance" = "Ø Blick";
+"click ALLOW for all" = "tippe bei allen auf ERLAUBEN";
+"device_info_format" = "Gerät: %@\niOS: %@\nApp-Version: %@";
+"did you actually" = "hast du dich tatsächlich";
+"for" = "für";
+"forget" = "vergisst";
+"forgotten" = "vergessen";
+"iosnotewall@gmail.com" = "iosnotewall@gmail.com";
+"never" = "nie";
+"new" = "neuen";
+"one-time payment" = "Einmalzahlung";
+"remember" = "erinnert";
+"screen time" = "Bildschirmzeit";
+"sec" = "Sek.";
+"share_app_text" = "Gerade NoteWall entdeckt – es verwandelt deinen Sperrbildschirm in eine Produktivitätsmaschine! 🚀\n\nSieh deine Ziele bei jedem Entsperren. Ein Game Changer!\n\n#ProductivityHack #NoteWall #LockScreen";
+"social_share_goals" = "✨ Tägliche Ziele ✨\n\n• Fokus auf das Wichtige\n• Produktiv bleiben\n• Bessere Gewohnheiten aufbauen\n\nErstellt mit NoteWall";
+"social_share_long" = "Gerade NoteWall entdeckt – es verwandelt deinen Sperrbildschirm in eine Produktivitätsmaschine! 🚀\nSieh deine Ziele bei jedem Entsperren. Ein Game Changer!\n#ProductivityHack #NoteWall #LockScreen";
+"social_share_wallpaper" = "Mein Produktivitäts-Hintergrundbild mit NoteWall erstellt! 📱✨ #NoteWall #ProductivityHack #LockScreen";
+"the average person unlocks their phone up to" = "the average person unlocks their phone up to";
+"times per day ?" = "Mal am Tag entsperrt?";
+"unlocks their phone up to" = "sein Handy bis zu";
+"what matters" = "what matters";
+"why?" = "warum?";
+"you'll" = "du";
+"your" = "deinen";
+"~3 minutes" = "~3 Minuten";
+"~30 seconds" = "~30 Sekunden";
+"🎉 Nailed It!" = "🎉 Geschafft!";
+"🚨 %@, 3 things forgotten today" = "🚨 %@, 3 Sachen heute vergessen";
+"🚨 %@, what did you forget?" = "🚨 %@, was hast du vergessen?";
+"🚨 3 things forgotten today" = "🚨 3 Sachen heute vergessen";
+"🚨 What did you forget?" = "🚨 Was hast du vergessen?";
+"🚨🚨 Claim Your Special Offer" = "🚨🚨 Sichern Sie Ihr Sonderangebot";
+"🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SONDERANGEBOT 🚨🚨";
+
