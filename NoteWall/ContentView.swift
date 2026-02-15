@@ -1229,7 +1229,7 @@ private struct EditModeSupplementView: View {
                     Spacer()
 
                     Button(action: { context.activeAlert.wrappedValue = .deleteSelectedNotes }) {
-                        Text("Delete (\(context.selectedNotes.wrappedValue.count))")
+                        Text(String(format: NSLocalizedString("Delete (%lld)", comment: ""), context.selectedNotes.wrappedValue.count))
                             .foregroundColor(context.selectedNotes.wrappedValue.isEmpty ? .gray : .red)
                     }
                     .buttonStyle(.plain)

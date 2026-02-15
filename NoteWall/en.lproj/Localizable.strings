@@ -717,3 +717,18 @@
 "🚨🚨 Claim Your Special Offer" = "🚨🚨 Claim Your Special Offer";
 "🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SPECIAL OFFER 🚨🚨";
 
+// MARK: - Format Strings (Auto-generated)
+"Step %lld" = "Step %lld";
+"%lld times" = "%lld times";
+"%lld%" = "%lld%";
+"%lld%%" = "%lld%%";
+"+%@ people" = "+%@ people";
+"%lld:%02lld" = "%lld:%02lld";
+"Next: %@" = "Next: %@";
+"Screen: %lld×%lld" = "Screen: %lld×%lld";
+"Device Category: %@" = "Device Category: %@";
+"Scale Factor: %.2f" = "Scale Factor: %.2f";
+"Is Compact: %@" = "Is Compact: %@";
+"Max Video Height: %lld" = "Max Video Height: %lld";
+"Error: %@" = "Error: %@";
+"Current step: %@" = "Current step: %@";

@@ -221,7 +221,7 @@ struct SettingsView: View {
                                 .font(.headline)
                                 .foregroundColor(.primary)
                             
-                            Text("\(paywallManager.remainingFreeExports) free wallpapers remaining")
+                            Text(String(format: NSLocalizedString("%lld free wallpapers remaining", comment: ""), paywallManager.remainingFreeExports))
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -1861,7 +1861,7 @@ struct StylingToolbarView: View {
                                 onUpdate()
                             }
                         
-                        Text("\(Int(shadowIntensity * 100))%")
+                        Text(String(format: NSLocalizedString("%lld%%", comment: ""), Int(shadowIntensity * 100)))
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(.primary)
                             .frame(width: 44, alignment: .trailing)

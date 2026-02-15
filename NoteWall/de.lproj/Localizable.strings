@@ -582,7 +582,7 @@
 "Watch Tutorial Again" = "Tutorial erneut ansehen";
 "Watch this short guide to fix the issue:" = "Watch this short guide to fix the issue:";
 "We Just Updated!" = "Gerade aktualisiert!";
-"We Made Things Better!" = "We Made Things Better!";
+"We Made Things Better!" = "Wir haben es verbessert!";
 "We Owe You an Apology" = "Wir schulden Ihnen eine Entschuldigung";
 "We can help you fix it in just a few steps." = "Wir können dir in wenigen Schritten helfen.";
 "We couldn't fix everything automatically. Let's get you personal help." = "Wir konnten nicht alles automatisch beheben. Lass uns dir persönlich helfen.";
@@ -703,7 +703,7 @@
 "the average person unlocks their phone up to" = "the average person unlocks their phone up to";
 "times per day ?" = "Mal am Tag entsperrt?";
 "unlocks their phone up to" = "sein Handy bis zu";
-"what matters" = "what matters";
+"what matters" = "was wichtig ist";
 "why?" = "warum?";
 "you'll" = "du";
 "your" = "deinen";
@@ -717,3 +717,18 @@
 "🚨🚨 Claim Your Special Offer" = "🚨🚨 Sichern Sie Ihr Sonderangebot";
 "🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 SONDERANGEBOT 🚨🚨";
 
+// MARK: - Format Strings (Auto-generated)
+"Step %lld" = "Schritt %lld";
+"%lld times" = "%lld Mal";
+"%lld%" = "%lld%";
+"%lld%%" = "%lld%%";
+"+%@ people" = "+%@ Personen";
+"%lld:%02lld" = "%lld:%02lld";
+"Next: %@" = "Weiter: %@";
+"Screen: %lld×%lld" = "Bildschirm: %lld×%lld";
+"Device Category: %@" = "Gerätekategorie: %@";
+"Scale Factor: %.2f" = "Skalierungsfaktor: %.2f";
+"Is Compact: %@" = "Ist kompakt: %@";
+"Max Video Height: %lld" = "Max. Videohöhe: %lld";
+"Error: %@" = "Fehler: %@";
+"Current step: %@" = "Aktueller Schritt: %@";

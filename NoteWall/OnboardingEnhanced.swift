@@ -156,7 +156,7 @@ struct OnboardingProgressBar: View {
                 
                 Spacer()
                 
-                Text("Step \(currentStep) of \(totalSteps)")
+                Text(String(format: NSLocalizedString("Step %lld of %lld", comment: ""), currentStep, totalSteps))
                     .font(.system(size: 12, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
             }
@@ -2058,12 +2058,12 @@ struct PersonalizationLoadingView: View {
                         
                         // Percentage
                         if #available(iOS 17.0, *) {
-                            Text("\(displayedPercentage)%")
+                            Text(String(format: NSLocalizedString("%lld%%", comment: ""), displayedPercentage))
                                 .font(.system(size: isCompact ? 12 : 14, weight: .medium, design: .rounded))
                                 .foregroundColor(.white.opacity(0.5))
                                 .contentTransition(.numericText(value: Double(displayedPercentage)))
                         } else {
-                            Text("\(displayedPercentage)%")
+                            Text(String(format: NSLocalizedString("%lld%%", comment: ""), displayedPercentage))
                                 .font(.system(size: isCompact ? 12 : 14, weight: .medium, design: .rounded))
                                 .foregroundColor(.white.opacity(0.5))
                         }
@@ -2613,7 +2613,7 @@ struct ResultsPreviewView: View {
                                             .foregroundColor(.white.opacity(0.5))
                                             .tracking(1.0)
                                         
-                                        Text("\(phoneCheckCount) times")
+                                        Text(String(format: NSLocalizedString("%lld times", comment: ""), phoneCheckCount))
                                             .font(.system(size: isCompact ? 18 : 22, weight: .bold))
                                             .foregroundColor(.white)
                                     }

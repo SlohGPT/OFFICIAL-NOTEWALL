@@ -582,7 +582,7 @@
 "Watch Tutorial Again" = "Revoir le tutoriel";
 "Watch this short guide to fix the issue:" = "Watch this short guide to fix the issue:";
 "We Just Updated!" = "Mise à jour !";
-"We Made Things Better!" = "We Made Things Better!";
+"We Made Things Better!" = "Nous l'avons amélioré!";
 "We Owe You an Apology" = "Nous vous devons des excuses";
 "We can help you fix it in just a few steps." = "On peut t'aider à résoudre ça en quelques étapes.";
 "We couldn't fix everything automatically. Let's get you personal help." = "On n'a pas pu tout corriger automatiquement. Obtenons de l'aide personnelle.";
@@ -703,7 +703,7 @@
 "the average person unlocks their phone up to" = "the average person unlocks their phone up to";
 "times per day ?" = "fois par jour ?";
 "unlocks their phone up to" = "déverrouille son téléphone jusqu'à";
-"what matters" = "what matters";
+"what matters" = "ce qui compte";
 "why?" = "pourquoi ?";
 "you'll" = "que tu";
 "your" = "ton";
@@ -717,3 +717,19 @@
 "🚨🚨 Claim Your Special Offer" = "🚨🚨 Réclamez votre offre spéciale";
 "🚨🚨 SPECIAL OFFER 🚨🚨" = "🚨🚨 OFFRE SPÉCIALE 🚨🚨";
 
+// MARK: - Format Strings (Auto-generated)
+"%lld free wallpapers remaining" = "%lld fonds d'écran gratuits restants";
+"Step %lld" = "Étape %lld";
+"%lld times" = "%lld fois";
+"%lld%" = "%lld%";
+"%lld%%" = "%lld%%";
+"+%@ people" = "+%@ personnes";
+"%lld:%02lld" = "%lld:%02lld";
+"Next: %@" = "Suivant: %@";
+"Screen: %lld×%lld" = "Écran: %lld×%lld";
+"Device Category: %@" = "Catégorie d'appareil: %@";
+"Scale Factor: %.2f" = "Facteur d'échelle: %.2f";
+"Is Compact: %@" = "Est compact: %@";
+"Max Video Height: %lld" = "Hauteur vidéo max: %lld";
+"Error: %@" = "Erreur: %@";
+"Current step: %@" = "Étape actuelle: %@";

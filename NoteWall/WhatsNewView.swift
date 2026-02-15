@@ -277,7 +277,7 @@ struct WhatsNewView: View {
                     .font(.system(size: isCompact ? 24 : 28, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
-                Text("Version \(currentVersion)")
+                Text(String(format: NSLocalizedString("Version %@", comment: ""), currentVersion))
                     .font(.system(size: isCompact ? 14 : 16))
                     .foregroundColor(.white.opacity(0.5))
             }

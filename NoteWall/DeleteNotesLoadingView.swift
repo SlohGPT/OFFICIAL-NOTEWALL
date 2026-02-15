@@ -74,7 +74,7 @@ struct DeleteNotesLoadingView: View {
                     
                     // Countdown number in center
                     VStack(spacing: 2) {
-                        Text("\(remainingSeconds)")
+                        Text(String(format: NSLocalizedString("%lld", comment: ""), remainingSeconds))
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
                         
