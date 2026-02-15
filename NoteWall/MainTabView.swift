@@ -13,14 +13,13 @@ struct MainTabView: View {
     @State private var showDiscountedPaywall = false
     @State private var shouldRestartOnboarding = false
     
-    // Apology screen state (shows before What's New)
+    // Apology screen state (mandatory for existing premium users)
     @State private var showApology = false
     
-    // What's New popup state
-    @State private var showWhatsNew = false
-    
     // Pipeline migration state
+    @State private var showMigrationConfirm = false
     @State private var showPipelineMigrationOnboarding = false
+    @State private var showMigrationThankYou = false
 
     var body: some View {
         ZStack {
@@ -74,6 +73,15 @@ struct MainTabView: View {
             // Navigate to home tab
             selectedTab = 0
         }
+        .onReceive(NotificationCenter.default.publisher(for: .debugShowApologyFlow)) { _ in
+            #if DEBUG
+            print("🧪 MainTabView: Debug trigger for apology flow")
+            #endif
+            showPipelineMigrationOnboarding = false
+            showMigrationConfirm = false
+            showMigrationThankYou = false
+            showApology = true
+        }
         // Quick Action modals
         .sheet(isPresented: $showExitFeedback) {
             ExitFeedbackView()
@@ -99,32 +107,43 @@ struct MainTabView: View {
                     .interactiveDismissDisabled(true)
             }
         }
-        // Apology screen for pre-Feb 9th premium users (shows BEFORE What's New)
-        .sheet(isPresented: $showApology) {
+        // Apology screen for existing premium users (mandatory, non-dismissible)
+        // Flow: Apology → MigrationConfirm → OnboardingView (migration) → ThankYou
+        .fullScreenCover(isPresented: $showApology) {
             ApologyView(isPresented: $showApology, onDismiss: {
-                // After apology is dismissed, check if What's New should show
-                checkAndShowWhatsNew()
-            })
-                .interactiveDismissDisabled(true)
-        }
-        // What's New popup for app updates (pipeline migration for pre-Feb 9th users)
-        .sheet(isPresented: $showWhatsNew) {
-            WhatsNewView(isPresented: $showWhatsNew, onStartMigration: {
-                // User chose to switch to the new pipeline
-                // Trigger the migration onboarding after a small delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    self.showPipelineMigrationOnboarding = true
+                // After apology, go DIRECTLY to migration confirmation (no WhatsNew in between)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    self.showMigrationConfirm = true
                 }
             })
-                .interactiveDismissDisabled(true)
+        }
+        // Migration confirmation screen (explains the 3-step fix, shown AFTER apology)
+        .fullScreenCover(isPresented: $showMigrationConfirm) {
+            MigrationConfirmView(isPresented: $showMigrationConfirm) {
+                // User confirmed — start the migration onboarding
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    self.showPipelineMigrationOnboarding = true
+                }
+            }
+            .interactiveDismissDisabled(true)
         }
         // Pipeline migration onboarding (re-runs OnboardingView with paywall skipped)
-        .fullScreenCover(isPresented: $showPipelineMigrationOnboarding) {
+        .fullScreenCover(isPresented: $showPipelineMigrationOnboarding, onDismiss: {
+            // After onboarding completes, show thank-you screen
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                self.showMigrationThankYou = true
+            }
+        }) {
             OnboardingView(
                 isPresented: $showPipelineMigrationOnboarding,
                 onboardingVersion: 3,
                 isPipelineMigration: true
             )
+        }
+        // Thank-you screen after migration completes
+        .fullScreenCover(isPresented: $showMigrationThankYou) {
+            MigrationThankYouView(isPresented: $showMigrationThankYou)
+                .interactiveDismissDisabled(true)
         }
         // Quick Action handler
         .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
@@ -163,10 +182,21 @@ struct MainTabView: View {
                         #if DEBUG
                         print("✅ MainTabView: Opening share sheet (from appear)")
                         #endif
-                        // Get the root view controller and present share sheet
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let rootViewController = windowScene.windows.first?.rootViewController {
-                            SocialSharingManager.shared.shareAppReferral(from: rootViewController)
+                        // Add delay to ensure view controller is fully ready
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            // Get the root view controller and present share sheet
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let rootViewController = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController {
+                                // Ensure we present from the top-most view controller
+                                var topController = rootViewController
+                                while let presented = topController.presentedViewController {
+                                    topController = presented
+                                }
+                                SocialSharingManager.shared.shareAppReferral(from: topController)
+                                #if DEBUG
+                                print("✅ Share sheet presented from: \(type(of: topController))")
+                                #endif
+                            }
                         }
                     }
                     QuickActionsManager.shared.clearTriggeredAction()
@@ -189,33 +219,21 @@ struct MainTabView: View {
         }
     }
     
-    // MARK: - Apology & What's New Flow
+    // MARK: - Apology & Migration Flow
     
-    /// Entry point: check apology first, then What's New
+    /// Entry point: check if apology/migration flow should be shown.
+    /// Only shows to existing premium users who haven't been through it yet.
+    /// New users are protected because completeOnboarding() marks it as shown.
     private func checkAndShowApologyOrWhatsNew() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             if ApologyManager.shared.checkShouldShow() {
                 #if DEBUG
-                print("💝 MainTabView: Showing apology screen first")
+                print("💝 MainTabView: Showing mandatory apology + migration flow")
                 #endif
                 self.showApology = true
-                // What's New will be triggered after apology is dismissed (via onDismiss callback)
-            } else {
-                // No apology needed — go straight to What's New check
-                checkAndShowWhatsNew()
+                // Flow continues: Apology → MigrationConfirm → Onboarding → ThankYou
             }
-        }
-    }
-    
-    /// Shows What's New popup if needed (called directly or after apology dismissal)
-    private func checkAndShowWhatsNew() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if WhatsNewManager.shared.checkShouldShow() {
-                #if DEBUG
-                print("🎉 MainTabView: Showing What's New popup")
-                #endif
-                self.showWhatsNew = true
-            }
+            // No else needed — new users and users who completed migration won't see anything
         }
     }
     
@@ -267,10 +285,25 @@ struct MainTabView: View {
                 #if DEBUG
                 print("✅ MainTabView: Opening share sheet")
                 #endif
-                // Get the root view controller and present share sheet
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let rootViewController = windowScene.windows.first?.rootViewController {
-                    SocialSharingManager.shared.shareAppReferral(from: rootViewController)
+                // Add delay to ensure view controller is fully ready
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    // Get the root view controller and present share sheet
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let rootViewController = windowScene.windows.first(where: { $0.isKeyWindow })?.rootViewController {
+                        // Ensure we present from the top-most view controller
+                        var topController = rootViewController
+                        while let presented = topController.presentedViewController {
+                            topController = presented
+                        }
+                        SocialSharingManager.shared.shareAppReferral(from: topController)
+                        #if DEBUG
+                        print("✅ Share sheet presented from: \(type(of: topController))")
+                        #endif
+                    } else {
+                        #if DEBUG
+                        print("⚠️ Could not find root view controller for share sheet")
+                        #endif
+                    }
                 }
             }
             

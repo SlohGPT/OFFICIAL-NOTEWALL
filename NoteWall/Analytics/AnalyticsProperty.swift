@@ -78,12 +78,11 @@ enum AnalyticsProperty {
 /// Consistent step IDs for onboarding tracking
 /// These map to the OnboardingPage enum in OnboardingView.swift
 enum OnboardingStepId: String, CaseIterable {
-    // Phase 0: Notification Permission
+    // Phase 0: Pre-onboarding
     case preOnboardingHook = "pre_onboarding_hook"
     case nameInput = "name_input"
-    case notificationPermission = "notification_permission"
     
-    // Phase 1: Emotional Hook
+    // Phase 1: Emotional Hook (Quiz)
     case painPoint = "pain_point"
     case quizForgetMost = "quiz_forget_most"
     case quizPhoneChecks = "quiz_phone_checks"
@@ -92,54 +91,54 @@ enum OnboardingStepId: String, CaseIterable {
     case resultsPreview = "results_preview"
     case resultsInsight = "results_insight"
     
-    // Phase 2: Social Proof
+    // Phase 2: Social Proof & Notification Permission
     case socialProof = "social_proof"
-    case reviewPage = "review_page"
+    case notificationPermission = "notification_permission"
     
     // Phase 3: Technical Setup
     case setupIntro = "setup_intro"
     case welcome = "welcome"
-    case videoIntroduction = "video_introduction"
     case installShortcut = "install_shortcut"
     case shortcutSuccess = "shortcut_success"
     case addNotes = "add_notes"
     case chooseWallpapers = "choose_wallpapers"
     case allowPermissions = "allow_permissions"
     
-    // Phase 4: Completion
+    // Phase 4: Celebration & Completion
     case setupComplete = "setup_complete"
     case overview = "overview"
+    case reviewPage = "review_page"
     
     /// Get the step index (0-based)
     var index: Int {
         OnboardingStepId.allCases.firstIndex(of: self) ?? 0
     }
     
-    /// Human-readable step name
+    /// Human-readable step name (numbered for Mixpanel clarity)
     var displayName: String {
+        let num = index + 1
         switch self {
-        case .preOnboardingHook: return "Welcome Hook"
-        case .nameInput: return "Name Input"
-        case .notificationPermission: return "Notification Permission"
-        case .painPoint: return "Pain Point"
-        case .quizForgetMost: return "Quiz: Forget Most"
-        case .quizPhoneChecks: return "Quiz: Phone Checks"
-        case .quizDistraction: return "Quiz: Distraction"
-        case .personalizationLoading: return "Personalization"
-        case .resultsPreview: return "Results Preview"
-        case .resultsInsight: return "Results Insight"
-        case .socialProof: return "Social Proof"
-        case .reviewPage: return "Review Page"
-        case .setupIntro: return "Setup Intro"
-        case .welcome: return "Welcome"
-        case .videoIntroduction: return "Video Introduction"
-        case .installShortcut: return "Install Shortcut"
-        case .shortcutSuccess: return "Shortcut Success"
-        case .addNotes: return "Add Notes"
-        case .chooseWallpapers: return "Choose Wallpapers"
-        case .allowPermissions: return "Allow Permissions"
-        case .setupComplete: return "Setup Complete"
-        case .overview: return "Overview"
+        case .preOnboardingHook: return "\(num). Welcome Hook"
+        case .nameInput: return "\(num). Name Input"
+        case .painPoint: return "\(num). Pain Point"
+        case .quizForgetMost: return "\(num). Quiz: Forget Most"
+        case .quizPhoneChecks: return "\(num). Quiz: Phone Checks"
+        case .quizDistraction: return "\(num). Quiz: Distraction"
+        case .personalizationLoading: return "\(num). Personalization"
+        case .resultsPreview: return "\(num). Results Preview"
+        case .resultsInsight: return "\(num). Results Insight"
+        case .socialProof: return "\(num). Social Proof"
+        case .notificationPermission: return "\(num). Notification Permission"
+        case .setupIntro: return "\(num). Setup Intro"
+        case .welcome: return "\(num). Welcome"
+        case .installShortcut: return "\(num). Install Shortcut"
+        case .shortcutSuccess: return "\(num). Shortcut Success"
+        case .addNotes: return "\(num). Add Notes"
+        case .chooseWallpapers: return "\(num). Choose Wallpapers"
+        case .allowPermissions: return "\(num). Allow Permissions"
+        case .setupComplete: return "\(num). Setup Complete"
+        case .overview: return "\(num). Overview"
+        case .reviewPage: return "\(num). Review Page"
         }
     }
 }

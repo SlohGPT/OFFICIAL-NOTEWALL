@@ -84,7 +84,7 @@ struct OnboardingAnalytics {
         print("📊 Legacy Analytics: Step shown - \(step)")
         #endif
         // Using Mixpanel Analytics via AnalyticsService
-        AnalyticsService.shared.trackScreenView(screenName: "onboarding_\(step)")
+        AnalyticsService.shared.trackScreenView(screenName: "onboarding_legacy_\(step)")
     }
     
     static func trackStepCompleted(_ step: String, timeSpent: TimeInterval) {

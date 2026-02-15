@@ -60,6 +60,8 @@ struct SettingsView: View {
         return .white
     }()
     @State private var alignmentMode = UserDefaults.standard.wallpaperAlignment
+    @State private var rcIdCopied = false
+
     @State private var highlightMode = UserDefaults.standard.wallpaperHighlightMode // RESTORED
     @AppStorage("wallpaperUseCustomColor") private var useCustomColor = false
     @State private var previewBackgroundImage: UIImage?
@@ -113,6 +115,7 @@ struct SettingsView: View {
             wallpaperSettingsSection
             actionsSection
             supportSection
+            userIdSection
         }
         .sheet(isPresented: $showPaywall) {
             if #available(iOS 15.0, *) {
@@ -643,6 +646,33 @@ struct SettingsView: View {
         }
     }
 
+    private var userIdSection: some View {
+        Section(header: Text("Account")) {
+            Button(action: {
+                let userId = PaywallManager.shared.customerInfo?.originalAppUserId ?? "Unknown"
+                UIPasteboard.general.string = userId
+                let generator = UINotificationFeedbackGenerator()
+                generator.notificationOccurred(.success)
+                rcIdCopied = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    rcIdCopied = false
+                }
+            }) {
+                HStack {
+                    Image(systemName: rcIdCopied ? "checkmark.circle.fill" : "person.text.rectangle")
+                        .foregroundColor(rcIdCopied ? .green : .secondary)
+                    Text(rcIdCopied ? "Copied!" : "Copy User ID")
+                        .foregroundColor(rcIdCopied ? .green : .primary)
+                    Spacer()
+                    if !rcIdCopied {
+                        Image(systemName: "doc.on.doc")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                    }
+                }
+            }
+        }
+    }
 
     private func loadPreviewImage() {
         // 1. Try to load custom background photo (if user selected one)

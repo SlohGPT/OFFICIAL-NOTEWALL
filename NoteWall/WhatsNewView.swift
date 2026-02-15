@@ -39,7 +39,7 @@ struct WhatsNewView: View {
     // MARK: - Current Version Info
     
     private var currentVersion: String {
-        "1.4.3"
+        "1.5.2"
     }
     
     private var buildNumber: String {
@@ -63,20 +63,20 @@ struct WhatsNewView: View {
             UpdateItem(
                 icon: "sparkles",
                 iconColor: Color("AppAccent"),
-                title: "Complete UI Redesign",
-                description: "We've rebuilt the entire app from the ground up, focusing exclusively on your lock screen — where your notes matter most."
+                title: "Rebuilt from Scratch",
+                description: "Entirely new engine focused on your lock screen — faster and more reliable."
             ),
             UpdateItem(
                 icon: "bolt.circle.fill",
                 iconColor: Color("AppAccent").opacity(0.8),
-                title: "Faster & Simpler Setup",
-                description: "The new shortcut is quicker to install and more reliable. You'll need to set it up again, but it only takes a minute."
+                title: "1-Minute Setup",
+                description: "A new shortcut replaces the old one. Quick install, then you're done."
             ),
             UpdateItem(
                 icon: "crown.fill",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "No Extra Charges",
-                description: "You're already premium — this is a free upgrade. Just reinstall the shortcut to get started with the improved experience."
+                title: "Premium Stays",
+                description: "Your subscription carries over — no extra charges, ever."
             )
         ]
     }
@@ -140,7 +140,7 @@ struct WhatsNewView: View {
         .onAppear {
             // Track screen view
             AnalyticsService.shared.trackScreenView(
-                screenName: "whats_new_migration_popup",
+                screenName: "migration_2_whats_new",
                 screenClass: "WhatsNewView"
             )
             
@@ -388,7 +388,7 @@ struct WhatsNewView: View {
                         .foregroundColor(.white)
                 }
                 
-                Text("Switching to the new system doesn't affect your subscription at all. You won't be charged again — everything stays the same, just faster and better.")
+                Text("Switching to the new system doesn't affect your subscription. Nothing changes — it just works better.")
                     .font(.system(size: isCompact ? 14 : 15))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -457,17 +457,6 @@ struct WhatsNewView: View {
             }
             
             HStack(spacing: 12) {
-                // Secondary: Keep Current
-                Button(action: { keepCurrentPipeline() }) {
-                    Text("Keep Current Setup")
-                        .font(.system(size: isCompact ? 14 : 16, weight: .medium))
-                        .foregroundColor(.white.opacity(0.5))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, isCompact ? 10 : 12)
-                        .background(Color.white.opacity(0.05))
-                        .cornerRadius(12)
-                }
-                
                 // Secondary: Rate App
                 Button(action: { requestReview() }) {
                     HStack(spacing: 6) {
@@ -585,6 +574,17 @@ struct WhatsNewView: View {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
         
+        // Track that user dismissed without migrating
+        AnalyticsService.shared.logEvent(
+            .custom(
+                name: "pipeline_migration_declined",
+                parameters: [
+                    "source": "whats_new_x_button",
+                    "version": currentVersion
+                ]
+            )
+        )
+        
         // Mark as shown
         WhatsNewManager.shared.markAsShown()
         
@@ -644,7 +644,7 @@ class WhatsNewManager: ObservableObject {
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!
-    private let debugForceShow = true
+    private let debugForceShow = false
     
     private init() {}
     

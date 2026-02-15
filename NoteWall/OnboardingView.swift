@@ -383,10 +383,22 @@ struct OnboardingView: View {
             if isPipelineMigration {
                 debugLog("📱 Onboarding: Pipeline migration mode — skipping to technical setup (.welcome)")
                 currentPage = .welcome
+                
+                // CRITICAL: Load existing notes so user doesn't have to re-add them
+                // This makes the migration completely frictionless — their notes are preserved!
+                if let data = UserDefaults.standard.data(forKey: "savedNotes"),
+                   let existingNotes = try? JSONDecoder().decode([Note].self, from: data) {
+                    onboardingNotes = existingNotes
+                    debugLog("✅ Pipeline migration: Loaded \(existingNotes.count) existing notes")
+                } else {
+                    debugLog("⚠️ Pipeline migration: No existing notes found")
+                }
+                
+                AnalyticsService.shared.trackScreenView(screenName: "migration_4_onboarding_setup")
                 AnalyticsService.shared.logEvent(
                     .custom(
                         name: "pipeline_migration_onboarding_started",
-                        parameters: ["start_page": "welcome"]
+                        parameters: ["start_page": "welcome", "existing_notes_count": onboardingNotes.count]
                     )
                 )
                 return // Skip saved progress restoration and abandoned notifications
@@ -631,15 +643,17 @@ struct OnboardingView: View {
                     // Update Superwall attributes
                     SuperwallUserAttributesManager.shared.updateOnboardingAttributes()
 
-                    debugLog("✅ Onboarding Paywall dismissed")
+                    debugLog("✅ Onboarding Paywall dismissed — user is premium, completing onboarding")
                     
-                    // Complete onboarding regardless of subscription status
-                    // Freemium users get access to home but features are gated
+                    // CRITICAL: Call completeOnboarding() which properly:
+                    // - Saves notes
+                    // - Cancels notifications  
+                    // - Tracks analytics
+                    // - Sets hasCompletedSetup = true
+                    // - Marks apology as shown (so new users never see it)
+                    // - Dismisses the onboarding view (isPresented = false)
                     if currentPage == .reviewPage {
-                        debugLog("✅ Completing onboarding - user may proceed as freemium")
-                        hasCompletedSetup = true
-                        completedOnboardingVersion = onboardingVersion
-                        WhatsNewManager.shared.markAsShown()
+                        completeOnboarding()
                     }
                 }
         }
@@ -951,8 +965,10 @@ struct OnboardingView: View {
                             CelebrationView(
                                 title: "🎉 Nailed It!",
                                 subtitle: "That was the hardest part.\nEverything else takes under 60 seconds.",
-                                encouragement: "You're crushing this setup!",
-                                nextStepPreview: "Add your first notes"
+                                encouragement: isPipelineMigration ? "Almost done!" : "You're crushing this setup!",
+                                nextStepPreview: isPipelineMigration && !onboardingNotes.isEmpty 
+                                    ? "Choose your wallpaper style" 
+                                    : "Add your first notes"
                             ) {
                                 // Track action
                                 OnboardingAnalyticsTracker.shared.trackAction(.next, on: .shortcutSuccess)
@@ -975,8 +991,10 @@ struct OnboardingView: View {
                             ReviewPageView {
                                 // Track action
                                 OnboardingAnalyticsTracker.shared.trackAction(.next, on: .reviewPage)
-                                // reviewPage is the last page — complete onboarding
-                                completeOnboarding()
+                                // CRITICAL: Call advanceStep() which intercepts and shows the paywall
+                                // Do NOT call completeOnboarding() directly — user is not premium yet!
+                                // advanceStep() → shows paywall → onDisappear → completeOnboarding()
+                                advanceStep()
                             }
                         case .overview:
                             overviewStep()
@@ -3265,11 +3283,8 @@ struct OnboardingView: View {
             note.id }) ?? 0
     }
 
-    @State private var hasConfirmedPermissions: Bool = false // Simple checkbox state
-    
-    // Permission detection via URL callback only
-    @State private var permissionGrantedViaURL = false
-    @State private var permissionPollTimer: Timer?
+    @State private var hasConfirmedPermissions: Bool = false // Enabled after 3-second delay
+    @State private var permissionDelayTimer: Timer?
 
     private func allowPermissionsStep() -> some View {
         // Use adaptive layout values based on device size
@@ -3448,8 +3463,8 @@ struct OnboardingView: View {
                         .foregroundColor(.secondary)
                         .padding(.top, isCompact ? 6 : 12)
                     
-                    // Status text showing success
-                    if permissionGrantedViaURL {
+                    // Status text showing success after 3-second delay
+                    if hasConfirmedPermissions {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: isCompact ? 16 : 18))
@@ -3459,6 +3474,7 @@ struct OnboardingView: View {
                                 .foregroundColor(.white)
                         }
                         .padding(.top, isCompact ? 12 : 16)
+                        .transition(.opacity.combined(with: .scale(scale: 0.8)))
                     }
                     
                     // CRITICAL: Add generous bottom padding to ensure visibility above sticky Continue button
@@ -3470,28 +3486,18 @@ struct OnboardingView: View {
         .onAppear {
             debugLog("📱 Allow Permissions step appeared")
             hasConfirmedPermissions = false
-            permissionGrantedViaURL = false
             
-            // Check if the shortcut already completed (URL callback fired before this view appeared)
-            if UserDefaults.standard.bool(forKey: "shortcut_wallpaper_applied") {
-                debugLog("✅ Shortcut already completed before view appeared - enabling button immediately")
-                permissionGrantedViaURL = true
-                hasConfirmedPermissions = true
-            } else {
-                // Poll UserDefaults for the flag set by SceneDelegate/NoteWallApp URL handler
-                // This handles the case where the URL fires after the view appears
-                permissionPollTimer?.invalidate()
-                permissionPollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-                    if UserDefaults.standard.bool(forKey: "shortcut_wallpaper_applied") {
-                        debugLog("✅ Detected wallpaper-updated via UserDefaults poll")
-                        permissionGrantedViaURL = true
+            // Enable the button after a 3-second delay to give user time to grant permissions
+            permissionDelayTimer?.invalidate()
+            permissionDelayTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: false) { _ in
+                DispatchQueue.main.async {
+                    withAnimation(.easeInOut(duration: 0.4)) {
                         hasConfirmedPermissions = true
-                        permissionPollTimer?.invalidate()
-                        permissionPollTimer = nil
-                        
-                        let generator = UINotificationFeedbackGenerator()
-                        generator.notificationOccurred(.success)
                     }
+                    debugLog("✅ 3-second delay elapsed - enabling Continue button")
+                    
+                    let generator = UINotificationFeedbackGenerator()
+                    generator.notificationOccurred(.success)
                 }
             }
             
@@ -3580,19 +3586,8 @@ struct OnboardingView: View {
             }
         }
         .onDisappear {
-            permissionPollTimer?.invalidate()
-            permissionPollTimer = nil
-            // Clear the flag so it's fresh if user returns to this step
-            UserDefaults.standard.set(false, forKey: "shortcut_wallpaper_applied")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .shortcutWallpaperApplied)) { _ in
-            debugLog("✅ Received wallpaper-updated URL callback - enabling button")
-            permissionGrantedViaURL = true
-            hasConfirmedPermissions = true
-            
-            // Success haptic
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.success)
+            permissionDelayTimer?.invalidate()
+            permissionDelayTimer = nil
         }
     }
     
@@ -4766,6 +4761,20 @@ struct OnboardingView: View {
             return 
         }
         
+        // CRITICAL: Skip "Add Notes" page during migration if notes already exist
+        // This makes the flow completely frictionless — no need to re-add their notes!
+        if isPipelineMigration && next == .addNotes && !onboardingNotes.isEmpty {
+            debugLog("✅ Pipeline migration: Skipping .addNotes (already have \(onboardingNotes.count) notes)")
+            // Jump directly to wallpapers
+            withAnimation(.easeInOut) {
+                currentPage = .chooseWallpapers
+            }
+            // Light impact haptic
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            return
+        }
+        
         // Light impact haptic for page transition
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
@@ -5090,7 +5099,18 @@ struct OnboardingView: View {
         hasCompletedSetup = true
         completedOnboardingVersion = onboardingVersion
         WhatsNewManager.shared.markAsShown()
+        
+        // CRITICAL: Mark apology as shown for users who just completed onboarding.
+        // This ensures new users who become premium through onboarding will NEVER
+        // see the apology flow — it's only for users who were already premium before this update.
+        ApologyManager.shared.markAsShown()
+        
         requestAppReviewIfNeeded()
+        
+        // Dismiss the onboarding view
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.isPresented = false
+        }
     }
 
     
@@ -7879,8 +7899,13 @@ struct ReviewPageView: View {
                 }
             }
             
-            // Request App Store review popup with delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+            // Preload paywall offerings now so they're cached before paywall opens
+            Task {
+                await PaywallManager.shared.loadOfferings(force: false)
+            }
+            
+            // Request App Store review popup immediately (minimal delay for smooth UX)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                 if let windowScene = UIApplication.shared.connectedScenes.first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
                     SKStoreReviewController.requestReview(in: windowScene)
                 }

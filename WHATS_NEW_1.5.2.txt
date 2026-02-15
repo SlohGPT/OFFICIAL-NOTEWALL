@@ -1,0 +1,7 @@
+Onboarding Flow Fix
+
+Some users experienced an issue during setup where the Continue button wouldn't activate after granting permissions. We've resolved this with a simpler, more reliable approach.
+
+This update also includes stability improvements to ensure a smooth experience for all new users.
+
+Thank you for using NoteWall.

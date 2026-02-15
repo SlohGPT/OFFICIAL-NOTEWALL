@@ -750,3 +750,26 @@
 
 // MARK: - Plan Names
 "Plan" = "Plan";
+
+// MARK: - Apology & Migration Flow
+"We Owe You an Apology" = "We Owe You an Apology";
+"You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track." = "You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track.";
+"Your premium is safe" = "Your premium is safe";
+"Your %lld note is still here" = "Your %lld note is still here";
+"Your %lld notes are still here" = "Your %lld notes are still here";
+"Your notes are still here" = "Your notes are still here";
+"1-minute fix, then you're done" = "1-minute fix, then you're done";
+"Fix It Now" = "Fix It Now";
+"Here's the Plan" = "Here's the Plan";
+"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "We'll reinstall your shortcut.\nYour notes stay exactly as they are.";
+"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same.";
+"Install the new shortcut" = "Install the new shortcut";
+"Allow one permission" = "Allow one permission";
+"Done — wallpapers update automatically" = "Done — wallpapers update automatically";
+"Let's Fix It" = "Let's Fix It";
+"You're All Set!" = "You're All Set!";
+"Thanks for bearing with us.\nEverything works now." = "Thanks for bearing with us.\nEverything works now.";
+"New system is active" = "New system is active";
+"Premium fully restored" = "Premium fully restored";
+"Lock screen updates automatically" = "Lock screen updates automatically";
+"Back to My Notes" = "Back to My Notes";

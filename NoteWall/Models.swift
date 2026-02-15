@@ -25,6 +25,7 @@ extension Notification.Name {
     static let showDeleteNotesLoadingOverlay = Notification.Name("showDeleteNotesLoadingOverlay")
     static let dismissPaywallAfterPromoCode = Notification.Name("dismissPaywallAfterPromoCode")
     static let restartMarqueeAnimations = Notification.Name("restartMarqueeAnimations")
+    static let debugShowApologyFlow = Notification.Name("debugShowApologyFlow")
 }
 
 struct WallpaperUpdateRequest {

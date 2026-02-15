@@ -95,7 +95,7 @@ final class OnboardingAnalyticsTracker {
         
         // Also track as a screen view so it appears in "Pages and screens" report
         AnalyticsService.shared.trackScreenView(
-            screenName: "onboarding_" + stepId.rawValue,
+            screenName: "onboarding_\(String(format: "%02d", stepId.index + 1))_\(stepId.rawValue)",
             screenClass: "OnboardingView"
         )
     }

@@ -747,3 +747,26 @@
 
 // MARK: - Plan Names
 "Plan" = "Plan";
+
+// MARK: - Apology & Migration Flow
+"We Owe You an Apology" = "Te debemos una disculpa";
+"You might have experienced a bug that prevented your wallpaper from updating. That's on us — let's get you back on track." = "Es posible que hayas experimentado un error que impidió que tu fondo se actualizara. Eso es culpa nuestra — volvamos a encaminarte.";
+"Your premium is safe" = "Tu premium está seguro";
+"Your %lld note is still here" = "Tu %lld nota sigue aquí";
+"Your %lld notes are still here" = "Tus %lld notas siguen aquí";
+"Your notes are still here" = "Tus notas siguen aquí";
+"1-minute fix, then you're done" = "Arreglo de 1 minuto, luego listo";
+"Fix It Now" = "Arreglarlo ahora";
+"Here's the Plan" = "Aquí está el plan";
+"We'll reinstall your shortcut.\nYour notes stay exactly as they are." = "Reinstalaremos tu atajo.\nTus notas permanecen exactamente como están.";
+"Don't worry — the flow will seem like the original setup you've done already, but just bear with us for this one. Your subscription will stay the same." = "No te preocupes — el flujo parecerá la configuración original que ya hiciste, pero ten paciencia con nosotros en esta. Tu suscripción permanecerá igual.";
+"Install the new shortcut" = "Instalar el nuevo atajo";
+"Allow one permission" = "Permitir un permiso";
+"Done — wallpapers update automatically" = "Listo — los fondos se actualizan automáticamente";
+"Let's Fix It" = "Vamos a arreglarlo";
+"You're All Set!" = "¡Todo listo!";
+"Thanks for bearing with us.\nEverything works now." = "Gracias por tu paciencia.\nAhora todo funciona.";
+"New system is active" = "Nuevo sistema activo";
+"Premium fully restored" = "Premium completamente restaurado";
+"Lock screen updates automatically" = "La pantalla de bloqueo se actualiza automáticamente";
+"Back to My Notes" = "Volver a mis notas";

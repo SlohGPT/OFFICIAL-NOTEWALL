@@ -997,15 +997,7 @@ struct PaywallView: View {
     
     /// Computes the sale percentage dynamically from the actual product price vs the computed "original" price
     private var dynamicSalePercentageText: String {
-        // ~44% off based on 1.8x multiplier
-        if let package = lifetimePackage {
-            let actual = package.storeProduct.price
-            let original = actual * Decimal(string: "1.8")!
-            let discount = ((original - actual) / original * 100)
-            let pct = NSDecimalNumber(decimal: discount).intValue
-            return "\(pct)% Sale"
-        }
-        return "44% Sale"
+        return "40% Sale"
     }
     
     // MARK: - Urgency Banner
