@@ -5,6 +5,7 @@ import SuperwallKit
 @main
 struct NoteWallApp: App {
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
+    @AppStorage(AppStorageKeys.troubleshootingReturnFlow) private var isTroubleshootingReturnFlow = false
     @State private var showOnboarding = false
     
     private let onboardingVersion = 3
@@ -106,10 +107,17 @@ struct NoteWallApp: App {
             Group {
                 if showOnboarding {
                     // Show onboarding directly for first-time users (no flash of empty homepage)
-                    OnboardingView(
-                        isPresented: $showOnboarding,
-                        onboardingVersion: onboardingVersion
-                    )
+                    if isTroubleshootingReturnFlow {
+                        ReturnFlowView(
+                            isPresented: $showOnboarding,
+                            onboardingVersion: onboardingVersion
+                        )
+                    } else {
+                        OnboardingView(
+                            isPresented: $showOnboarding,
+                            onboardingVersion: onboardingVersion
+                        )
+                    }
                 } else {
                     // Show main app for users who have completed setup
                     MainTabView()

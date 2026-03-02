@@ -47,6 +47,9 @@ struct PaywallView: View {
     @State private var particleData: [ParticleData] = []
     @State private var particleAnimationTime: Double = 0
     @State private var showPrivacyOptions = false
+    @State private var isCancellationGiftOfferActive = false
+    @State private var giftOfferRemainingSeconds: Int = 120
+    @State private var giftOfferEndDate: Date?
     
 
 
@@ -88,6 +91,7 @@ struct PaywallView: View {
     
     private let benefitsAutoScrollTimer = Timer.publish(every: 4, on: .main, in: .common).autoconnect()
     private let particleAnimationTimer = Timer.publish(every: 0.033, on: .main, in: .common).autoconnect() // ~30fps for smooth, efficient animation
+    private let giftOfferCountdownTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     init(triggerReason: PaywallTriggerReason = .manual, allowDismiss: Bool = true, applyExitInterceptDiscount: Bool = false) {
         self.triggerReason = triggerReason
@@ -104,9 +108,15 @@ struct PaywallView: View {
                 .drawingGroup() // Optimize background rendering
             
             // Floating particles (dots) - same as lifetime sheet
-            floatingParticles
+            if !isCancellationGiftOfferActive {
+                floatingParticles
+            }
             
-            step1PlanSelection
+            if isCancellationGiftOfferActive {
+                cancellationGiftOfferScreen
+            } else {
+                step1PlanSelection
+            }
         }
         .ignoresSafeArea(.all) // Extend background to all edges including bottom
         // Note: Don't use drawingGroup on entire body - it breaks scrolling and interactivity
@@ -320,6 +330,9 @@ struct PaywallView: View {
             }
             initializePlanSelection()
         }
+        .onReceive(giftOfferCountdownTimer) { _ in
+            updateGiftOfferCountdownIfNeeded()
+        }
         .onChange(of: paywallManager.isPremium) { _, isPremium in
             // Auto-dismiss paywall when user becomes premium (e.g., after restore or purchase)
             if isPremium {
@@ -434,44 +447,44 @@ struct PaywallView: View {
         ZStack {
             // Base dark gradient - matching lifetime sheet
             LinearGradient(
-                colors: [
-                    Color(red: 0.06, green: 0.06, blue: 0.12),
-                    Color(red: 0.02, green: 0.02, blue: 0.06)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            
-            // Accent glow orbs - matching lifetime sheet
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.appAccent.opacity(0.3), Color.clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 200
-                    )
+                    colors: [
+                        Color(red: 0.06, green: 0.06, blue: 0.12),
+                        Color(red: 0.02, green: 0.02, blue: 0.06)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-                .frame(width: 400, height: 400)
-                .offset(x: -100, y: -200)
-                .blur(radius: 60)
-            
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.appAccent.opacity(0.2), Color.clear],
-                        center: .center,
-                        startRadius: 0,
-                        endRadius: 150
+                
+                // Accent glow orbs - matching lifetime sheet
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.appAccent.opacity(0.3), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 200
+                        )
                     )
-                )
-                .frame(width: 300, height: 300)
-                .offset(x: 150, y: 300)
-                .blur(radius: 50)
-            
-            // Subtle noise texture overlay for depth
-            Rectangle()
-                .fill(Color.white.opacity(0.02))
+                    .frame(width: 400, height: 400)
+                    .offset(x: -100, y: -200)
+                    .blur(radius: 60)
+                
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [Color.appAccent.opacity(0.2), Color.clear],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 150
+                        )
+                    )
+                    .frame(width: 300, height: 300)
+                    .offset(x: 150, y: 300)
+                    .blur(radius: 50)
+                
+                // Subtle noise texture overlay for depth
+                Rectangle()
+                    .fill(Color.white.opacity(0.02))
         }
         .compositingGroup() // Optimize background composition
     }
@@ -877,6 +890,182 @@ struct PaywallView: View {
                 .padding(.horizontal, 16)
         }
     }
+
+    private var cancellationGiftOfferScreen: some View {
+        VStack(spacing: 0) {
+            if allowDismiss {
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        paywallManager.trackPaywallDismiss()
+                        AnalyticsService.shared.trackPaywallClose(
+                            paywallId: PaywallId.exitIntercept.rawValue,
+                            converted: false
+                        )
+                        dismiss()
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 28))
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 20)
+            }
+
+            Spacer(minLength: 8)
+
+            cancellationGiftOfferContent
+                .padding(.horizontal, 12)
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+
+            Spacer(minLength: 16)
+
+            Button(action: {
+                handlePurchase()
+            }) {
+                HStack(spacing: 10) {
+                    if isPurchasing || paywallManager.isLoadingOfferings {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    } else {
+                        Text("Claim your one time offer")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                    }
+                }
+                .frame(height: 64)
+                .frame(maxWidth: .infinity)
+                .background(
+                    LinearGradient(
+                        colors: [Color.appAccent.opacity(0.95), Color.appAccent],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .foregroundColor(.white)
+                .cornerRadius(18)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.black.opacity(0.25), lineWidth: 1)
+                )
+                .shadow(color: Color.appAccent.opacity(0.35), radius: 12, x: 0, y: 6)
+            }
+            .padding(.horizontal, 24)
+            .disabled(isPurchasing || paywallManager.isLoadingOfferings || selectedPackage == nil)
+
+            HStack(spacing: 28) {
+                Button("Privacy") {
+                    showPrivacyOptions = true
+                }
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+
+                Button("Terms") {
+                    if let url = URL(string: "https://peat-appendix-c3c.notion.site/TERMS-OF-USE-2b7f6a63758f8067a318e16486b16f47?source=copy_link") {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.system(size: 14))
+                .foregroundColor(.secondary)
+            }
+            .padding(.top, 16)
+            .padding(.bottom, 18)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var cancellationGiftOfferContent: some View {
+        VStack(spacing: 20) {
+            VStack(spacing: 8) {
+                Text("One Time Offer")
+                    .font(.system(size: 40, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
+
+                Text("30% OFF")
+                    .font(.system(size: 56, weight: .heavy, design: .rounded))
+                    .foregroundColor(.appAccent)
+                    .minimumScaleFactor(0.75)
+                    .lineLimit(1)
+                    .shadow(color: Color.appAccent.opacity(0.3), radius: 8, x: 0, y: 4)
+
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.system(size: 18, weight: .semibold))
+                    Text("You will not see this offer again")
+                        .font(.system(size: 18, weight: .medium))
+                }
+                .foregroundColor(.white.opacity(0.85))
+                .padding(.top, 2)
+            }
+            .padding(.horizontal, 24)
+
+            VStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Text("Only")
+                        .font(.system(size: 24, weight: .medium, design: .rounded))
+                        .foregroundColor(.white)
+
+                    Text(giftOfferDiscountedPriceText) // Calculated dynamically
+                        .font(.system(size: 48, weight: .heavy, design: .rounded))
+                        .foregroundColor(.appAccent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                        .shadow(color: Color.appAccent.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+
+            }
+            .padding(.vertical, 22)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 24)
+
+            ZStack(alignment: .top) {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 90, weight: .bold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color.appAccent, Color.appAccent.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .shadow(color: Color.appAccent.opacity(0.4), radius: 20, x: 0, y: 10)
+                    .frame(height: 150)
+
+                HStack(spacing: 10) {
+                    Image(systemName: "alarm.fill")
+                        .font(.system(size: 18, weight: .bold))
+                    Text(giftOfferTimerText)
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(Color(red: 0.1, green: 0.1, blue: 0.15))
+                        .overlay(
+                            Capsule().stroke(Color.appAccent.opacity(0.4), lineWidth: 1)
+                        )
+                )
+                .offset(y: -22)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+            .padding(.bottom, 4)
+        }
+    }
     
     private var benefitsCarousel: some View {
         let slides = loopingBenefitSlides
@@ -1248,6 +1437,34 @@ struct PaywallView: View {
         // Otherwise, use the regular lifetime package
         return availablePackages.first { planKind(for: $0) == .lifetime && 
             !$0.storeProduct.productIdentifier.lowercased().contains("discount") }
+    }
+
+    private var regularLifetimePackage: Package? {
+        availablePackages.first { package in
+            planKind(for: package) == .lifetime &&
+            !package.storeProduct.productIdentifier.lowercased().contains("discount")
+        }
+    }
+
+    private var giftOfferTimerText: String {
+        let minutes = max(0, giftOfferRemainingSeconds) / 60
+        let seconds = max(0, giftOfferRemainingSeconds) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private var giftOfferDiscountedPriceText: String {
+        if let discounted = availablePackages.first(where: { package in
+            let identifier = package.storeProduct.productIdentifier.lowercased()
+            return (identifier == "lifetime_discount" || identifier.contains("lifetime_discount")) && planKind(for: package) == .lifetime
+        }) {
+            return discounted.localizedPriceString
+        }
+
+        if let regularLifetimePackage {
+            return getDiscountedPriceString(for: regularLifetimePackage)
+        }
+
+        return "€17.49"
     }
     
     private var lifetimeFallbackPlan: FallbackPlan? {
@@ -1811,10 +2028,21 @@ struct PaywallView: View {
                     isPurchasing = false
                     
                     // Check if this is a cancellation - don't show error or dismiss
-                    if let purchasesError = error as? ErrorCode,
-                       purchasesError == .purchaseCancelledError {
+                    if isPurchaseCancellationError(error) {
                         // Track cancellation
                         AnalyticsService.shared.trackPurchaseCancel(productId: productId)
+
+                        let isDiscountedLifetimeOffer = package.storeProduct.productIdentifier
+                            .lowercased()
+                            .contains("lifetime_discount")
+
+                        // If user cancelled lifetime purchase from Apple pay sheet,
+                        // immediately present a branded 2-minute gift offer with 30% discount.
+                        // Never re-trigger from the discounted lifetime offer itself.
+                        if planKind(for: package) == .lifetime && !isCancellationGiftOfferActive && !isDiscountedLifetimeOffer {
+                            activateCancellationGiftOffer()
+                        }
+
                         // User cancelled - silently handle, keep paywall open
                         // No error message, no dismiss, just reset purchasing state
                         return
@@ -1834,6 +2062,78 @@ struct PaywallView: View {
                     // Paywall stays open - user can try again
                 }
             }
+        }
+    }
+
+    private func isPurchaseCancellationError(_ error: Error) -> Bool {
+        if let purchasesError = error as? ErrorCode,
+           purchasesError == .purchaseCancelledError {
+            return true
+        }
+
+        if let paywallError = error as? PaywallPurchaseError,
+           paywallError == .cancelled {
+            return true
+        }
+
+        let nsError = error as NSError
+        if nsError.code == NSUserCancelledError || nsError.code == -999 {
+            return true
+        }
+
+        return nsError.localizedDescription.lowercased().contains("cancel")
+    }
+
+    private func activateCancellationGiftOffer() {
+        // Keep existing discount state if already active, but refresh timer/offer mode.
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            isCancellationGiftOfferActive = true
+            discountApplied = true
+        }
+        giftOfferRemainingSeconds = 120
+        giftOfferEndDate = Date().addingTimeInterval(120)
+
+        // Select discounted lifetime package if available.
+        hasInitializedPlanSelection = false
+        _ = selectLifetimePackage()
+        initializePlanSelection()
+
+        AnalyticsService.shared.logEvent(
+            .custom(
+                name: "lifetime_cancel_gift_offer_shown",
+                parameters: [
+                    "offer_duration_seconds": 120,
+                    "discount_percent": 30
+                ]
+            )
+        )
+
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+
+    private func updateGiftOfferCountdownIfNeeded() {
+        guard isCancellationGiftOfferActive,
+              let endDate = giftOfferEndDate else { return }
+
+        let remaining = max(0, Int(endDate.timeIntervalSinceNow.rounded(.down)))
+        giftOfferRemainingSeconds = remaining
+
+        if remaining == 0 {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isCancellationGiftOfferActive = false
+                discountApplied = false
+            }
+            giftOfferEndDate = nil
+            hasInitializedPlanSelection = false
+            initializePlanSelection()
+
+            AnalyticsService.shared.logEvent(
+                .custom(
+                    name: "lifetime_cancel_gift_offer_expired",
+                    parameters: ["discount_percent": 30]
+                )
+            )
         }
     }
     
@@ -2496,7 +2796,7 @@ private struct LifetimePlanSheet: View {
                                         endPoint: .bottom
                                     ),
                                     lineWidth: 1
-                                )
+                                    .padding(.top, 34)
                                 .frame(width: 140 + CGFloat(i) * 30, height: 140 + CGFloat(i) * 30)
                                 .scaleEffect(pulseGlow ? 1.1 : 1.0)
                                 .opacity(pulseGlow ? 0.3 : 0.6)

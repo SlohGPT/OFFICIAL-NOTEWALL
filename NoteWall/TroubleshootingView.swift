@@ -449,6 +449,8 @@ struct TroubleshootingView: View {
                 Button(action: {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
+                    UserDefaults.standard.set(true, forKey: AppStorageKeys.troubleshootingRestartOnboarding)
+                    UserDefaults.standard.set(true, forKey: AppStorageKeys.troubleshootingReturnFlow)
                     shouldRestartOnboarding = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         isPresented = false

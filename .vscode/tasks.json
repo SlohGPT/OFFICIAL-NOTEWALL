@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Update Superwall SDK (latest)",
+      "type": "shell",
+      "command": "./update_superwall_sdk.sh",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Update All Swift Packages (latest allowed)",
+      "type": "shell",
+      "command": "./update_all_packages.sh",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

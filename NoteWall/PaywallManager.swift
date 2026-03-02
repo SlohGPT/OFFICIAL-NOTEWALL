@@ -3,6 +3,10 @@ import SwiftUI
 import RevenueCat
 import SuperwallKit
 
+enum PaywallPurchaseError: Error {
+    case cancelled
+}
+
 /// Manages paywall state, RevenueCat configuration, and premium status
 final class PaywallManager: NSObject, ObservableObject {
     // MARK: - Singleton
@@ -164,6 +168,21 @@ final class PaywallManager: NSObject, ObservableObject {
 
         do {
             let result = try await Purchases.shared.purchase(package: package)
+
+            // RevenueCat may report user cancellation via result payload (not thrown error).
+            // Handle that case explicitly so caller can keep paywall visible.
+            if didUserCancelPurchaseResult(result) {
+                await MainActor.run {
+                    isProcessingPurchase = false
+                    lastErrorMessage = nil
+
+                    AnalyticsService.shared.logEvent(
+                        .purchaseCancel(productId: package.storeProduct.productIdentifier)
+                    )
+                }
+                throw PaywallPurchaseError.cancelled
+            }
+
             await MainActor.run {
                 handle(customerInfo: result.customerInfo)
                 
@@ -198,7 +217,7 @@ final class PaywallManager: NSObject, ObservableObject {
                 lastErrorMessage = purchaseErrorMessage(error)
                 
                 // Track purchase failure
-                let userCancelled = (error as? ErrorCode) == .purchaseCancelledError
+                let userCancelled = isPurchaseCancellationError(error)
                 
                 if userCancelled {
                     AnalyticsService.shared.logEvent(
@@ -218,6 +237,35 @@ final class PaywallManager: NSObject, ObservableObject {
             }
             throw error
         }
+    }
+
+    private func didUserCancelPurchaseResult(_ result: Any) -> Bool {
+        let mirror = Mirror(reflecting: result)
+        for child in mirror.children {
+            if child.label == "userCancelled", let value = child.value as? Bool {
+                return value
+            }
+        }
+        return false
+    }
+
+    private func isPurchaseCancellationError(_ error: Error) -> Bool {
+        if let purchasesError = error as? ErrorCode,
+           purchasesError == .purchaseCancelledError {
+            return true
+        }
+
+        if let paywallError = error as? PaywallPurchaseError,
+           paywallError == .cancelled {
+            return true
+        }
+
+        let nsError = error as NSError
+        if nsError.code == NSUserCancelledError || nsError.code == -999 {
+            return true
+        }
+
+        return nsError.localizedDescription.lowercased().contains("cancel")
     }
 
     func restoreRevenueCatPurchases() async {

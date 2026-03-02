@@ -128,6 +128,7 @@
 		FA100000000000000000006 /* OnboardingView+Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA200000000000000000006 /* OnboardingView+Analytics.swift */; };
 		I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = I2000001000000000000001 /* AppIconAnimationView.swift */; };
 		L0BF0001000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = L0VG0001000000000000001 /* Localizable.strings */; };
+		RF100000000000000000001 /* ReturnFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RF200000000000000000001 /* ReturnFlowView.swift */; };
 		SF20000000000000000001 /* SubscriptionFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF10000000000000000001 /* SubscriptionFeedbackView.swift */; };
 		UC100000000000000000001 /* UserCountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = UC200000000000000000001 /* UserCountService.swift */; };
 /* End PBXBuildFile section */
@@ -257,6 +258,7 @@
 		L0EN0001000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L0ES0001000000000000001 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/Localizable.strings; sourceTree = "<group>"; };
 		L0FR0001000000000000001 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = fr.lproj/Localizable.strings; sourceTree = "<group>"; };
+		RF200000000000000000001 /* ReturnFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReturnFlowView.swift; sourceTree = "<group>"; };
 		SF10000000000000000001 /* SubscriptionFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeedbackView.swift; sourceTree = "<group>"; };
 		UC200000000000000000001 /* UserCountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserCountService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -611,6 +613,7 @@
 				A2000001000000000000001 /* NoteWallApp.swift */,
 				A2000002000000000000001 /* ContentView.swift */,
 				A2000003000000000000001 /* Models.swift */,
+				RF200000000000000000001 /* ReturnFlowView.swift */,
 				A2000004000000000000001 /* OnboardingView.swift */,
 				A2000005000000000000001 /* SettingsView.swift */,
 				A2000006000000000000001 /* MainTabView.swift */,
@@ -771,6 +774,7 @@
 				A1000001000000000000001 /* NoteWallApp.swift in Sources */,
 				A1000002000000000000001 /* ContentView.swift in Sources */,
 				A1000003000000000000001 /* Models.swift in Sources */,
+				RF100000000000000000001 /* ReturnFlowView.swift in Sources */,
 				D00000000000000000000001 /* DeviceAdaptive.swift in Sources */,
 				D10000000000000000000001 /* OnboardingEnhanced.swift in Sources */,
 				D20000000000000000000001 /* SuperwallPaywallView.swift in Sources */,

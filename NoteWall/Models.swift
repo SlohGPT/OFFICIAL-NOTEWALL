@@ -28,6 +28,11 @@ extension Notification.Name {
     static let debugShowApologyFlow = Notification.Name("debugShowApologyFlow")
 }
 
+enum AppStorageKeys {
+    static let troubleshootingRestartOnboarding = "troubleshooting_restart_onboarding"
+    static let troubleshootingReturnFlow = "troubleshooting_return_flow"
+}
+
 struct WallpaperUpdateRequest {
     let skipDeletionPrompt: Bool
     let trackForPaywall: Bool

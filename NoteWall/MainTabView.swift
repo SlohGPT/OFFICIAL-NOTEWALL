@@ -217,6 +217,13 @@ struct MainTabView: View {
                 }
             }
         }
+        .onChange(of: shouldRestartOnboarding) { _, shouldRestart in
+            guard shouldRestart else { return }
+
+            UserDefaults.standard.set(false, forKey: "hasCompletedSetup")
+            NotificationCenter.default.post(name: .onboardingReplayRequested, object: nil)
+            shouldRestartOnboarding = false
+        }
     }
     
     // MARK: - Apology & Migration Flow

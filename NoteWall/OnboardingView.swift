@@ -210,9 +210,12 @@ struct OnboardingView: View {
     /// When true, this is a pipeline migration (old shortcut → new shortcut).
     /// The user is already premium, so the paywall is skipped entirely.
     var isPipelineMigration: Bool = false
+    /// When true, this is a slim troubleshooting return flow (technical setup only).
+    var isReturnFlow: Bool = false
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage("completedOnboardingVersion") private var completedOnboardingVersion = 0
+    @AppStorage(AppStorageKeys.troubleshootingRestartOnboarding) private var isTroubleshootingRestartOnboarding = false
     @AppStorage("shouldShowTroubleshootingBanner") private var shouldShowTroubleshootingBanner = false
     @AppStorage("lockScreenBackground") private var lockScreenBackgroundRaw = LockScreenBackgroundOption.default.rawValue
     @AppStorage("lockScreenBackgroundMode") private var lockScreenBackgroundModeRaw = LockScreenBackgroundMode.default.rawValue
@@ -345,6 +348,10 @@ struct OnboardingView: View {
     @State private var overallOffset: CGFloat = 100 // Start lower on screen
     @State private var hasStartedPreOnboardingAnimation = false
 
+    private var shouldBypassPostOnboardingPaywall: Bool {
+        isPipelineMigration || isTroubleshootingRestartOnboarding || isReturnFlow
+    }
+
     private var shortcutURL: String {
         // During pipeline migration, always use the new lock-screen-only shortcut
         if isPipelineMigration {
@@ -378,6 +385,11 @@ struct OnboardingView: View {
             shortcutLaunchFallback = nil
             wallpaperVerificationTask?.cancel()
             wallpaperVerificationTask = nil
+
+            if isReturnFlow {
+                configureReturnFlowStart()
+                return
+            }
             
             // Pipeline migration: skip quiz/hook sections, jump straight to technical setup
             if isPipelineMigration {
@@ -591,6 +603,10 @@ struct OnboardingView: View {
                 withAnimation {
                     currentPage = .welcome
                 }
+
+                if isReturnFlow {
+                    configureReturnFlowStart()
+                }
                 shouldRestartOnboarding = false
             }
         }
@@ -629,7 +645,7 @@ struct OnboardingView: View {
                     // CRITICAL: Only complete onboarding if user is PREMIUM or LIFETIME
                     // EXCEPTION: Pipeline migration users are already premium, allow them through
                     // This enforces the hard paywall requirement
-                    guard PaywallManager.shared.isPremium || isPipelineMigration else {
+                    guard PaywallManager.shared.isPremium || shouldBypassPostOnboardingPaywall else {
                         // If they somehow dismissed it without paying (shouldn't happen with interactiveDismissDisabled),
                         // do NOT complete setup. They will remain in onboarding.
                         debugLog("⚠️ Paywall dismissed but user is NOT premium. Staying in onboarding.")
@@ -1085,7 +1101,10 @@ struct OnboardingView: View {
     }
 
     private var onboardingProgressIndicatorCompact: some View {
-        let technicalSteps: [OnboardingPage] = [.welcome, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions]
+        let technicalSteps: [OnboardingPage] = isReturnFlow
+            ? [.welcome, .installShortcut, .addNotes, .chooseWallpapers]
+            : [.welcome, .installShortcut, .addNotes, .chooseWallpapers, .allowPermissions]
+        let currentIndex = max(0, technicalSteps.firstIndex(of: currentPage) ?? 0)
         
         return HStack(alignment: .center, spacing: 12) {
             ForEach(technicalSteps, id: \.self) { page in
@@ -1110,7 +1129,7 @@ struct OnboardingView: View {
         .padding(.horizontal, 24)
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Onboarding progress")
-        .accessibilityValue("\(currentPage.accessibilityLabel) of 6")
+        .accessibilityValue("\(currentIndex + 1) of \(technicalSteps.count)")
     }
 
     private var primaryButtonSection: some View {
@@ -4746,10 +4765,38 @@ struct OnboardingView: View {
     }
 
     private func advanceStep() {
-        // INTERCEPT: Show Paywall after Review Page
-        // This must be checked BEFORE the 'next' guard because reviewPage is the last step
-        // SKIP paywall entirely for pipeline migration users (they are already premium)
-        if currentPage == .reviewPage && !isPipelineMigration {
+        if isReturnFlow {
+            switch currentPage {
+            case .welcome:
+                withAnimation(.easeInOut) {
+                    currentPage = .installShortcut
+                }
+                return
+            case .installShortcut:
+                withAnimation(.easeInOut) {
+                    currentPage = onboardingNotes.isEmpty ? .addNotes : .chooseWallpapers
+                }
+                return
+            case .addNotes:
+                withAnimation(.easeInOut) {
+                    currentPage = .chooseWallpapers
+                }
+                return
+            default:
+                break
+            }
+        }
+
+        // INTERCEPT: Review page is the final step and must either:
+        // 1) Complete immediately for premium/bypass users, or
+        // 2) Present hard paywall for non-premium users.
+        // This check must run BEFORE the `next` guard because `.reviewPage` has no next page.
+        if currentPage == .reviewPage {
+            if PaywallManager.shared.isPremium || shouldBypassPostOnboardingPaywall {
+                completeOnboarding()
+                return
+            }
+
             // Only show if we haven't already (though logic should prevent loops)
             if !showPostOnboardingPaywall {
                 showPostOnboardingPaywall = true
@@ -4850,9 +4897,32 @@ struct OnboardingView: View {
         // Generate wallpaper and launch shortcut to apply it
         // This will trigger permission prompts automatically
         finalizeWallpaperSetup(shouldLaunchShortcut: true)
+
+        if isReturnFlow {
+            completeOnboarding()
+            return
+        }
         
         // Advance to next step (Allow Permissions) - this happens after wallpaper is generated
         advanceStep()
+    }
+
+    private func configureReturnFlowStart() {
+        debugLog("🔁 Onboarding: Starting troubleshooting Return Flow")
+
+        currentPage = .welcome
+
+        if let data = UserDefaults.standard.data(forKey: "savedNotes"),
+           let existingNotes = try? JSONDecoder().decode([Note].self, from: data) {
+            onboardingNotes = existingNotes
+        }
+
+        AnalyticsService.shared.logEvent(
+            .custom(
+                name: "troubleshooting_return_flow_started",
+                parameters: ["existing_notes_count": onboardingNotes.count]
+            )
+        )
     }
 
     private func installShortcut() {
@@ -5084,7 +5154,7 @@ struct OnboardingView: View {
         // MARK: - Hard Paywall Check
         // CRITICAL: Ensure user is premium before completing setup
         // EXCEPTION: Pipeline migration users are already premium, skip this check
-        guard PaywallManager.shared.isPremium || isPipelineMigration else {
+        guard PaywallManager.shared.isPremium || shouldBypassPostOnboardingPaywall else {
             debugLog("⚠️ completeOnboarding called but user is NOT premium. Aborting completion.")
             return
         }
@@ -5104,7 +5174,12 @@ struct OnboardingView: View {
         // This ensures new users who become premium through onboarding will NEVER
         // see the apology flow — it's only for users who were already premium before this update.
         ApologyManager.shared.markAsShown()
-        
+
+        // Consume one-time troubleshooting onboarding bypass once flow completes.
+        if isTroubleshootingRestartOnboarding {
+            isTroubleshootingRestartOnboarding = false
+        }
+
         requestAppReviewIfNeeded()
         
         // Dismiss the onboarding view
