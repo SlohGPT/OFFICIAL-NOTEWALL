@@ -962,11 +962,11 @@ struct OnboardingView: View {
                             }
                         case .setupIntro:
                             SetupIntroView(
-                                title: "Quick 4-Minute Setup",
+                                title: "Quick 2-Minute Setup",
                                 subtitle: "Let's get your focus system working",
                                 icon: "gearshape.2.fill",
                                 steps: QuizData.setupSteps,
-                                timeEstimate: "About 4 minutes",
+                                timeEstimate: "About 2 minutes",
                                 ctaText: "Let's Do This!"
                             ) {
                                 // Track action

@@ -54,6 +54,8 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>SKIncludeConsumableInAppPurchaseHistory</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>NoteWall needs camera access so you can capture a photo for your home screen wallpaper.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

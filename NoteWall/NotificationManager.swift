@@ -144,9 +144,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             // --- 1 Hour Reminder ---
             let content1hr = UNMutableNotificationContent()
             if firstName.isEmpty {
-                content1hr.title = "🚨 You forgot again..."
+                content1hr.title = "🚨 You forgot..."
             } else {
-                content1hr.title = "🚨 \(firstName), you forgot again..."
+                content1hr.title = "🚨 \(firstName), you forgot..."
             }
             content1hr.body = "You see? You even forgot to setup the app that helps you stop forgetting."
             content1hr.sound = .default

@@ -3221,7 +3221,7 @@ struct TrajectoryView: View {
                     .buttonStyle(OnboardingPrimaryButtonStyle(isEnabled: true))
                     
                     // Reassurance text
-                    Text("Takes about 4 minutes")
+                    Text("Takes about 2 minutes")
                         .font(.system(size: isCompact ? 11 : 12))
                         .foregroundColor(.white.opacity(0.4))
                 }
@@ -4033,9 +4033,9 @@ struct QuizData {
     ]
     
     static let setupSteps = [
-        SetupIntroView.SetupStep(icon: "link", text: "Connect the shortcut", time: "~3 minutes"),
-        SetupIntroView.SetupStep(icon: "note.text", text: "Add your first notes", time: "~30 seconds"),
-        SetupIntroView.SetupStep(icon: "photo", text: "Choose your wallpaper style", time: "~30 seconds")
+        SetupIntroView.SetupStep(icon: "link", text: "Connect the shortcut", time: "~90 seconds"),
+        SetupIntroView.SetupStep(icon: "note.text", text: "Add your first notes", time: "~20 seconds"),
+        SetupIntroView.SetupStep(icon: "photo", text: "Choose your wallpaper style", time: "~10 seconds")
     ]
 }
 
