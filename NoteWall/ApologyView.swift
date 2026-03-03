@@ -1,5 +1,5 @@
 import SwiftUI
-import RevenueCat
+import SuperwallKit
 
 // MARK: - Apology View
 /// Mandatory apology + migration screen shown to existing premium users after the update.
@@ -960,9 +960,9 @@ class ApologyManager: ObservableObject {
         PaywallManager.shared.isPremium
     }
     
-    /// RevenueCat user IDs excluded from the apology flow
+    /// Superwall user IDs excluded from the apology flow
     private let excludedUserIDs: Set<String> = [
-        "$RCAnonymousID:7c8905e38de54ad9b7f9f7d6135bf451"
+        "7c8905e38de54ad9b7f9f7d6135bf451"
     ]
     
     /// Determines if the apology screen should be shown
@@ -970,7 +970,7 @@ class ApologyManager: ObservableObject {
     /// - Only shows to PREMIUM users (they paid and the bug affected them)
     /// - Only shows to users who have completed setup
     /// - Only shows ONCE EVER
-    /// - Excludes specific RevenueCat user IDs
+    /// - Excludes specific Superwall user IDs
     func checkShouldShow() -> Bool {
         #if DEBUG
         if debugForceShow {
@@ -987,20 +987,11 @@ class ApologyManager: ObservableObject {
             return false
         }
         
-        // Exclude specific RevenueCat user IDs
-        // Purchases.shared.appUserID is available immediately after RC configuration (no network needed)
-        let currentRCUserID = Purchases.shared.appUserID
-        if excludedUserIDs.contains(currentRCUserID) {
+        // Exclude specific Superwall user IDs
+        let currentUserID = Superwall.shared.userId
+        if excludedUserIDs.contains(currentUserID) {
             #if DEBUG
-            print("💝 ApologyManager: Excluded RevenueCat user \(currentRCUserID) - skipping apology")
-            #endif
-            return false
-        }
-        // Also check customerInfo in case the ID format differs
-        if let rcUserID = PaywallManager.shared.customerInfo?.originalAppUserId,
-           excludedUserIDs.contains(rcUserID) {
-            #if DEBUG
-            print("💝 ApologyManager: Excluded RevenueCat user \(rcUserID) - skipping apology")
+            print("💝 ApologyManager: Excluded Superwall user \(currentUserID) - skipping apology")
             #endif
             return false
         }

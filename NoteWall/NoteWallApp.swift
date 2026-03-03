@@ -1,5 +1,4 @@
 import SwiftUI
-import RevenueCat
 import SuperwallKit
 
 @main
@@ -7,6 +6,7 @@ struct NoteWallApp: App {
     @AppStorage("hasCompletedSetup") private var hasCompletedSetup = false
     @AppStorage(AppStorageKeys.troubleshootingReturnFlow) private var isTroubleshootingReturnFlow = false
     @State private var showOnboarding = false
+    @StateObject private var paywallManager = PaywallManager.shared
     
     private let onboardingVersion = 3
     
@@ -23,7 +23,6 @@ struct NoteWallApp: App {
         // Initialize crash reporting
         setupCrashReporting()
         HomeScreenImageManager.prepareStorageStructure()
-        configureRevenueCat()
         configureSuperwall()
         
         // Check onboarding status on init (only show for first launch)
@@ -43,46 +42,39 @@ struct NoteWallApp: App {
         QuickActionsManager.shared.registerQuickActions()
     }
 
-    private func configureRevenueCat() {
-        let configuration = Configuration
-            .builder(withAPIKey: "appl_VuulGamLrpZVzgEymEJnflZNEzs")
-            .with(entitlementVerificationMode: .informational)
-            .with(storeKitVersion: .storeKit1)
-            .build()
-
-        Purchases.configure(with: configuration)
-        PaywallManager.shared.connectRevenueCat()
-        
-        // CRITICAL: Attempt silent restore on every launch to prevent "amnesia"
-        // This ensures lifetime/subscription status is synced even if app was offloaded/reinstalled
-        Task {
-            let previousPremiumState = PaywallManager.shared.isPremium
-            await PaywallManager.shared.restoreRevenueCatPurchases()
-            let newPremiumState = PaywallManager.shared.isPremium
-            
-            // Log the "Amnesia Repair" event if it occurred
-            if !previousPremiumState && newPremiumState {
-                 AnalyticsService.shared.logEvent(
-                    .custom(
-                        name: "auto_restore_repair_success",
-                        parameters: [
-                            "previous_state": "free",
-                            "new_state": "premium",
-                            "repair_type": "launch_auto_restore"
-                        ]
-                    )
-                )
-            }
-        }
-    }
-    
     private func configureSuperwall() {
         let apiKey = "pk_IeL87ZJ24CWF5_aPvRJE_"
         Superwall.configure(apiKey: apiKey)
+        Superwall.shared.delegate = NoteWallSuperwallDelegate.shared
         
         // Initialize user attributes tracking
         // Superwall automatically uses anonymous IDs since there's no user management system
         SuperwallUserAttributesManager.shared.updateAllAttributes()
+
+        #if DEBUG
+        Task {
+            await validateSuperwallPlacementSetup()
+        }
+        #endif
+    }
+
+    @MainActor
+    private func validateSuperwallPlacementSetup() async {
+        let placementsToCheck = [
+            PaywallManager.defaultPlacement,
+            PaywallManager.discountPlacement,
+            "transaction_abandon"
+        ]
+
+        for placement in placementsToCheck {
+            let result = await Superwall.shared.getPresentationResult(forPlacement: placement)
+            let resultDescription = String(describing: result)
+            CrashReporter.logMessage("Superwall placement check [\(placement)]: \(resultDescription)", level: .info)
+
+            if resultDescription.contains("placementNotFound") {
+                CrashReporter.logMessage("Superwall warning: placement '\(placement)' is not attached to any campaign.", level: .warning)
+            }
+        }
     }
     
     private func setupCrashReporting() {
@@ -165,7 +157,24 @@ struct NoteWallApp: App {
                 }
             }
             .preferredColorScheme(.dark)
+            .onChange(of: paywallManager.shouldShowSwiftUIDiscountFallback) { _, shouldShow in
+                if shouldShow {
+                    Task { @MainActor in
+                        DiscountFallbackWindowPresenter.shared.presentIfNeeded()
+                    }
+                } else {
+                    Task { @MainActor in
+                        DiscountFallbackWindowPresenter.shared.dismissIfNeeded()
+                    }
+                }
+            }
             .onAppear {
+                if paywallManager.shouldShowSwiftUIDiscountFallback {
+                    Task { @MainActor in
+                        DiscountFallbackWindowPresenter.shared.presentIfNeeded()
+                    }
+                }
+
                 // Lock orientation to portrait on app launch
                 // Note: Orientation locking is primarily handled by Info.plist and AppDelegate
                 // This onAppear is a backup attempt, but the main control is in AppDelegate.supportedInterfaceOrientationsFor

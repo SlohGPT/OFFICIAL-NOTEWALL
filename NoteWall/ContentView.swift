@@ -797,12 +797,10 @@ private struct ContentViewRoot: View {
         RootConfiguredView(context: context) {
             MainContentView(context: context)
         }
-        .sheet(isPresented: $paywallManager.shouldShowPaywall) {
-            if #available(iOS 15.0, *) {
-                PaywallView(
-                    triggerReason: paywallManager.paywallTriggerReason,
-                    allowDismiss: paywallManager.paywallTriggerReason != .limitReached
-                )
+        .sheet(isPresented: $paywallManager.shouldShowSuperwallPaywall) {
+            if !paywallManager.superwallPlacement.isEmpty {
+                SuperwallPaywallView(placement: paywallManager.superwallPlacement)
+                    .interactiveDismissDisabled(true)
             }
         }
         .eraseToAnyView()

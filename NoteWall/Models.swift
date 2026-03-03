@@ -26,6 +26,8 @@ extension Notification.Name {
     static let dismissPaywallAfterPromoCode = Notification.Name("dismissPaywallAfterPromoCode")
     static let restartMarqueeAnimations = Notification.Name("restartMarqueeAnimations")
     static let debugShowApologyFlow = Notification.Name("debugShowApologyFlow")
+    static let superwallTransactionAbandoned = Notification.Name("superwallTransactionAbandoned")
+    static let showDiscountSuperwallPaywall = Notification.Name("showDiscountSuperwallPaywall")
 }
 
 enum AppStorageKeys {

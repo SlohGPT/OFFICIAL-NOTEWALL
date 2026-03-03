@@ -3,6 +3,7 @@ import PhotosUI
 import UIKit
 import Combine
 import StoreKit
+import SuperwallKit
 
 struct SettingsView: View {
     @AppStorage("savedNotes") private var savedNotesData: Data = Data()
@@ -649,7 +650,7 @@ struct SettingsView: View {
     private var userIdSection: some View {
         Section(header: Text("Account")) {
             Button(action: {
-                let userId = PaywallManager.shared.customerInfo?.originalAppUserId ?? "Unknown"
+                let userId = Superwall.shared.userId
                 UIPasteboard.general.string = userId
                 let generator = UINotificationFeedbackGenerator()
                 generator.notificationOccurred(.success)

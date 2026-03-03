@@ -283,6 +283,7 @@ struct OnboardingView: View {
     // Post-onboarding paywall
     @State private var showPostOnboardingPaywall = false
     @State private var showDiscountedPaywall = false
+    @State private var pendingDiscountFallbackPresentation = false
     @StateObject private var paywallManager = PaywallManager.shared
     
     // Final step mockup preview
@@ -637,7 +638,7 @@ struct OnboardingView: View {
                 }
         }
         .sheet(isPresented: $showPostOnboardingPaywall) {
-            PaywallView(triggerReason: .firstWallpaperCreated, allowDismiss: false)
+            SuperwallPaywallView(placement: PaywallManager.defaultPlacement)
                 .interactiveDismissDisabled(true)
                 .onDisappear {
                     // When paywall is dismissed (user subscribed, or restored)
@@ -673,13 +674,37 @@ struct OnboardingView: View {
                     }
                 }
         }
-        .sheet(isPresented: $showDiscountedPaywall) {
-            if #available(iOS 15.0, *) {
-                PaywallView(
-                    triggerReason: .exitIntercept,
-                    allowDismiss: true,
-                    applyExitInterceptDiscount: true
-                )
+        .onChange(of: paywallManager.shouldShowSwiftUIDiscountFallback) { _, shouldShow in
+            guard shouldShow else { return }
+            guard !paywallManager.isPremium else { return }
+            debugLog("⚠️ OnboardingView: shared fallback trigger received — dismissing onboarding paywall and forwarding to app-level fallback")
+
+            if showPostOnboardingPaywall {
+                showPostOnboardingPaywall = false
+            }
+
+            if paywallManager.shouldShowSuperwallPaywall {
+                paywallManager.shouldShowSuperwallPaywall = false
+            }
+            paywallManager.superwallPlacement = ""
+            debugLog("✅ OnboardingView: app-level discount fallback should present now")
+        }
+        .onChange(of: paywallManager.isPremium) { _, isPremium in
+            guard isPremium else { return }
+
+            if showPostOnboardingPaywall {
+                showPostOnboardingPaywall = false
+            }
+
+            if paywallManager.shouldShowSuperwallPaywall {
+                paywallManager.shouldShowSuperwallPaywall = false
+            }
+            paywallManager.superwallPlacement = ""
+            paywallManager.shouldShowSwiftUIDiscountFallback = false
+
+            if !hasCompletedSetup {
+                debugLog("✅ OnboardingView: premium activated — completing onboarding and routing to home")
+                completeOnboarding()
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in

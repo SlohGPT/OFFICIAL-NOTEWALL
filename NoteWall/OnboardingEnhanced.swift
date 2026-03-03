@@ -2613,7 +2613,7 @@ struct ResultsPreviewView: View {
                                             .foregroundColor(.white.opacity(0.5))
                                             .tracking(1.0)
                                         
-                                        Text(String(format: NSLocalizedString("%lld times", comment: ""), phoneCheckCount))
+                                        Text("\(phoneCheckCount) times")
                                             .font(.system(size: isCompact ? 18 : 22, weight: .bold))
                                             .foregroundColor(.white)
                                     }

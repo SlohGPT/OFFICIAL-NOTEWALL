@@ -40,7 +40,7 @@ final class SuperwallUserAttributesManager {
         attributes["hasPremiumAccess"] = paywallManager.isPremium
         attributes["hasLifetimeAccess"] = paywallManager.hasLifetimeAccess
         attributes["hasActiveSubscription"] = paywallManager.hasActiveSubscription
-        attributes["hasActiveRevenueCatEntitlement"] = paywallManager.hasActiveRevenueCatEntitlement
+        attributes["hasActiveSuperwallEntitlement"] = paywallManager.hasActiveSuperwallEntitlement
         
         if paywallManager.subscriptionExpiryTimestamp > 0 {
             attributes["subscriptionExpiryDate"] = Date(timeIntervalSince1970: paywallManager.subscriptionExpiryTimestamp)
@@ -164,7 +164,7 @@ final class SuperwallUserAttributesManager {
         attributes["hasPremiumAccess"] = paywallManager.isPremium
         attributes["hasLifetimeAccess"] = paywallManager.hasLifetimeAccess
         attributes["hasActiveSubscription"] = paywallManager.hasActiveSubscription
-        attributes["hasActiveRevenueCatEntitlement"] = paywallManager.hasActiveRevenueCatEntitlement
+        attributes["hasActiveSuperwallEntitlement"] = paywallManager.hasActiveSuperwallEntitlement
         
         if paywallManager.subscriptionExpiryTimestamp > 0 {
             attributes["subscriptionExpiryDate"] = Date(timeIntervalSince1970: paywallManager.subscriptionExpiryTimestamp)

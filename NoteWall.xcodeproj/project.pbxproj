@@ -13,7 +13,6 @@
 		333333333333333333333333 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444444444444444444444444 /* Config.swift */; };
 		346345317236465393090244 /* AutoFixWorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 434025501223443399045143 /* AutoFixWorkflowView.swift */; };
 		420E5C412EF55E43003293FD /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = 420E5C402EF55E43003293FD /* Mixpanel */; };
-		425035A42ED5ADB20064014E /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 425035A32ED5ADB20064014E /* RevenueCat */; };
 		42641C1B2F3A875E00CDE59F /* SocialSharingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42641C1A2F3A875E00CDE59F /* SocialSharingManager.swift */; };
 		4283B2352ED25B5E00093E2D /* ShortcutSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4283B2322ED25B5E00093E2D /* ShortcutSetupView.swift */; };
 		4283B2362ED25B5E00093E2D /* ShortcutSetupViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4283B2332ED25B5E00093E2D /* ShortcutSetupViewModel.swift */; };
@@ -26,70 +25,19 @@
 		42AA30FB2F3C0ADC006F0EF7 /* OnboardingView+Analytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42AA30992F3C0ADC006F0EF7 /* OnboardingView+Analytics.swift */; };
 		42AA30FC2F3C0ADC006F0EF7 /* LegalDocumentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42AA30CD2F3C0ADC006F0EF7 /* LegalDocumentView.swift */; };
 		42AA30FD2F3C0ADC006F0EF7 /* AnalyticsProperty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42AA30952F3C0ADC006F0EF7 /* AnalyticsProperty.swift */; };
-		42AA30FE2F3C0ADC006F0EF7 /* mockup-step-zero.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30F12F3C0ADC006F0EF7 /* mockup-step-zero.png */; };
-		42AA30FF2F3C0ADC006F0EF7 /* Icon-App-29x29@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A12F3C0ADC006F0EF7 /* Icon-App-29x29@3x.png */; };
-		42AA31002F3C0ADC006F0EF7 /* experiment-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30B72F3C0ADC006F0EF7 /* experiment-icon.png */; };
-		42AA31012F3C0ADC006F0EF7 /* FAITHWALL.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30BA2F3C0ADC006F0EF7 /* FAITHWALL.png */; };
-		42AA31022F3C0ADC006F0EF7 /* Icon-App-20x20@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA309F2F3C0ADC006F0EF7 /* Icon-App-20x20@3x.png */; };
-		42AA31032F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30ED2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31042F3C0ADC006F0EF7 /* skipForward3s.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30EE2F3C0ADC006F0EF7 /* skipForward3s.png */; };
 		42AA31052F3C0ADC006F0EF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30AE2F3C0ADC006F0EF7 /* Localizable.strings */; };
-		42AA31062F3C0ADC006F0EF7 /* Icon-App-29x29@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A02F3C0ADC006F0EF7 /* Icon-App-29x29@2x.png */; };
 		42AA31072F3C0ADC006F0EF7 /* fix-guide-final-version.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30BC2F3C0ADC006F0EF7 /* fix-guide-final-version.mp4 */; };
-		42AA31082F3C0ADC006F0EF7 /* Icon-App-60x60@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A42F3C0ADC006F0EF7 /* Icon-App-60x60@2x.png */; };
-		42AA31092F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30CA2F3C0ADC006F0EF7 /* Contents.json */; };
 		42AA310A2F3C0ADC006F0EF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30B12F3C0ADC006F0EF7 /* Localizable.strings */; };
-		42AA310B2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30DB2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA310C2F3C0ADC006F0EF7 /* mockup-dark-new.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D22F3C0ADC006F0EF7 /* mockup-dark-new.png */; };
-		42AA310D2F3C0ADC006F0EF7 /* Icon-App-20x20@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA309E2F3C0ADC006F0EF7 /* Icon-App-20x20@2x.png */; };
 		42AA310E2F3C0ADC006F0EF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30BE2F3C0ADC006F0EF7 /* Localizable.strings */; };
-		42AA310F2F3C0ADC006F0EF7 /* skipBackward3s.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30EB2F3C0ADC006F0EF7 /* skipBackward3s.png */; };
-		42AA31102F3C0ADC006F0EF7 /* Icon-App-40x40@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A22F3C0ADC006F0EF7 /* Icon-App-40x40@2x.png */; };
-		42AA31112F3C0ADC006F0EF7 /* Icon-App-60x60@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A52F3C0ADC006F0EF7 /* Icon-App-60x60@3x.png */; };
-		42AA31122F3C0ADC006F0EF7 /* safari-logo@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E42F3C0ADC006F0EF7 /* safari-logo@2x.png */; };
-		42AA31132F3C0ADC006F0EF7 /* shortcuts-app-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E82F3C0ADC006F0EF7 /* shortcuts-app-logo.png */; };
-		42AA31142F3C0ADC006F0EF7 /* stuck-placeholder.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30F42F3C0ADC006F0EF7 /* stuck-placeholder.png */; };
-		42AA31152F3C0ADC006F0EF7 /* notificationes.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30DC2F3C0ADC006F0EF7 /* notificationes.png */; };
-		42AA31162F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30CE2F3C0ADC006F0EF7 /* Contents.json */; };
 		42AA31172F3C0ADC006F0EF7 /* notifications-of-permissions.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30DE2F3C0ADC006F0EF7 /* notifications-of-permissions.mp4 */; };
-		42AA31182F3C0ADC006F0EF7 /* image-3-review.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C82F3C0ADC006F0EF7 /* image-3-review.png */; };
 		42AA31192F3C0ADC006F0EF7 /* welcome-video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30F62F3C0ADC006F0EF7 /* welcome-video.mp4 */; };
-		42AA311A2F3C0ADC006F0EF7 /* Icon-App-1024.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A62F3C0ADC006F0EF7 /* Icon-App-1024.png */; };
-		42AA311B2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E72F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA311C2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D72F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA311D2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA309B2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA311E2F3C0ADC006F0EF7 /* safari-logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E32F3C0ADC006F0EF7 /* safari-logo.png */; };
-		42AA311F2F3C0ADC006F0EF7 /* image-2-review.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C52F3C0ADC006F0EF7 /* image-2-review.png */; };
-		42AA31202F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA309D2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31212F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30F02F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31222F3C0ADC006F0EF7 /* logo-icon.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E02F3C0ADC006F0EF7 /* logo-icon.png */; };
-		42AA31232F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E22F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31242F3C0ADC006F0EF7 /* mockup_light.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D52F3C0ADC006F0EF7 /* mockup_light.png */; };
-		42AA31252F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30AC2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31262F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C42F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31272F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D12F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31282F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D42F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31292F3C0ADC006F0EF7 /* instruction_wallpaper.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30CB2F3C0ADC006F0EF7 /* instruction_wallpaper.png */; };
-		42AA312A2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30EA2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA312B2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30922F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA312C2F3C0ADC006F0EF7 /* arrow.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A82F3C0ADC006F0EF7 /* arrow.png */; };
-		42AA312D2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30B92F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA312E2F3C0ADC006F0EF7 /* image-1-review.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C22F3C0ADC006F0EF7 /* image-1-review.png */; };
-		42AA312F2F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C12F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31312F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30F32F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31322F3C0ADC006F0EF7 /* mockup-dark.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30CF2F3C0ADC006F0EF7 /* mockup-dark.png */; };
-		42AA31332F3C0ADC006F0EF7 /* mockup-light-new.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30D82F3C0ADC006F0EF7 /* mockup-light-new.png */; };
-		42AA31342F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30DF2F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31352F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30B62F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31362F3C0ADC006F0EF7 /* safari-logo@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30E52F3C0ADC006F0EF7 /* safari-logo@3x.png */; };
-		42AA31372F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C72F3C0ADC006F0EF7 /* Contents.json */; };
-		42AA31382F3C0ADC006F0EF7 /* Contents.json in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A92F3C0ADC006F0EF7 /* Contents.json */; };
 		42AA31392F3C0ADC006F0EF7 /* how-to-fix-guide.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30C02F3C0ADC006F0EF7 /* how-to-fix-guide.mp4 */; };
 		42AA313A2F3C0ADC006F0EF7 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30B42F3C0ADC006F0EF7 /* Localizable.strings */; };
-		42AA313C2F3C0ADC006F0EF7 /* Icon-App-40x40@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 42AA30A32F3C0ADC006F0EF7 /* Icon-App-40x40@3x.png */; };
 		42D731FA2F200D670020F9D6 /* notewall-pip-vid.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 42D731F92F200D670020F9D6 /* notewall-pip-vid.mp4 */; };
 		42DB5DEB2EC32ADB00F21F88 /* NoteWall.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */; };
 		42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E415502EFC46BD002F695D /* WhatsNewView.swift */; };
+		42E539C92F5742ED005C85FD /* NoteWallSuperwallDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E539C82F5742ED005C85FD /* NoteWallSuperwallDelegate.swift */; };
+		42E539CB2F576562005C85FD /* DiscountFallbackWindowPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42E539CA2F576562005C85FD /* DiscountFallbackWindowPresenter.swift */; };
 		486563549087408615731241 /* ExitFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 571205128022447414641365 /* ExitFeedbackView.swift */; };
 		652485545120494283652512 /* QuickActionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 179742655116427522430919 /* QuickActionsManager.swift */; };
 		777777777777777777777777 /* PromoSecurityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 888888888888888888888888 /* PromoSecurityManager.swift */; };
@@ -215,6 +163,8 @@
 		42D731F92F200D670020F9D6 /* notewall-pip-vid.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "notewall-pip-vid.mp4"; sourceTree = "<group>"; };
 		42DB5DEA2EC32ADB00F21F88 /* NoteWall.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = NoteWall.storekit; sourceTree = "<group>"; };
 		42E415502EFC46BD002F695D /* WhatsNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewView.swift; sourceTree = "<group>"; };
+		42E539C82F5742ED005C85FD /* NoteWallSuperwallDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteWallSuperwallDelegate.swift; sourceTree = "<group>"; };
+		42E539CA2F576562005C85FD /* DiscountFallbackWindowPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiscountFallbackWindowPresenter.swift; sourceTree = "<group>"; };
 		434025501223443399045143 /* AutoFixWorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoFixWorkflowView.swift; sourceTree = "<group>"; };
 		444444444444444444444444 /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		571205128022447414641365 /* ExitFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExitFeedbackView.swift; sourceTree = "<group>"; };
@@ -269,7 +219,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				E00000000000000000000005 /* SuperwallKit in Frameworks */,
-				425035A42ED5ADB20064014E /* RevenueCat in Frameworks */,
 				420E5C412EF55E43003293FD /* Mixpanel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -569,6 +518,8 @@
 		A5000002000000000000001 /* NoteWall */ = {
 			isa = PBXGroup;
 			children = (
+				42E539CA2F576562005C85FD /* DiscountFallbackWindowPresenter.swift */,
+				42E539C82F5742ED005C85FD /* NoteWallSuperwallDelegate.swift */,
 				42AA30932F3C0ADC006F0EF7 /* AccentColor.colorset */,
 				42AA309A2F3C0ADC006F0EF7 /* Analytics */,
 				42AA309C2F3C0ADC006F0EF7 /* AppAccent.colorset */,
@@ -695,7 +646,6 @@
 			name = NoteWall;
 			packageProductDependencies = (
 				E00000000000000000000004 /* SuperwallKit */,
-				425035A32ED5ADB20064014E /* RevenueCat */,
 				420E5C402EF55E43003293FD /* Mixpanel */,
 			);
 			productName = NoteWall;
@@ -731,7 +681,6 @@
 			mainGroup = A5000001000000000000001;
 			packageReferences = (
 				E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */,
-				425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
 				420E5C3F2EF55E43003293FD /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
 			);
 			productRefGroup = A5000003000000000000001 /* Products */;
@@ -813,10 +762,12 @@
 				123456789012345678901234 /* PromoCodeManager.swift in Sources */,
 				111111111111111111111111 /* DeleteNotesLoadingView.swift in Sources */,
 				333333333333333333333333 /* Config.swift in Sources */,
+				42E539C92F5742ED005C85FD /* NoteWallSuperwallDelegate.swift in Sources */,
 				777777777777777777777777 /* PromoSecurityManager.swift in Sources */,
 				42E415512EFC46BD002F695D /* WhatsNewView.swift in Sources */,
 				APO100000000000000000001 /* ApologyView.swift in Sources */,
 				E00000000000000000000001 /* SuperwallUserAttributesManager.swift in Sources */,
+				42E539CB2F576562005C85FD /* DiscountFallbackWindowPresenter.swift in Sources */,
 				999999999999999999999999 /* PromoCodePersistenceManager.swift in Sources */,
 				I1000001000000000000000001 /* AppIconAnimationView.swift in Sources */,
 				UC100000000000000000001 /* UserCountService.swift in Sources */,
@@ -1099,14 +1050,6 @@
 				minimumVersion = 4.3.0;
 			};
 		};
-		425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.49.0;
-			};
-		};
 		E00000000000000000000003 /* XCRemoteSwiftPackageReference "Superwall-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/superwall/Superwall-iOS";
@@ -1122,11 +1065,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 420E5C3F2EF55E43003293FD /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
 			productName = Mixpanel;
-		};
-		425035A32ED5ADB20064014E /* RevenueCat */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 425035A12ED5ACAC0064014E /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
-			productName = RevenueCat;
 		};
 		E00000000000000000000004 /* SuperwallKit */ = {
 			isa = XCSwiftPackageProductDependency;
