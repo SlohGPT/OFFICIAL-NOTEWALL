@@ -732,3 +732,26 @@
 "Max Video Height: %lld" = "Max Video Height: %lld";
 "Error: %@" = "Error: %@";
 "Current step: %@" = "Current step: %@";
+
+// MARK: - v1.5.3 Feedback + WhatsNew
+"Help Shape NoteWall" = "Help Shape NoteWall";
+"Tell us one thing to improve. We read every message." = "Tell us one thing to improve. We read every message.";
+"Email Feedback" = "Email Feedback";
+"What should we improve?" = "What should we improve?";
+"Short note is enough. Your feedback helps us build what matters most." = "Short note is enough. Your feedback helps us build what matters most.";
+"Your message" = "Your message";
+"Type your idea here…" = "Type your idea here…";
+"Send Email" = "Send Email";
+"Sending…" = "Sending…";
+"Thanks — feedback sent successfully." = "Thanks — feedback sent successfully.";
+"Could not send feedback. Please try again." = "Could not send feedback. Please try again.";
+"What’s New in NoteWall" = "What’s New in NoteWall";
+"Faster Performance" = "Faster Performance";
+"Smoother updates and quicker loading across the app." = "Smoother updates and quicker loading across the app.";
+"More Reliable Setup" = "More Reliable Setup";
+"Onboarding and setup flow now behave more consistently." = "Onboarding and setup flow now behave more consistently.";
+"Feedback Built-In" = "Feedback Built-In";
+"Send ideas directly inside the app. We read every message." = "Send ideas directly inside the app. We read every message.";
+"Thanks for Supporting NoteWall+" = "Thanks for Supporting NoteWall+";
+"You’re getting improvements first. Keep sharing feedback so we can make every update even better." = "You’re getting improvements first. Keep sharing feedback so we can make every update even better.";
+"Feedback" = "Feedback";

@@ -1086,6 +1086,7 @@ private struct NotesListView: View {
             // Troubleshooting banner appears after notes - always show on every boot
             if !context.isEditMode.wrappedValue {
                 TroubleshootingBannerView(context: context)
+                FeedbackRequestBannerView(context: context)
             }
 
             if context.isEditMode.wrappedValue {
@@ -1630,6 +1631,261 @@ private struct TroubleshootingBannerView: View {
         .onAppear {
             // Reset visibility on every app launch so banner reappears
             isTemporarilyHidden = false
+        }
+    }
+}
+
+private struct FeedbackRequestBannerView: View {
+    let context: ContentViewContext
+    @State private var isTemporarilyHidden = false
+    @State private var showFeedbackModal = false
+
+    var body: some View {
+        Group {
+            if !isTemporarilyHidden {
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "heart.text.square.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.appAccent)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(NSLocalizedString("Help Shape NoteWall", comment: ""))
+                                .font(.system(.headline, design: .rounded))
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+
+                            Text(NSLocalizedString("Tell us one thing to improve. We read every message.", comment: ""))
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+
+                        Spacer()
+
+                        Button(action: {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+
+                            withAnimation {
+                                isTemporarilyHidden = true
+                            }
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary.opacity(0.5))
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+                        context.hideKeyboard()
+                        showFeedbackModal = true
+                    }) {
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text(NSLocalizedString("Email Feedback", comment: ""))
+                                .fontWeight(.semibold)
+                                .font(.subheadline)
+                            Spacer()
+                            Image(systemName: "arrow.right.circle.fill")
+                                .font(.system(size: 16))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            Color.appAccent,
+                                            Color.appAccent.opacity(0.9)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.appAccent.opacity(0.08))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .strokeBorder(Color.appAccent.opacity(0.2), lineWidth: 1)
+                        )
+                )
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .transition(.asymmetric(
+                    insertion: .scale.combined(with: .opacity),
+                    removal: .scale.combined(with: .opacity)
+                ))
+            }
+        }
+        .sheet(isPresented: $showFeedbackModal) {
+            FeedbackEmailModalView()
+        }
+        .onAppear {
+            isTemporarilyHidden = false
+        }
+    }
+}
+
+private struct FeedbackEmailModalView: View {
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var paywallManager = PaywallManager.shared
+    @State private var feedbackText = ""
+    @State private var isSending = false
+    @State private var statusMessage: String?
+    @State private var statusColor: Color = .secondary
+
+    private var canSend: Bool {
+        !feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                LinearGradient(
+                    colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(NSLocalizedString("What should we improve?", comment: ""))
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Text(NSLocalizedString("Short note is enough. Your feedback helps us build what matters most.", comment: ""))
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.7))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(NSLocalizedString("Your message", comment: ""))
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.6))
+
+                        ZStack(alignment: .topLeading) {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.white.opacity(0.06))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .strokeBorder(Color.appAccent.opacity(0.3), lineWidth: 1)
+                                )
+
+                            if feedbackText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Text(NSLocalizedString("Type your idea here…", comment: ""))
+                                    .font(.subheadline)
+                                    .foregroundColor(.white.opacity(0.35))
+                                    .padding(.horizontal, 14)
+                                    .padding(.top, 14)
+                            }
+
+                            TextEditor(text: $feedbackText)
+                                .scrollContentBackground(.hidden)
+                                .foregroundColor(.white)
+                                .font(.subheadline)
+                                .padding(8)
+                                .background(Color.clear)
+                        }
+                        .frame(minHeight: 180)
+                    }
+
+                    if let statusMessage {
+                        Text(statusMessage)
+                            .font(.footnote)
+                            .foregroundColor(statusColor)
+                    }
+
+                    Button(action: sendFeedbackEmail) {
+                    HStack {
+                        if isSending {
+                            ProgressView()
+                                .tint(.white)
+                        } else {
+                            Image(systemName: "paperplane.fill")
+                        }
+                        Text(isSending ? NSLocalizedString("Sending…", comment: "") : NSLocalizedString("Send Email", comment: ""))
+                            .fontWeight(.semibold)
+                        Spacer()
+                        Image(systemName: "arrow.right.circle.fill")
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color.appAccent,
+                                        Color.appAccent.opacity(0.9)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+                    .disabled(!canSend)
+                    .opacity(canSend ? 1 : 0.55)
+
+                    Spacer()
+                }
+                .padding(20)
+            }
+            .navigationTitle(NSLocalizedString("Email Feedback", comment: ""))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Close") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func sendFeedbackEmail() {
+        let message = feedbackText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !message.isEmpty else { return }
+
+        isSending = true
+        statusMessage = nil
+
+        FeedbackService.shared.sendFeedback(
+            reason: "home_feedback",
+            details: message,
+            isPremium: paywallManager.isPremium
+        ) { success, error in
+            isSending = false
+
+            if success {
+                statusColor = .green
+                statusMessage = NSLocalizedString("Thanks — feedback sent successfully.", comment: "")
+
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                    dismiss()
+                }
+            } else {
+                statusColor = .red
+                statusMessage = error ?? NSLocalizedString("Could not send feedback. Please try again.", comment: "")
+            }
         }
     }
 }

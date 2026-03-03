@@ -1,0 +1,12 @@
+Performance & Reliability Update
+
+We improved overall app stability and made key onboarding and paywall flows more reliable.
+
+What’s improved:
+- Better paywall flow handling during onboarding
+- Discount feedback and support flow now works directly in-app
+- Focus Profile daily phone checks display fixed
+- Refined premium What’s New experience (one-time, premium-only)
+- General polish and stability improvements
+
+Thank you for using NoteWall.

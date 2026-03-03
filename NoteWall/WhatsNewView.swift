@@ -39,7 +39,7 @@ struct WhatsNewView: View {
     // MARK: - Current Version Info
     
     private var currentVersion: String {
-        "1.5.2"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.5.3"
     }
     
     private var buildNumber: String {
@@ -63,20 +63,20 @@ struct WhatsNewView: View {
             UpdateItem(
                 icon: "sparkles",
                 iconColor: Color("AppAccent"),
-                title: "Rebuilt from Scratch",
-                description: "Entirely new engine focused on your lock screen — faster and more reliable."
+                title: NSLocalizedString("Faster Performance", comment: ""),
+                description: NSLocalizedString("Smoother updates and quicker loading across the app.", comment: "")
             ),
             UpdateItem(
                 icon: "bolt.circle.fill",
                 iconColor: Color("AppAccent").opacity(0.8),
-                title: "1-Minute Setup",
-                description: "A new shortcut replaces the old one. Quick install, then you're done."
+                title: NSLocalizedString("More Reliable Setup", comment: ""),
+                description: NSLocalizedString("Onboarding and setup flow now behave more consistently.", comment: "")
             ),
             UpdateItem(
                 icon: "crown.fill",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: "Premium Stays",
-                description: "Your subscription carries over — no extra charges, ever."
+                title: NSLocalizedString("Feedback Built-In", comment: ""),
+                description: NSLocalizedString("Send ideas directly inside the app. We read every message.", comment: "")
             )
         ]
     }
@@ -273,7 +273,7 @@ struct WhatsNewView: View {
             
             // Title and version
             VStack(spacing: isCompact ? 8 : 10) {
-                Text("We Made Things Better!")
+                Text(NSLocalizedString("What’s New in NoteWall", comment: ""))
                     .font(.system(size: isCompact ? 24 : 28, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                 
@@ -383,12 +383,12 @@ struct WhatsNewView: View {
                         .shadow(color: .green.opacity(0.4), radius: shieldPulse ? 8 : 3, x: 0, y: 0)
                         .scaleEffect(shieldPulse ? 1.1 : 1.0)
                     
-                    Text("Your Subscription is Safe")
+                    Text(NSLocalizedString("Thanks for Supporting NoteWall+", comment: ""))
                         .font(.system(size: isCompact ? 17 : 19, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 
-                Text("Switching to the new system doesn't affect your subscription. Nothing changes — it just works better.")
+                Text(NSLocalizedString("You’re getting improvements first. Keep sharing feedback so we can make every update even better.", comment: ""))
                     .font(.system(size: isCompact ? 14 : 15))
                     .foregroundColor(.white.opacity(0.6))
                     .multilineTextAlignment(.center)
@@ -423,13 +423,13 @@ struct WhatsNewView: View {
     
     private var actionButtonsView: some View {
         VStack(spacing: isCompact ? 12 : 14) {
-            // Primary: Switch to New Pipeline with shimmer effect
-            Button(action: { startMigration() }) {
+            // Primary: Continue
+            Button(action: { continueToApp() }) {
                 ZStack {
                     HStack(spacing: isCompact ? 8 : 10) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
+                        Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: isCompact ? 16 : 18, weight: .semibold))
-                        Text("Switch to New System")
+                        Text("Continue")
                             .font(.system(size: isCompact ? 15 : 17, weight: .semibold))
                     }
                     
@@ -471,6 +471,22 @@ struct WhatsNewView: View {
                     .background(Color("AppAccent").opacity(0.1))
                     .cornerRadius(12)
                 }
+
+                Button(action: {
+                    showFeatureRequestAlert = true
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "envelope.fill")
+                            .font(.system(size: 14))
+                        Text(NSLocalizedString("Feedback", comment: ""))
+                            .font(.system(size: isCompact ? 14 : 16, weight: .medium))
+                    }
+                    .foregroundColor(Color("AppAccent"))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, isCompact ? 10 : 12)
+                    .background(Color("AppAccent").opacity(0.1))
+                    .cornerRadius(12)
+                }
             }
         }
         .padding(.horizontal, isCompact ? 20 : 24)
@@ -489,17 +505,17 @@ struct WhatsNewView: View {
     
     // MARK: - Actions
     
-    private func startMigration() {
+    private func continueToApp() {
         // Haptic feedback
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
         
-        // Track migration start
+        // Track continue action
         AnalyticsService.shared.logEvent(
             .custom(
-                name: "pipeline_migration_started",
+                name: "whats_new_continue_tapped",
                 parameters: [
-                    "source": "whats_new_popup",
+                    "source": "whats_new_modal",
                     "version": currentVersion
                 ]
             )
@@ -507,8 +523,8 @@ struct WhatsNewView: View {
         
         // Mark What's New as shown
         WhatsNewManager.shared.markAsShown()
-        
-        // Dismiss and trigger migration onboarding
+
+        // Dismiss
         withAnimation(.easeInOut(duration: 0.3)) {
             headerOpacity = 0
             cardsOpacity = 0
@@ -518,8 +534,7 @@ struct WhatsNewView: View {
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             isPresented = false
-            // Trigger the migration flow
-            onStartMigration?()
+            dismiss()
         }
     }
     
@@ -639,8 +654,8 @@ class WhatsNewManager: ObservableObject {
     
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
-    /// Key for the pipeline migration What's New popup (v1.5.0)
-    private let whatsNewHasBeenShownKey = "WhatsNewShown_PipelineMigration_v1.5.0"
+    /// Key for the premium What's New popup (v1.5.3)
+    private let whatsNewHasBeenShownKey = "WhatsNewShown_Premium_v1.5.3"
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!
@@ -669,37 +684,15 @@ class WhatsNewManager: ObservableObject {
         UserDefaults.standard.bool(forKey: whatsNewHasBeenShownKey)
     }
     
-    /// Whether the user has already completed the pipeline migration
-    var hasCompletedPipelineMigration: Bool {
-        UserDefaults.standard.bool(forKey: "hasCompletedPipelineMigration")
-    }
-    
-    /// Cutoff date: February 9th, 2026 at 00:00:00
-    /// Users who installed before this date are on the old pipeline (home + lock screen)
-    private var pipelineCutoffDate: Date {
-        var components = DateComponents()
-        components.year = 2026
-        components.month = 2
-        components.day = 9
-        components.hour = 0
-        components.minute = 0
-        components.second = 0
-        return Calendar.current.date(from: components) ?? Date()
-    }
-    
-    /// Whether the user installed before the pipeline cutoff (Feb 9, 2026)
-    /// These are the users on the old pipeline who should see the migration prompt
-    var isPreCutoffUser: Bool {
-        let installDate = UserDefaults.standard.object(forKey: "analytics_install_date") as? Date ?? Date()
-        return installDate < pipelineCutoffDate
+    /// Whether the user is premium
+    var isPremiumUser: Bool {
+        PaywallManager.shared.isPremium
     }
     
     /// Determines if What's New should be shown
-    /// - Only shows to users who installed BEFORE February 9th, 2026 (old pipeline users)
     /// - Only shows ONCE EVER
-    /// - Only shows to users who have completed setup (existing users)
-    /// - Only shows to users who haven't already migrated
-    /// - Once shown and dismissed, NEVER shows again
+    /// - Only shows to users who have completed setup
+    /// - Only shows to premium users
     func checkShouldShow() -> Bool {
         #if DEBUG
         // In debug mode, force show if flag is enabled
@@ -717,35 +710,25 @@ class WhatsNewManager: ObservableObject {
             return false
         }
         
-        // If user has already migrated, don't show
-        if hasCompletedPipelineMigration {
-            #if DEBUG
-            print("🎉 WhatsNewManager: User already completed pipeline migration - not showing")
-            #endif
-            return false
-        }
-        
-        // User must have completed setup (existing user, not new install)
+        // User must have completed setup
         guard hasCompletedSetup else {
             #if DEBUG
             print("🎉 WhatsNewManager: User hasn't completed setup - skipping What's New")
             #endif
             return false
         }
-        
-        // CRITICAL: Only show to users who installed BEFORE February 9th, 2026
-        // These are the users on the old pipeline (home + lock screen)
-        guard isPreCutoffUser else {
+
+        // Only show to premium users
+        guard isPremiumUser else {
             #if DEBUG
-            print("🎉 WhatsNewManager: User installed on/after Feb 9, 2026 - already on new pipeline, skipping")
+            print("🎉 WhatsNewManager: User is not premium - skipping What's New")
             #endif
             return false
         }
-        
-        // This is an old-pipeline user who hasn't seen the migration prompt yet - show it!
+
         #if DEBUG
-        print("🎉 WhatsNewManager: Pre-cutoff user, showing pipeline migration prompt")
-        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup), Pre-cutoff: true")
+        print("🎉 WhatsNewManager: Premium user eligible - showing What's New")
+        print("   Version: \(currentVersion), Setup complete: \(hasCompletedSetup), Premium: true")
         #endif
         return true
     }
@@ -767,7 +750,6 @@ class WhatsNewManager: ObservableObject {
         #if DEBUG
         UserDefaults.standard.removeObject(forKey: lastShownVersionKey)
         UserDefaults.standard.removeObject(forKey: whatsNewHasBeenShownKey)
-        UserDefaults.standard.removeObject(forKey: "hasCompletedPipelineMigration")
         print("🎉 WhatsNewManager: Reset for testing - popup will show on next launch")
         #endif
     }

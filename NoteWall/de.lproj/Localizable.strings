@@ -732,3 +732,26 @@
 "Max Video Height: %lld" = "Max. Videohöhe: %lld";
 "Error: %@" = "Fehler: %@";
 "Current step: %@" = "Aktueller Schritt: %@";
+
+// MARK: - v1.5.3 Feedback + WhatsNew
+"Help Shape NoteWall" = "Hilf, NoteWall zu verbessern";
+"Tell us one thing to improve. We read every message." = "Sag uns eine Sache, die wir verbessern sollen. Wir lesen jede Nachricht.";
+"Email Feedback" = "Feedback per E-Mail";
+"What should we improve?" = "Was sollen wir verbessern?";
+"Short note is enough. Your feedback helps us build what matters most." = "Eine kurze Notiz reicht. Dein Feedback hilft uns, das Wichtigste zu bauen.";
+"Your message" = "Deine Nachricht";
+"Type your idea here…" = "Schreibe deine Idee hier…";
+"Send Email" = "E-Mail senden";
+"Sending…" = "Wird gesendet…";
+"Thanks — feedback sent successfully." = "Danke — Feedback erfolgreich gesendet.";
+"Could not send feedback. Please try again." = "Feedback konnte nicht gesendet werden. Bitte versuche es erneut.";
+"What’s New in NoteWall" = "Was ist neu in NoteWall";
+"Faster Performance" = "Schnellere Leistung";
+"Smoother updates and quicker loading across the app." = "Flüssigere Updates und schnelleres Laden in der ganzen App.";
+"More Reliable Setup" = "Zuverlässigeres Setup";
+"Onboarding and setup flow now behave more consistently." = "Onboarding und Einrichtung laufen jetzt konsistenter.";
+"Feedback Built-In" = "Feedback integriert";
+"Send ideas directly inside the app. We read every message." = "Sende Ideen direkt in der App. Wir lesen jede Nachricht.";
+"Thanks for Supporting NoteWall+" = "Danke für deine Unterstützung von NoteWall+";
+"You’re getting improvements first. Keep sharing feedback so we can make every update even better." = "Du erhältst Verbesserungen zuerst. Teile weiter Feedback, damit jedes Update noch besser wird.";
+"Feedback" = "Feedback";

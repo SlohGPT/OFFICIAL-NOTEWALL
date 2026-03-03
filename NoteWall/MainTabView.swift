@@ -15,6 +15,7 @@ struct MainTabView: View {
     
     // Apology screen state (mandatory for existing premium users)
     @State private var showApology = false
+    @State private var showWhatsNew = false
     
     // Pipeline migration state
     @State private var showMigrationConfirm = false
@@ -145,6 +146,9 @@ struct MainTabView: View {
             MigrationThankYouView(isPresented: $showMigrationThankYou)
                 .interactiveDismissDisabled(true)
         }
+        .fullScreenCover(isPresented: $showWhatsNew) {
+            WhatsNewView(isPresented: $showWhatsNew)
+        }
         // Quick Action handler
         .onReceive(NotificationCenter.default.publisher(for: .quickActionTriggered)) { notification in
             #if DEBUG
@@ -239,8 +243,12 @@ struct MainTabView: View {
                 #endif
                 self.showApology = true
                 // Flow continues: Apology → MigrationConfirm → Onboarding → ThankYou
+            } else if WhatsNewManager.shared.checkShouldShow() {
+                #if DEBUG
+                print("✨ MainTabView: Showing What's New modal")
+                #endif
+                self.showWhatsNew = true
             }
-            // No else needed — new users and users who completed migration won't see anything
         }
     }
     
