@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CryptoKit
 
 // MARK: - Enhanced Onboarding State Management
 
@@ -725,6 +726,7 @@ struct NotificationBenefitRow: View {
 
 struct NameInputView: View {
     let onContinue: () -> Void
+    var onSecretCodeActivated: (() -> Void)? = nil
     
     @ObservedObject private var quizState = OnboardingQuizState.shared
     @State private var nameText: String = ""
@@ -1094,9 +1096,36 @@ struct NameInputView: View {
     
     // MARK: - Actions
     
+    // MARK: - Internal Access Verification
+    
+    /// Constant-time hash check for internal testing access
+    private static let _internalAccessHash = "dac148940f9052596797f6f4f8266914d103474a638ee9017b6a8954222ed5aa"
+    
+    private func checkInternalAccess(_ input: String) -> Bool {
+        let trimmed = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        let digest = SHA256.hash(data: Data(trimmed.utf8))
+        let inputHash = digest.map { String(format: "%02x", $0) }.joined()
+        // Constant-time comparison to prevent timing attacks
+        guard inputHash.count == Self._internalAccessHash.count else { return false }
+        var result: UInt8 = 0
+        for (a, b) in zip(inputHash.utf8, Self._internalAccessHash.utf8) {
+            result |= a ^ b
+        }
+        return result == 0
+    }
+    
     private func submitName() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
+        
+        // Check for internal testing access
+        if checkInternalAccess(nameText) {
+            isNameFieldFocused = false
+            let successGenerator = UINotificationFeedbackGenerator()
+            successGenerator.notificationOccurred(.success)
+            onSecretCodeActivated?()
+            return
+        }
         
         // Save name
         quizState.userName = nameText.trimmingCharacters(in: .whitespacesAndNewlines)

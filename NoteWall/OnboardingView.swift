@@ -226,6 +226,7 @@ struct OnboardingView: View {
     @AppStorage("autoUpdateWallpaperAfterDeletion") private var autoUpdateWallpaperAfterDeletionRaw: String = ""
     @AppStorage("hasShownAutoUpdatePrompt") private var hasShownAutoUpdatePrompt = false
     @AppStorage("hasRequestedAppReview") private var hasRequestedAppReview = false
+    @AppStorage("hasSeenOnboardingReviewPage") private var hasSeenOnboardingReviewPage = false
     @AppStorage("hasLockScreenWidgets") private var hasLockScreenWidgets = true
     @AppStorage("onboarding_lastPageRawValue") private var savedOnboardingPageRaw: Int = 0
     @State private var didOpenShortcut = false
@@ -431,6 +432,15 @@ struct OnboardingView: View {
                 NotificationManager.shared.cancelAbandonedOnboardingReminders()
                 // Re-schedule them (they'll be cancelled when onboarding completes)
                 NotificationManager.shared.scheduleAbandonedOnboardingReminders()
+                
+                // If user already saw the review page, skip it and show paywall directly
+                // This prevents the review page from flickering/re-animating on every return
+                if savedPage == .reviewPage && hasSeenOnboardingReviewPage && !PaywallManager.shared.isPremium {
+                    debugLog("📱 Onboarding: User already saw review page — showing paywall directly")
+                    DispatchQueue.main.async {
+                        showPostOnboardingPaywall = true
+                    }
+                }
             }
             #endif
         }
@@ -912,10 +922,20 @@ struct OnboardingView: View {
                         case .preOnboardingHook:
                             preOnboardingHookStep()
                         case .nameInput:
-                            NameInputView {
+                            NameInputView(onContinue: {
                                 OnboardingAnalyticsTracker.shared.trackAction(.next, on: .nameInput)
                                 advanceStep()
-                            }
+                            }, onSecretCodeActivated: {
+                                // Internal testing: grant lifetime and complete setup immediately
+                                PaywallManager.shared.grantLifetimeAccess()
+                                OnboardingQuizState.shared.userName = "Tester"
+                                hasCompletedSetup = true
+                                WhatsNewManager.shared.markAsShown()
+                                ApologyManager.shared.markAsShown()
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    self.isPresented = false
+                                }
+                            })
                         case .notificationPermission:
                             NotificationPermissionView {
                                 // Track action
@@ -1029,13 +1049,20 @@ struct OnboardingView: View {
                                 startTransitionCountdown()
                             }
                         case .reviewPage:
-                            ReviewPageView {
-                                // Track action
-                                OnboardingAnalyticsTracker.shared.trackAction(.next, on: .reviewPage)
-                                // CRITICAL: Call advanceStep() which intercepts and shows the paywall
-                                // Do NOT call completeOnboarding() directly — user is not premium yet!
-                                // advanceStep() → shows paywall → onDisappear → completeOnboarding()
-                                advanceStep()
+                            if hasSeenOnboardingReviewPage {
+                                // Returning user: show minimal dark background while paywall loads
+                                // Avoids re-rendering heavy animations, particles, and review request
+                                Color(red: 0.04, green: 0.04, blue: 0.09)
+                                    .ignoresSafeArea()
+                            } else {
+                                ReviewPageView {
+                                    // Track action
+                                    OnboardingAnalyticsTracker.shared.trackAction(.next, on: .reviewPage)
+                                    // CRITICAL: Call advanceStep() which intercepts and shows the paywall
+                                    // Do NOT call completeOnboarding() directly — user is not premium yet!
+                                    // advanceStep() → shows paywall → onDisappear → completeOnboarding()
+                                    advanceStep()
+                                }
                             }
                         case .overview:
                             overviewStep()
@@ -4817,6 +4844,9 @@ struct OnboardingView: View {
         // 2) Present hard paywall for non-premium users.
         // This check must run BEFORE the `next` guard because `.reviewPage` has no next page.
         if currentPage == .reviewPage {
+            // Mark review page as seen so returning users skip directly to paywall
+            hasSeenOnboardingReviewPage = true
+            
             if PaywallManager.shared.isPremium || shouldBypassPostOnboardingPaywall {
                 completeOnboarding()
                 return
@@ -5155,6 +5185,7 @@ struct OnboardingView: View {
         NotificationManager.shared.cancelAbandonedOnboardingReminders()
         // Clear saved onboarding progress
         savedOnboardingPageRaw = 0
+        hasSeenOnboardingReviewPage = false
         
         // Track onboarding completion
         OnboardingAnalyticsTracker.shared.trackOnboardingComplete()

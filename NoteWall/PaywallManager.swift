@@ -33,6 +33,7 @@ final class PaywallManager: NSObject, ObservableObject {
     private let freeExportLimit = 0
     private let defaultSuperwallPlacement = PaywallManager.defaultPlacement
     private var paywallDelayWorkItem: DispatchWorkItem?
+    private var transactionListenerTask: Task<Void, Never>?
 
     var isPremium: Bool {
         hasActiveSuperwallEntitlement || hasLifetimeAccess || hasActiveSubscription || hasPremiumAccess
@@ -71,10 +72,127 @@ final class PaywallManager: NSObject, ObservableObject {
     private override init() {
         super.init()
         restoreLegacyAccessIfNeeded()
+        startTransactionListener()
+    }
+
+    deinit {
+        transactionListenerTask?.cancel()
+    }
+
+    // MARK: - StoreKit Transaction Listener
+
+    /// Listens for ALL StoreKit 2 transaction updates in real-time.
+    /// This catches purchases made by Superwall's built-in purchase controller,
+    /// App Store renewals, family sharing changes, and refunds.
+    private func startTransactionListener() {
+        transactionListenerTask = Task(priority: .background) { [weak self] in
+            for await verificationResult in StoreKit.Transaction.updates {
+                guard let self = self else { return }
+                switch verificationResult {
+                case .verified(let transaction):
+                    await self.handleVerifiedTransaction(transaction)
+                    await transaction.finish()
+                case .unverified(_, let error):
+                    print("⚠️ PaywallManager: Unverified transaction update — \(error)")
+                }
+            }
+        }
+    }
+
+    /// Handles a verified StoreKit transaction by updating local premium state.
+    @MainActor
+    private func handleVerifiedTransaction(_ transaction: StoreKit.Transaction) async {
+        print("✅ PaywallManager: Transaction detected — product: \(transaction.productID), revocationDate: \(String(describing: transaction.revocationDate))")
+
+        // If the transaction was revoked (refunded), don't grant access
+        if transaction.revocationDate != nil {
+            print("⚠️ PaywallManager: Transaction \(transaction.productID) was revoked/refunded")
+            await syncSubscriptionStatusFromStoreKit()
+            return
+        }
+
+        // Update expiry if this is a subscription with an expiration date
+        if let expirationDate = transaction.expirationDate {
+            if expirationDate > Date() {
+                subscriptionExpiryTimestamp = expirationDate.timeIntervalSince1970
+                hasPremiumAccess = true
+                print("✅ PaywallManager: Subscription active until \(expirationDate)")
+            }
+        } else {
+            // Non-subscription (lifetime) purchase
+            hasLifetimeAccess = true
+            hasPremiumAccess = true
+            print("✅ PaywallManager: Lifetime access granted via \(transaction.productID)")
+        }
+
+        // Sync the analytics premium flag so Mixpanel events carry correct is_premium
+        UserDefaults.standard.set(true, forKey: "analytics_is_premium_user")
+        AnalyticsService.shared.setUserProperty("true", forName: "is_premium")
+
+        // Track purchase in analytics so Mixpanel knows about premium conversions
+        AnalyticsService.shared.trackPurchaseSuccess(
+            productId: transaction.productID,
+            transactionId: String(transaction.id),
+            revenue: nil, // Revenue amount not available from StoreKit Transaction object
+            currency: nil
+        )
+
+        SuperwallUserAttributesManager.shared.updateSubscriptionAttributes()
+    }
+
+    /// Checks all current entitlements from StoreKit on app launch to pick up
+    /// any existing subscriptions that the app missed (e.g. purchases made via
+    /// Superwall while the Transaction.updates listener wasn't running).
+    @MainActor
+    func syncSubscriptionStatusFromStoreKit() async {
+        var hasActiveEntitlement = false
+        var latestExpiry: Date?
+
+        for await verificationResult in StoreKit.Transaction.currentEntitlements {
+            switch verificationResult {
+            case .verified(let transaction):
+                // Skip revoked transactions
+                guard transaction.revocationDate == nil else { continue }
+
+                if let expirationDate = transaction.expirationDate {
+                    if expirationDate > Date() {
+                        hasActiveEntitlement = true
+                        if let current = latestExpiry {
+                            latestExpiry = max(current, expirationDate)
+                        } else {
+                            latestExpiry = expirationDate
+                        }
+                    }
+                } else {
+                    // Lifetime / non-subscription purchase
+                    hasActiveEntitlement = true
+                    hasLifetimeAccess = true
+                }
+            case .unverified(_, let error):
+                print("⚠️ PaywallManager: Unverified entitlement — \(error)")
+            }
+        }
+
+        if let expiry = latestExpiry {
+            subscriptionExpiryTimestamp = expiry.timeIntervalSince1970
+        }
+
+        hasPremiumAccess = hasActiveEntitlement || hasLifetimeAccess || hasActiveSubscription
+
+        // Keep the analytics premium flag in sync so Mixpanel events are accurate
+        UserDefaults.standard.set(hasPremiumAccess, forKey: "analytics_is_premium_user")
+        AnalyticsService.shared.setUserProperty(hasPremiumAccess ? "true" : "false", forName: "is_premium")
+
+        print("ℹ️ PaywallManager: StoreKit sync complete — hasPremiumAccess=\(hasPremiumAccess), hasActiveEntitlement=\(hasActiveEntitlement), latestExpiry=\(String(describing: latestExpiry))")
+
+        SuperwallUserAttributesManager.shared.updateSubscriptionAttributes()
     }
 
     @MainActor
     func refreshCustomerInfo() async {
+        // First sync with StoreKit to get the latest transaction state
+        await syncSubscriptionStatusFromStoreKit()
+        // Then also check Superwall's own subscription status
         hasPremiumAccess = hasActiveSuperwallEntitlement || hasLifetimeAccess || hasActiveSubscription
         SuperwallUserAttributesManager.shared.updateSubscriptionAttributes()
         checkPaywallOnLaunch()
@@ -87,6 +205,19 @@ final class PaywallManager: NSObject, ObservableObject {
 
     @MainActor
     func restorePurchases() async {
+        do {
+            // Force a server-side sync with Apple — pulls ALL the user's transactions
+            // to this device (handles reinstalls, device transfers, family sharing)
+            try await AppStore.sync()
+            print("✅ PaywallManager: AppStore.sync() completed")
+        } catch {
+            print("⚠️ PaywallManager: AppStore.sync() failed — \(error)")
+        }
+
+        // Also tell Superwall to restore so its internal subscription status updates
+        await Superwall.shared.restorePurchases()
+
+        // Now check entitlements with the freshly synced data
         await refreshCustomerInfo()
 
         if isPremium {
@@ -94,11 +225,6 @@ final class PaywallManager: NSObject, ObservableObject {
         } else {
             AnalyticsService.shared.logEvent(.restoreFail(errorCode: "no_active_entitlement"))
         }
-    }
-
-    @MainActor
-    func restoreRevenueCatPurchases() async {
-        await restorePurchases()
     }
 
     func checkPaywallOnLaunch() {

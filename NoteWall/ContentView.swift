@@ -1639,10 +1639,11 @@ private struct FeedbackRequestBannerView: View {
     let context: ContentViewContext
     @State private var isTemporarilyHidden = false
     @State private var showFeedbackModal = false
+    @AppStorage("hasSentHomeFeedback") private var hasSentHomeFeedback = false
 
     var body: some View {
         Group {
-            if !isTemporarilyHidden {
+            if !isTemporarilyHidden && !hasSentHomeFeedback {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack(alignment: .top, spacing: 12) {
                         Image(systemName: "heart.text.square.fill")
@@ -1735,7 +1736,9 @@ private struct FeedbackRequestBannerView: View {
             }
         }
         .sheet(isPresented: $showFeedbackModal) {
-            FeedbackEmailModalView()
+            FeedbackEmailModalView(onFeedbackSent: {
+                hasSentHomeFeedback = true
+            })
         }
         .onAppear {
             isTemporarilyHidden = false
@@ -1748,6 +1751,7 @@ private struct FeedbackEmailModalView: View {
     @StateObject private var paywallManager = PaywallManager.shared
     @State private var feedbackText = ""
     @State private var isSending = false
+    var onFeedbackSent: (() -> Void)? = nil
     @State private var statusMessage: String?
     @State private var statusColor: Color = .secondary
 
@@ -1879,6 +1883,7 @@ private struct FeedbackEmailModalView: View {
                 statusColor = .green
                 statusMessage = NSLocalizedString("Thanks — feedback sent successfully.", comment: "")
 
+                onFeedbackSent?()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
                     dismiss()
                 }

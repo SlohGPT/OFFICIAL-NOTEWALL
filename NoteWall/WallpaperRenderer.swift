@@ -296,29 +296,76 @@ struct WallpaperRenderer {
                 height: textSize.height
             )
             
-            // Draw box background if highlight mode is box
+            // Draw per-note box backgrounds if highlight mode is box
             if highlightMode == .whiteBox || highlightMode == .blackBox {
-                let padding: CGFloat = 32
-                let backgroundRect = textRect.insetBy(dx: -padding, dy: -padding)
-                
+                let boxPadding: CGFloat = 24
+                let boxCornerRadius: CGFloat = 14
                 let boxColor: UIColor = (highlightMode == .whiteBox) 
                     ? UIColor.white.withAlphaComponent(0.85) 
                     : UIColor.black.withAlphaComponent(0.85)
                 
-                let path = UIBezierPath(roundedRect: backgroundRect, cornerRadius: 16)
-                boxColor.setFill()
-                path.fill()
+                let lineSpacing = lineSpacingForFontSize(optimalFontSize)
+                let separatorHeight = separatorHeightForFontSize(optimalFontSize)
                 
-                if isShadowEnabled {
-                    context.cgContext.setShadow(
-                        offset: CGSize(width: 2, height: 4), 
-                        blur: 10, 
-                        color: UIColor.black.withAlphaComponent(0.4).cgColor
+                let noteParaStyle = NSMutableParagraphStyle()
+                noteParaStyle.alignment = textAlignment
+                noteParaStyle.lineSpacing = lineSpacing
+                
+                let noteAttrs: [NSAttributedString.Key: Any] = [
+                    .font: selectedFont.font(size: optimalFontSize, weight: fontWeight),
+                    .paragraphStyle: noteParaStyle
+                ]
+                
+                var yOffset: CGFloat = currentTopPadding
+                
+                for (index, note) in notesToShow.enumerated() {
+                    if index > 0 {
+                        yOffset += separatorHeight
+                    }
+                    
+                    let noteAttrStr = NSAttributedString(string: note.text, attributes: noteAttrs)
+                    let noteSize = noteAttrStr.boundingRect(
+                        with: CGSize(width: textMaxWidth, height: .greatestFiniteMagnitude),
+                        options: [.usesLineFragmentOrigin, .usesFontLeading],
+                        context: nil
                     )
-                    context.cgContext.addPath(path.cgPath)
-                    context.cgContext.fillPath()
-                    context.cgContext.setShadow(offset: .zero, blur: 0, color: nil)
+                    
+                    // Calculate X for this individual note based on alignment
+                    var noteX: CGFloat = leftPadding
+                    if textAlignment == .center {
+                        noteX = leftPadding + (textMaxWidth - noteSize.width) / 2
+                    } else if textAlignment == .right {
+                        noteX = leftPadding + (textMaxWidth - noteSize.width)
+                    }
+                    
+                    let noteRect = CGRect(
+                        x: noteX - boxPadding,
+                        y: yOffset - boxPadding * 0.6,
+                        width: noteSize.width + boxPadding * 2,
+                        height: noteSize.height + boxPadding * 1.2
+                    )
+                    
+                    let path = UIBezierPath(roundedRect: noteRect, cornerRadius: boxCornerRadius)
+                    
+                    if isShadowEnabled {
+                        context.cgContext.saveGState()
+                        context.cgContext.setShadow(
+                            offset: CGSize(width: 1, height: 3), 
+                            blur: 8, 
+                            color: UIColor.black.withAlphaComponent(0.35).cgColor
+                        )
+                        boxColor.setFill()
+                        path.fill()
+                        context.cgContext.restoreGState()
+                    } else {
+                        boxColor.setFill()
+                        path.fill()
+                    }
+                    
+                    yOffset += noteSize.height
                 }
+                
+                print("   ✅ Drew \(notesToShow.count) individual note box backgrounds")
             }
             
             print("   📍 Text rect: x=\(leftPadding), y=\(currentTopPadding), w=\(textMaxWidth), h=\(textSize.height)")

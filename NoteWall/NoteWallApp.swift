@@ -51,6 +51,13 @@ struct NoteWallApp: App {
         // Superwall automatically uses anonymous IDs since there's no user management system
         SuperwallUserAttributesManager.shared.updateAllAttributes()
 
+        // Sync subscription status from StoreKit on launch to pick up any
+        // purchases made through Superwall (or renewals) that the app missed.
+        Task { @MainActor in
+            await PaywallManager.shared.syncSubscriptionStatusFromStoreKit()
+            print("ℹ️ NoteWallApp: StoreKit sync on launch complete — isPremium=\(PaywallManager.shared.isPremium)")
+        }
+
         #if DEBUG
         Task {
             await validateSuperwallPlacementSetup()

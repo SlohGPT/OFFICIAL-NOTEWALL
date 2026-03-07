@@ -99,6 +99,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     
     func sceneWillEnterForeground(_ scene: UIScene) {
         print("🎬 SceneDelegate: Scene will enter foreground")
+        // Re-sync subscription status from StoreKit when app returns to foreground.
+        // This catches any renewals, new purchases, or expirations that happened
+        // while the app was in the background or terminated.
+        Task { @MainActor in
+            await PaywallManager.shared.syncSubscriptionStatusFromStoreKit()
+        }
     }
 }
 

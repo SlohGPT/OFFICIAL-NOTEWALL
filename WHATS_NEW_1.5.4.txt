@@ -1,0 +1,13 @@
+Individual Note Highlights
+
+Each note now gets its own separate highlight background instead of one large 
+block covering everything. White box and black box highlight styles now wrap 
+each note individually with proper spacing and rounded corners.
+
+What's improved:
+- Highlight backgrounds render per-note (no more giant single block)
+- White and black box styles have better padding and rounded corners
+- Shadow effects apply cleanly to individual note boxes
+- General polish and stability improvements
+
+Thank you for using NoteWall.

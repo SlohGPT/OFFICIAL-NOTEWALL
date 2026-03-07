@@ -882,7 +882,7 @@ final class AnalyticsService {
     
     /// Bucket error codes to prevent cardinality explosion
     private func bucketErrorCode(_ errorCode: String) -> String {
-        // Common RevenueCat/StoreKit error patterns
+        // Common StoreKit error patterns
         let code = errorCode.lowercased()
         
         if code.contains("cancel") || code.contains("cancelled") {

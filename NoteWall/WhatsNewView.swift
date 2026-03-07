@@ -61,22 +61,22 @@ struct WhatsNewView: View {
     private var updateItems: [UpdateItem] {
         [
             UpdateItem(
-                icon: "sparkles",
+                icon: "text.badge.checkmark",
                 iconColor: Color("AppAccent"),
-                title: NSLocalizedString("Faster Performance", comment: ""),
-                description: NSLocalizedString("Smoother updates and quicker loading across the app.", comment: "")
+                title: NSLocalizedString("Individual Note Highlights", comment: ""),
+                description: NSLocalizedString("Highlight backgrounds now wrap each note separately instead of one big block. Looks way cleaner.", comment: "")
+            ),
+            UpdateItem(
+                icon: "paintbrush.fill",
+                iconColor: Color("AppAccent").opacity(0.8),
+                title: NSLocalizedString("Better Text Styling", comment: ""),
+                description: NSLocalizedString("White and black box styles sit neatly behind each note with proper spacing and rounded corners.", comment: "")
             ),
             UpdateItem(
                 icon: "bolt.circle.fill",
-                iconColor: Color("AppAccent").opacity(0.8),
-                title: NSLocalizedString("More Reliable Setup", comment: ""),
-                description: NSLocalizedString("Onboarding and setup flow now behave more consistently.", comment: "")
-            ),
-            UpdateItem(
-                icon: "crown.fill",
                 iconColor: Color("AppAccent").opacity(0.6),
-                title: NSLocalizedString("Feedback Built-In", comment: ""),
-                description: NSLocalizedString("Send ideas directly inside the app. We read every message.", comment: "")
+                title: NSLocalizedString("Smoother Experience", comment: ""),
+                description: NSLocalizedString("Small fixes and polish across the app for a more reliable daily workflow.", comment: "")
             )
         ]
     }
@@ -654,8 +654,8 @@ class WhatsNewManager: ObservableObject {
     
     private let lastShownVersionKey = "WhatsNewLastShownVersion"
     private let hasCompletedSetupKey = "hasCompletedSetup"
-    /// Key for the premium What's New popup (v1.5.3)
-    private let whatsNewHasBeenShownKey = "WhatsNewShown_Premium_v1.5.3"
+    /// Key for the premium What's New popup (v1.5.4)
+    private let whatsNewHasBeenShownKey = "WhatsNewShown_Premium_v1.5.4"
     
     // 🚨 DEBUG MODE: Set to true to FORCE show the popup for testing
     // ⚠️ MUST be set to false before production release!

@@ -94,6 +94,7 @@ iOSInjectionProject/
 
 # Sensitive configuration files (like .env.local in Next.js)
 # Note: Config.swift is kept locally but gitignored for security
+NoteWall/Config.swift
 DEVELOPER_CREDENTIALS.txt
 
 SECRET_PROMO_CODES.txt
